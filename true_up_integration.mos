@@ -1,0 +1,44 @@
+! ---------------------------------------------------------------------------
+! NCPLite Dumping Memory
+! ---------------------------------------------------------------------------
+
+! ---------------------------------------------------------------------------
+! Parallel Execution
+! ---------------------------------------------------------------------------
+! PARL:= getHostInt('PARALLEL')
+! if (PARL = 1 and AWSF = 0) then
+! 	COMM:= getHostInt('COMMUNICATOR')
+! end-if
+
+! ---------------------------------------------------------------------------
+! Hydro Data
+! ---------------------------------------------------------------------------
+  if (GENESYS_INTEGRATION) then
+
+    if (I > 0) then
+
+      ! Initial volumes
+      ! ..............-
+  	  getHostArray('VOLINI',VOLIHY)
+
+  	end-if
+
+  else
+
+    if (GENESYS) then
+      ! Lujan: set initial volume for debugging
+  	  forall(i in 1..I) do
+  	    VOLIHY(i) := VMINHY(i)
+      end-do
+      if (DEBUG_PRINT) then
+        writeln("------------------------------------------------------------------------")
+        forall(i in 1..I) do
+          writeln("Generator ID: ", IDHY(i))
+          writeln(" initial volume: ", VOLIHY(i))
+       end-do
+       writeln("------------------------------------------------------------------------")
+     end-if
+   end-if
+
+  end-if
+

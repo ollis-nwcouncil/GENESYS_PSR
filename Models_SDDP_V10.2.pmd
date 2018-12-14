@@ -1,0 +1,933 @@
+//--------------------------------------------------------------------------------------------------
+// Modelo de Configuracao do SDDP
+//--------------------------------------------------------------------------------------------------
+DEFINE_MODEL MODL:SDDP_V10.2_ConfiguracaoEstudo
+	PARM INTEGER Idioma
+	PARM INTEGER Objetivo
+	PARM INTEGER Opcao
+	PARM INTEGER Tipo_Etapa
+	PARM INTEGER Vazoes
+	PARM INTEGER Manutencao
+	PARM INTEGER Configuracao
+	PARM INTEGER Rede
+	PARM INTEGER Perdas
+	PARM INTEGER Horizonte
+	PARM INTEGER Series_Simular
+	PARM INTEGER Etapa_inicial
+	PARM INTEGER Ano_inicial
+	PARM INTEGER NumeroEtapas
+	PARM INTEGER Mes_Inicial_Hidro
+	PARM INTEGER Ano_Inicial_Hidro
+	PARM INTEGER NumeroSistemas
+	PARM INTEGER Series_Forward
+	PARM INTEGER Series_Backward
+	PARM INTEGER NumeroBlocosDemanda
+	PARM INTEGER NumeroBlocosDemandaParm2
+	PARM INTEGER NumeroAnosAdicionais
+	PARM INTEGER NumeroAnosAdicionaisParm2
+	PARM INTEGER NumeroAnosAdicionaisParm3
+	PARM INTEGER MaximoIteracoes
+	PARM REAL    CriterioConvergencia
+	PARM INTEGER NivelInformes
+	PARM REAL    TaxaDesconto
+	PARM REAL    MinOutflowPenalty
+	PARM REAL    SpillagePenalty
+	VECTOR REAL  DeficitSegment
+	VECTOR REAL  DeficitCost
+
+	//--- Codigos dos Sistemas Listados ---
+	VECTOR INTEGER CodigoSistemas
+
+	//--- Index das series selecionadas ---
+	VECTOR INTEGER IndexSeriesSimulacao
+
+	//--------------------------------------
+	//--- Controle de Versao             ---
+	//--------------------------------------
+	PARM STRING VersaoInfoCargaBarra
+
+	//--------------------------------------
+	//--- HourBlock Map                  ---
+	//--------------------------------------
+	VETOR DATE 	DataHourBlock
+	VETOR INTEGER 	HourBlockMap INDEX DataHourBlock
+
+	//--------------------------------------
+	//--- Parametros comuns              ---
+	//--------------------------------------
+	PARM INTEGER NumberSimulations
+	PARM INTEGER NumberOpenings
+	PARM INTEGER NumberBlocks
+
+	//--------------------------------------
+	//--- Parametros monetarios          ---
+	//--------------------------------------
+	PARM  	STRING	CurrencyReference
+	VETOR	STRING 	Currency
+	VETOR 	REAL	CurrencyFactor
+
+	//--------------------------------------
+	//--- Parametros de custo futuro     ---
+	//--------------------------------------
+	PARM	INTEGER FlagCreateFutureCost
+	PARM	INTEGER	FutureCostStage
+	PARM	INTEGER	FutureCostYear
+	PARM 	STRING	FutureCostEntryFileName
+
+	PARM	INTEGER FlagReadFutureCost
+	PARM 	STRING	FutureCostReadFileName
+
+	//--------------------------------------
+	//--- Parametros de Hot Start     	 ---
+	//--------------------------------------
+	PARM	INTEGER FlagUseHotStart
+	PARM	INTEGER InitialStageFutureCost
+	PARM	INTEGER FinalStageFutureCost
+
+	PARM	INTEGER	MinSpillageUnit
+END_MODEL
+
+//--------------------------------------------------------------------------------------------------
+// Sistema
+//--------------------------------------------------------------------------------------------------
+DEFINE_MODEL MODL:SDDP_V10.2_Sistema
+	PARM INTEGER		TipoInfoManutencaoHidro
+	PARM INTEGER		TipoUnidadeManutencaoHidro
+	PARM INTEGER		TipoInfoManutencaoTermica
+	PARM INTEGER		TipoUnidadeManutencaoTermica
+
+	PARM INTEGER		TipoInfoReservaGirante
+	PARM INTEGER		TipoUnidadeReservaGirante
+
+	PARM INTEGER		TipoInfoReservaGeracao
+	PARM INTEGER		TipoUnidadeReservaGeracao
+
+	PARM STRING UnM
+    PARM INTEGER Ignored
+
+    PARM INTEGER TimeZoneOffset
+
+	VETOR DATE		DataEmissionCost
+	VETOR REAL		EmissionCost  INDEX DataEmissionCost
+END_MODEL
+
+//--------------------------------------------------------------------------------------------------
+// Senvitivity
+//--------------------------------------------------------------------------------------------------
+DEFINE_MODEL SDDP_V10.2_Sensitivity
+	PARM	STRING		Keyword
+	PARM	INTEGER		SystemCode
+	PARM	INTEGER		ElementCode
+	PARM	REAL		Factor
+END_MODEL
+//--------------------------------------------------------------------------------------------------
+// Modelo para Duracao Variavel
+//--------------------------------------------------------------------------------------------------
+DEFINE_MODEL MODL:SDDP_V10.2_DuracaoVariavel
+        DIMENSION 	block 5
+	VETOR DATE 	Data
+	VETOR REAL 	Duracao	DIM(block) INDEX Data
+END_MODEL
+DEFINE_MODEL MODL:SDDP_V10.2_DuracaoVariavel21
+        DIMENSION 	block 21
+	VETOR DATE 	Data
+	VETOR REAL 	Duracao	DIM(block) INDEX Data
+END_MODEL
+//--------------------------------------------------------------------------------------------------
+// Modelo para a Area
+//--------------------------------------------------------------------------------------------------
+DEFINE_MODEL MODL:SDDP_V10.2_Area
+        DIMENSION  block 5
+	VETOR DATE Data
+	VETOR REAL Export DIM(block) INDEX Data
+	VETOR REAL Import DIM(block) INDEX Data
+END_MODEL
+DEFINE_MODEL MODL:SDDP_V10.2_Area21
+        DIMENSION  block 21
+	VETOR DATE Data
+	VETOR REAL Export DIM(block) INDEX Data
+	VETOR REAL Import DIM(block) INDEX Data
+END_MODEL
+
+//--------------------------------------------------------------------------------------------------
+// Modelo para a Carga de Barra
+//--------------------------------------------------------------------------------------------------
+DEFINE_MODEL MODL:SDDP_V10.2_CargaBarra
+        DIMENSION  block 5
+	VETOR DATE Data
+	VETOR REAL P	DIM(block) INDEX Data
+	VETOR REAL Pind DIM(block) INDEX Data
+	VETOR REAL PerF DIM(block) INDEX Data
+
+	VETOR INTEGER Icca
+END_MODEL
+//--------------------------------------------------------------------------------------------------
+// Modelo para a Demanda
+//--------------------------------------------------------------------------------------------------
+DEFINE_MODEL MODL:SDDP_V10.2_Demanda
+        DIMENSION  block 5
+	VETOR DATE 	Data
+	PARM  INTEGER	Elastico
+	VETOR REAL 	CoefVariation DIM(block) INDEX Data
+	PARM  REAL	Duracao DIM(block)
+END_MODEL
+//--------------------------------------------------------------------------------------------------
+// Modelo para a Demanda
+//--------------------------------------------------------------------------------------------------
+DEFINE_MODEL MODL:SDDP_V10.2_Demanda21
+        DIMENSION  block 21
+	VETOR DATE 	Data
+	PARM  INTEGER	Elastico
+	VETOR REAL 	CoefVariation DIM(block) INDEX Data
+	PARM  REAL	Duracao DIM(block)
+END_MODEL
+//--------------------------------------------------------------------------------------------------
+// Modelo para Segmento de Demanda
+//--------------------------------------------------------------------------------------------------
+DEFINE_MODEL MODL:SDDP_V10.2_SegmentoDemanda
+        DIMENSION	block 5
+	VETOR DATE 	Data
+	VETOR REAL 	Demanda	DIM(block) INDEX Data
+	VETOR DATE 	DataCusto
+	VETOR REAL 	Custo	DIM(block) INDEX DataCusto
+
+	//--------------------------------------
+	//--- Demanda Horaria                ---
+	//--------------------------------------
+	VETOR DATE 	DataHourDemand
+	VETOR REAL 	HourDemand INDEX DataHourDemand
+	VETOR DATE 	DataHourDemandPrice
+	VETOR REAL 	HourDemandPrice INDEX DataHourDemandPrice
+
+	VETOR DATE 	DataHourDemandScen
+	VETOR REAL 	HourDemandScen INDEX DataHourDemandScen
+END_MODEL
+DEFINE_MODEL MODL:SDDP_V10.2_SegmentoDemanda21
+        DIMENSION	block 21
+	VETOR DATE 	Data
+	VETOR REAL 	Demanda	DIM(block) INDEX Data
+	VETOR DATE 	DataCusto
+	VETOR REAL 	Custo	DIM(block) INDEX DataCusto
+
+	//--------------------------------------
+	//--- Demanda Horaria                ---
+	//--------------------------------------
+	VETOR DATE 	DataHourDemand
+	VETOR REAL 	HourDemand INDEX DataHourDemand
+	VETOR DATE 	DataHourDemandPrice
+	VETOR REAL 	HourDemandPrice INDEX DataHourDemandPrice
+
+	VETOR DATE 	DataHourDemandScen
+	VETOR REAL 	HourDemandScen INDEX DataHourDemandScen
+END_MODEL
+//--------------------------------------------------------------------------------------------------
+// Currency
+//--------------------------------------------------------------------------------------------------
+DEFINE_MODEL MODL:SDDP_V10.2_Currency
+	PARM     STRING    Currency
+END_MODEL
+
+//--------------------------------------------------------------------------------------------------
+// Interconnection
+//--------------------------------------------------------------------------------------------------
+DEFINE_MODEL MODL:SDDP_V10.2_Interconnection
+        DIMENSION	  block 5
+
+	VETOR   DATE      Data
+	VETOR   INTEGER   Existing INDEX Data
+	VETOR   DATE      DataCost->
+	VETOR   DATE      DataCost<-
+	VETOR   REAL      Capacity->     DIM(block) INDEX Data
+	VETOR   REAL      Capacity<-     DIM(block) INDEX Data
+	VETOR   REAL      LossFactor->              INDEX Data
+	VETOR   REAL      LossFactor<-              INDEX Data
+	VETOR   REAL      Cost->         DIM(block) INDEX DataCost->
+	VETOR   REAL      Cost<-         DIM(block) INDEX DataCost<-
+
+	MERGE_MODEL MODL:SDDP_V10.2_Currency
+
+	DEFINE_VALIDATION
+
+       	  //--- Validacao dos vetores indexados pela Data ---
+	  FOR_EACH $(Data)
+
+       	    //--- Atributos variantes por patamar ---
+	    FOR @I=1,5
+	      IF ($(Capacity->(@I)) < 0) THEN ERROR(1)
+	      IF ($(Capacity<-(@I)) < 0) THEN ERROR(1)
+	    END_FOR
+
+   	    //---- Atributos independentes do patamar ---
+	    IF ($(LossFactor->) < 0 OR $(LossFactor->) > 1 ) THEN ERROR(2)
+	    IF ($(LossFactor<-) < 0 OR $(LossFactor<-) > 1 ) THEN ERROR(2)
+
+	  END_FOR_EACH
+
+       	  //--- Validacao dos patamares invariaves ---
+	  IF ( $(Existing) != 0 AND $(Existing) != 1 ) THEN ERROR(3)
+	  IF ( $(name).LENGTH() > 10 ) THEN ERROR(4)
+
+	END_VALIDATION
+
+END_MODEL
+DEFINE_MODEL MODL:SDDP_V10.2_Interconnection21
+        DIMENSION	  block 21
+
+	VETOR   DATE      Data
+	VETOR   INTEGER   Existing INDEX Data
+	VETOR   DATE      DataCost->
+	VETOR   DATE      DataCost<-
+	VETOR   REAL      Capacity->     DIM(block) INDEX Data
+	VETOR   REAL      Capacity<-     DIM(block) INDEX Data
+	VETOR   REAL      LossFactor->          INDEX Data
+	VETOR   REAL      LossFactor<-          INDEX Data
+	VETOR   REAL      Cost->         DIM(block) INDEX DataCost->
+	VETOR   REAL      Cost<-         DIM(block) INDEX DataCost<-
+
+	MERGE_MODEL MODL:SDDP_V10.2_Currency
+
+	DEFINE_VALIDATION
+
+       	  //--- Validacao dos vetores indexados pela Data ---
+	  FOR_EACH $(Data)
+
+       	    //--- Atributos variantes por patamar ---
+	    FOR @I=1,21
+	      IF ($(Capacity->(@I)) < 0) THEN ERROR(1)
+	      IF ($(Capacity<-(@I)) < 0) THEN ERROR(1)
+	    END_FOR
+
+   	    //---- Atributos independentes do patamar ---
+	    IF ($(LossFactor->) < 0 OR $(LossFactor->) > 1 ) THEN ERROR(2)
+	    IF ($(LossFactor<-) < 0 OR $(LossFactor<-) > 1 ) THEN ERROR(2)
+
+	  END_FOR_EACH
+
+       	  //--- Validacao dos patamares invariaves ---
+	  IF ( $(Existing) != 0 AND $(Existing) != 1 ) THEN ERROR(3)
+	  IF ( $(name).LENGTH() > 10 ) THEN ERROR(4)
+
+	END_VALIDATION
+
+END_MODEL
+
+//--------------------------------------
+//--- Modelo de Barra                ---
+//--------------------------------------
+DEFINE_MODEL MODL:SDDP_V10.2_Bus
+	PARM	REAL	Kv
+END_MODEL
+
+//--------------------------------------------------------------------------------------------------
+// Modelo para a Circuito
+//--------------------------------------------------------------------------------------------------
+DEFINE_MODEL MODL:SDDP_V10.2_Circuito
+	VETOR DATE 	Data
+	VETOR REAL	R INDEX Data
+	VETOR REAL	X INDEX Data
+	VETOR REAL	MVAr INDEX Data
+	VETOR REAL	Tmn INDEX Data
+	VETOR REAL	Tmx INDEX Data
+	VETOR REAL	Pmn INDEX Data
+	VETOR REAL	Pmx INDEX Data
+	VETOR REAL	Rn INDEX Data
+	VETOR REAL	Re INDEX Data
+	VETOR INTEGER	I INDEX Data
+	VETOR REAL	Prob INDEX Data
+	VETOR INTEGER	Iflh INDEX Data
+	VETOR INTEGER	Status INDEX Data
+	//--- Marcado para monitoramento
+	PARM INTEGER    FlagMonitored
+	//--- Marcado para contingencia
+	PARM INTEGER    FlagContingency
+	PARM INTEGER    FlagConstraint
+	PARM INTEGER    FlagTariff
+	PARM INTEGER    FlagDC
+END_MODEL
+//--------------------------------------------------------------------------------------------------
+// Modelo para a Transformador
+//--------------------------------------------------------------------------------------------------
+DEFINE_MODEL MODL:SDDP_Transformador
+    MERGE_MODEL MODL:SDDP_V10.2_Circuito
+END_MODEL
+
+//--------------------------------------------------------------------------------------------------
+// Modelo para Termica
+//--------------------------------------------------------------------------------------------------
+DEFINE_MODEL MODL:SDDP_V10.2_Termica
+        DIMENSION 		block 5
+        DIMENSION		segment 3
+        DIMENSION		fuels 3
+
+	VETOR DATE		Data
+	VETOR DATE		DataCesp
+	VETOR DATE              DataChroGerMin
+	VETOR INTEGER		Existing INDEX Data
+	VETOR INTEGER		Unidades INDEX Data
+	VETOR REAL		PotInst INDEX Data
+	VETOR REAL		GerMin INDEX Data
+	VETOR REAL		GerMax INDEX Data
+	VETOR REAL		ICP INDEX Data
+	VETOR REAL		IH INDEX Data
+	VETOR REAL		O&MCost INDEX Data
+	VETOR REAL		G DIM(segment) INDEX Data
+	VETOR REAL		CEsp DIM(segment,block) INDEX DataCesp
+	VETOR INTEGER		NAdF INDEX Data
+	VETOR INTEGER		NAF DIM(fuels) INDEX Data
+	VETOR INTEGER		ComT INDEX Data
+	VETOR REAL		CTransp INDEX Data
+	VETOR REAL		StartUp INDEX Data
+	VETOR INTEGER		sfal INDEX Data
+	VETOR INTEGER		NGas INDEX Data
+	VETOR REAL		CoefE INDEX Data
+
+	//--- Geracao minima em informacao cronologica
+	VETOR REAL		ChroGerMin DIM(block) INDEX DataChroGerMin
+
+	VETOR DATE      DataSpinningReserve
+	VETOR REAL      SpinningReserve DIM(block) INDEX DataSpinningReserve
+
+	VETOR DATE		DataMaxSecondaryReserve
+	VETOR REAL		MaxSecondaryReserve DIM(block) INDEX DataMaxSecondaryReserve
+	VETOR DATE		DataPriceSecondaryReserve
+	VETOR REAL		PriceSecondaryReserve DIM(block) INDEX DataPriceSecondaryReserve
+
+
+	//--- Curto prazo ---
+        PARM REAL    RampUp
+        PARM REAL    RampDown
+        PARM REAL    MinUptime
+        PARM REAL    MinDowntime
+        PARM INTEGER MaxStartUps
+        PARM INTEGER MaxShutDowns
+        PARM REAL   ShutDownCost
+
+END_MODEL
+DEFINE_MODEL MODL:SDDP_V10.2_Termica21
+        DIMENSION 		block 21
+        DIMENSION		segment 3
+        DIMENSION		fuels 3
+
+	VETOR DATE		Data
+	VETOR DATE		DataCesp
+	VETOR DATE              DataChroGerMin
+	VETOR INTEGER		Existing INDEX Data
+	VETOR INTEGER		Unidades INDEX Data
+	VETOR REAL		PotInst INDEX Data
+	VETOR REAL		GerMin INDEX Data
+	VETOR REAL		GerMax INDEX Data
+	VETOR REAL		ICP INDEX Data
+	VETOR REAL		IH INDEX Data
+	VETOR REAL		O&MCost INDEX Data
+	VETOR REAL		G DIM(segment) INDEX Data
+	VETOR REAL		CEsp DIM(segment,block) INDEX DataCesp
+	VETOR INTEGER		NAdF INDEX Data
+	VETOR INTEGER		NAF DIM(fuels) INDEX Data
+	VETOR INTEGER		ComT INDEX Data
+	VETOR REAL		CTransp INDEX Data
+	VETOR REAL		StartUp INDEX Data
+	VETOR INTEGER		sfal INDEX Data
+	VETOR INTEGER		NGas INDEX Data
+	VETOR REAL		CoefE INDEX Data
+
+	//--- Geracao minima em informacao cronologica
+	VETOR REAL		ChroGerMin DIM(block) INDEX DataChroGerMin
+
+	VETOR DATE      DataSpinningReserve
+	VETOR REAL      SpinningReserve DIM(block) INDEX DataSpinningReserve
+
+	VETOR DATE		DataMaxSecondaryReserve
+	VETOR REAL		MaxSecondaryReserve DIM(block) INDEX DataMaxSecondaryReserve
+	VETOR DATE		DataPriceSecondaryReserve
+	VETOR REAL		PriceSecondaryReserve DIM(block) INDEX DataPriceSecondaryReserve
+
+
+	//--- Curto prazo ---
+        PARM REAL	RampUp
+        PARM REAL	RampDown
+        PARM REAL	MinUptime
+        PARM REAL	MinDowntime
+        PARM INTEGER	MaxStartUps
+        PARM INTEGER	MaxShutDowns
+        PARM REAL   ShutDownCost
+
+END_MODEL
+//--------------------------------------------------------------------------------------------------
+// Modelo para Hidro
+//--------------------------------------------------------------------------------------------------
+DEFINE_MODEL MODL:SDDP_V10.2_Hidro
+        DIMENSION 		block 21
+        DIMENSION		point 5
+        DIMENSION		month 12
+	VETOR DATE      Data
+	VETOR INTEGER   Existing       INDEX Data
+	VETOR INTEGER   Unidades       INDEX Data
+	VETOR REAL      PotInst        INDEX Data
+	VETOR REAL      FPMed          INDEX Data
+	VETOR REAL      Qmin           INDEX Data
+	VETOR REAL      Qmax           INDEX Data
+	VETOR REAL      Vmin           INDEX Data
+	VETOR REAL      Vmax           INDEX Data
+	PARM  REAL      Vinic
+	PARM  INTEGER   VNC
+	VETOR REAL      DfTotMin       INDEX Data
+	VETOR REAL      ICP            INDEX Data
+	VETOR REAL      IH             INDEX Data
+	VETOR INTEGER   Eaflu          INDEX Data
+
+	PARM  INTEGER   AreaType
+	PARM  REAL      AreaConst
+	PARM  INTEGER   FiltType
+	PARM  REAL      FiltConst
+	PARM  REAL      RegFactor
+	PARM  INTEGER   ProdTypePol
+	PARM  INTEGER   SpillCostType
+	PARM  REAL      SpillCost
+	PARM  INTEGER   OutSampling
+	VETOR  REAL      O&MCost
+	PARM  INTEGER   ProdTypeSim
+	PARM  REAL      TurbGenEffic
+	PARM  REAL      MeanTailLevel
+
+	//PARM  INTEGER   SECalcFlag
+	PARM  REAL      TurbLossFactor
+	PARM  REAL      SpillLossFactor
+
+	//--- Storage x Production table ---
+	PARM  REAL      FP DIM(point)
+	PARM  REAL      FP.VOL DIM(point)
+
+	//--- Storage x Area table ---
+	PARM  REAL      SxA_Area       DIM(point)
+	PARM  REAL      SxA_Storage    DIM(point)
+
+	//--- Storage x Filtration table ---
+	PARM  REAL      SxF_Filtration DIM(point)
+	PARM  REAL      SxF_Storage    DIM(point)
+
+	//--- Storage x Head table ---
+	PARM  REAL      SxH_Head       DIM(point)
+	PARM  REAL      SxH_Storage    DIM(point)
+
+	//--- Inflow x Turbining table ---
+	VETOR INTEGER   Indicador      INDEX Data
+	VETOR REAL      TurIn          DIM(point) INDEX Data
+	VETOR REAL      TotIn          DIM(point) INDEX Data
+	//PARM  REAL      IxT_Turbining  DIM(point) INDEX Data
+	//PARM  REAL      IxT_Inflow     DIM(point) INDEX Data
+
+	//--- Outflow x Tailwater elevation table ---
+	VETOR  REAL      OxT_Tail       DIM(point) INDEX Data
+	VETOR  REAL      OxT_Outflow    DIM(point) INDEX Data
+
+	//--- Evaporation coefficient ---
+	PARM  REAL      Evap           DIM(month)
+
+	PARM  INTEGER   VinicType
+
+	//--- Chronological data ---
+	VETOR DATE      DataFloodControlStorage
+	VETOR REAL      FloodControlStorage INDEX DataFloodControlStorage
+
+	PARM  REAL      VolMinPenalty
+	VETOR DATE      DataVolumeMinimum
+	VETOR REAL      VolumeMinimum INDEX DataVolumeMinimum
+
+	PARM  REAL	VolMaxPenalty
+	VETOR DATE	DataVolumeMaximum
+	VETOR REAL	VolumeMaximum INDEX DataVolumeMaximum
+
+	PARM  REAL      AlertStoragePenalty
+	VETOR DATE      DataAlertStorage
+	VETOR REAL      AlertStorage INDEX DataAlertStorage
+
+	PARM  REAL      MinTOPenalty
+	VETOR DATE      DataMinTO
+	VETOR REAL      MinTO INDEX  DataMinTO
+
+	PARM  REAL      MaxTOPenalty
+	VETOR DATE      DataMaxTO
+	VETOR REAL      MaxTO INDEX  DataMaxTO
+
+	PARM  REAL      MinSpillagePenalty
+	VETOR DATE      DataMinSpillage
+	VETOR REAL      MinSpillage INDEX  DataMinSpillage
+
+	PARM  INTEGER   RiegPenalty
+	PARM  REAL      RiegPenaltyValue
+	VETOR DATE      DataRieg
+	VETOR REAL      Rieg INDEX DataRieg
+
+	VETOR DATE      DataSpinningReserve
+	VETOR REAL      SpinningReserve DIM(block) INDEX DataSpinningReserve
+
+	PARM  REAL      MaxTurbiningPenalty
+	VETOR DATE      DataMaxTurbining
+	VETOR REAL      MaxTurbining INDEX  DataMaxTurbining
+
+	PARM  DATE      DateDeadStorage
+	PARM  INTEGER   DurationDeadStorage
+	PARM  REAL      InitialValueDeadStorage
+
+	VETOR DATE		DataMaxSecondaryReserve
+	VETOR REAL		MaxSecondaryReserve DIM(block) INDEX DataMaxSecondaryReserve
+	VETOR DATE		DataPriceSecondaryReserve
+	VETOR REAL		PriceSecondaryReserve DIM(block) INDEX DataPriceSecondaryReserve
+
+	PARM REAL PrdEsp
+	PARM REAL PrdHid
+	PARM INTEGER PolU
+	PARM REAL PolA0
+	PARM REAL PolA1
+	PARM REAL PolA2
+	PARM REAL PolA3
+	PARM REAL PolA4
+
+	VECTOR  DATE	  DataLossFactor
+	VECTOR  REAL      LossFactor	INDEX DataLossFactor
+
+	VECTOR  DATE	  DataRegTime
+	VECTOR  REAL      RegTime	INDEX DataRegTime
+
+	VECTOR  DATE	  DataVolVNC
+	VETOR	REAL      VolVNC           INDEX DataVolVNC
+
+
+        PARM  INTEGER     RunRiverType
+
+
+
+END_MODEL
+//--------------------------------------------------------------------------------------------------
+// Modelo para Geracao nao despachavel
+//--------------------------------------------------------------------------------------------------
+DEFINE_MODEL MODL:SDDP_V10.2_Gnd
+        DIMENSION 		block 5
+
+	VETOR DATE		Data
+	VETOR INTEGER		Existing INDEX Data
+	VETOR INTEGER		Unidades INDEX Data
+	VETOR REAL		PotInst INDEX Data
+	VETOR REAL		FatOpe INDEX Data
+	VETOR REAL		ICP INDEX Data
+	VETOR INTEGER		sfal INDEX Data
+
+	VETOR REAL		O&MCost INDEX Data
+	VETOR REAL		CurtailmentCost  INDEX Data
+	PARM INTEGER	TechType  INDEX Data
+
+	//--- Cenarios de geracao por bloco ---
+	VETOR DATE		DataGeneration
+	VETOR REAL		Generation DIM(block) INDEX DataGeneration
+
+	//--- Cenarios de geracao horaria ---
+	VETOR REAL		HourGeneration
+END_MODEL
+DEFINE_MODEL MODL:SDDP_V10.2_Gnd21
+        DIMENSION 		block 21
+
+	VETOR DATE		Data
+	VETOR INTEGER		Existing INDEX Data
+	VETOR INTEGER		Unidades INDEX Data
+	VETOR REAL		PotInst INDEX Data
+	VETOR REAL		FatOpe INDEX Data
+	VETOR REAL		ICP INDEX Data
+	VETOR INTEGER		sfal INDEX Data
+
+	VETOR REAL		O&MCost INDEX Data
+	VETOR REAL		CurtailmentCost  INDEX Data
+	PARM INTEGER	TechType  INDEX Data
+
+	//--- Cenarios de geracao por bloco ---
+	VETOR DATE		DataGeneration
+	VETOR REAL		Generation DIM(block) INDEX DataGeneration
+
+	//--- Cenarios de geracao horaria ---
+	VETOR REAL		HourGeneration
+END_MODEL
+DEFINE_MODEL MODL:SDDP_PostoMedicaoGnd
+        DIMENSION 		block 21
+	//--- Cenarios de geracao por bloco ---
+	VETOR DATE		DataGeneration
+	VETOR REAL		Generation DIM(block) INDEX DataGeneration
+	//--- Cenarios de geracao horaria ---
+	VETOR REAL		HourGeneration
+END_MODEL
+//--------------------------------------------------------------------------------------------------
+// Modelo para Combustivel
+//--------------------------------------------------------------------------------------------------
+DEFINE_MODEL MODL:SDDP_V10.2_Combustivel
+	VETOR DATE		Data
+	PARM  STRING		UComb
+	PARM  STRING		UE
+	PARM  REAL		EmiCO2
+	VETOR REAL		Custo INDEX Data
+
+	VETOR DATE		DataConsumptionMax
+	VETOR REAL		ConsumptionMax INDEX DataConsumptionMax
+	VETOR DATE		DataAvailability
+	VETOR REAL		Availability INDEX DataAvailability
+
+END_MODEL
+
+//--------------------------------------------------------------------------------------------------
+// Modelo de Manutencao
+//--------------------------------------------------------------------------------------------------
+DEFINE_MODEL MODL:SDDP_V10.2_Manutencao
+	VETOR DATE		Data
+	VETOR REAL		Manutencao INDEX Data
+END_MODEL
+//--------------------------------------------------------------------------------------------------
+// Modelo de Restricao de Conjunto de Elementos
+//--------------------------------------------------------------------------------------------------
+DEFINE_MODEL MODL:SDDP_V10.2_Restricao
+        DIMENSION 		block 5
+
+	VETOR DATE		Data
+	VETOR REAL		Restricao DIM(block) INDEX Data
+END_MODEL
+DEFINE_MODEL MODL:SDDP_V10.2_Restricao21
+        DIMENSION 		block 21
+
+	VETOR DATE		Data
+	VETOR REAL		Restricao DIM(block) INDEX Data
+END_MODEL
+//--------------------------------------------------------------------------------------------------
+// Modelo de Restricao de Soma de Elementos
+//--------------------------------------------------------------------------------------------------
+DEFINE_MODEL MODL:SDDP_V10.2_RestricaoSoma
+        DIMENSION 		block 5
+	VETOR DATE		Data
+	VETOR REAL		LB DIM(block) INDEX Data
+	VETOR REAL		UB DIM(block) INDEX Data
+END_MODEL
+//--------------------------------------------------------------------------------------------------
+// Modelo de Restricao de Soma de Elementos
+//--------------------------------------------------------------------------------------------------
+DEFINE_MODEL MODL:SDDP_V10.2_RestricaoSoma21
+        DIMENSION 		block 21
+	VETOR DATE		Data
+	VETOR REAL		LB DIM(block) INDEX Data
+	VETOR REAL		UB DIM(block) INDEX Data
+END_MODEL
+//--------------------------------------------------------------------------------------------------
+// Modelo de Restricao de Geracao
+//--------------------------------------------------------------------------------------------------
+DEFINE_MODEL MODL:SDDP_V10.2_RestricaoGeracao
+	MERGE_MODEL MODL:SDDP_V10.2_Restricao
+	PARM REAL	Penalty
+	PARM STRING	sign
+END_MODEL
+DEFINE_MODEL MODL:SDDP_V10.2_RestricaoGeracao21
+	MERGE_MODEL MODL:SDDP_V10.2_Restricao21
+	PARM REAL	Penalty
+	PARM STRING	sign
+END_MODEL
+//--------------------------------------------------------------------------------------------------
+// Modelo de Restricao de Reserva de Geracao
+//--------------------------------------------------------------------------------------------------
+DEFINE_MODEL MODL:SDDP_V10.2_ReservaGeracao
+	MERGE_MODEL MODL:SDDP_V10.2_Restricao
+	PARM REAL	Penalty
+	PARM INTEGER	Type
+	PARM INTEGER	CompensateNoSel
+	PARM INTEGER	CompensateSel
+	PARM INTEGER	DCLinkFlowLimit
+	PARM INTEGER	Unit
+	VETOR REAL 	HourReserve
+END_MODEL
+DEFINE_MODEL MODL:SDDP_V10.2_ReservaGeracao21
+	MERGE_MODEL MODL:SDDP_V10.2_Restricao21
+	PARM REAL	Penalty
+	PARM INTEGER	Type
+	PARM INTEGER	CompensateNoSel
+	PARM INTEGER	CompensateSel
+	PARM INTEGER	DCLinkFlowLimit
+	PARM INTEGER	Unit
+	VETOR REAL 	HourReserve
+END_MODEL
+
+//--------------------------------------------------------------------------------------------------
+// Modelo de Conexao Hidreletrica entre usinas
+//--------------------------------------------------------------------------------------------------
+DEFINE_MODEL MODL:SDDP_V10.2_ConexaoHidreletrica
+	PARM INTEGER		IsTurbinamento
+	PARM INTEGER		IsVertimento
+	PARM INTEGER		IsFiltration
+	PARM INTEGER		IsStoredEnergy
+	PARM INTEGER		IsAssociatedReservoir
+END_MODEL
+//--------------------------------------------------------------------------------------------------
+// Modelo de Posto Hidrologico
+//--------------------------------------------------------------------------------------------------
+DEFINE_MODEL MODL:SDDP_V10.2_PostoHidrologico
+	DIMENSION	lag 6
+	VETOR DATE		Data
+	VETOR REAL		Vazao INDEX Data
+
+        //--- Parametros associados a representacao por autoregressao ---
+        VETOR  INTEGER          Ordem
+	VETOR REAL              Fi DIM(lag)
+	VETOR REAL              Av
+	VETOR REAL              Sd
+	VETOR REAL              Teta
+END_MODEL
+//--------------------------------------------------------------------------------------------------
+// Modelo para a Link DC
+//--------------------------------------------------------------------------------------------------
+DEFINE_MODEL MODL:SDDP_V10.2_DCLink
+	VETOR DATE 	Data
+	VETOR INTEGER	Existing INDEX Data
+	VETOR REAL	Capacity->	INDEX Data
+	VETOR REAL	Capacity<-	INDEX Data
+	VETOR REAL 	LossFactor->	INDEX Data
+	VETOR REAL 	LossFactor<-	INDEX Data
+	VETOR REAL	CapacityEmergency->	 INDEX Data
+	VETOR REAL	CapacityEmergency<-	 INDEX Data
+END_MODEL
+//--------------------------------------------------------------------------------------------------
+// Modelo para no de gas
+//--------------------------------------------------------------------------------------------------
+DEFINE_MODEL MODL:SDDP_V10.2_NoGas
+        DIMENSION 	block 5
+	VETOR DATE 	Data
+	VETOR INTEGER	Existing INDEX Data
+	VETOR REAL	MinProd INDEX Data
+	VETOR REAL	MaxProd INDEX Data
+	VETOR REAL	ProdCost INDEX Data
+
+	//--- Custo de producao em informacao cronologica
+	VETOR DATE 	DataChroProdCost
+	VETOR REAL	ChroProdCost DIM(block) INDEX DataChroProdCost
+END_MODEL
+//--------------------------------------------------------------------------------------------------
+// Modelo para gasoduto
+//--------------------------------------------------------------------------------------------------
+DEFINE_MODEL MODL:SDDP_V10.2_Gasoduto
+        PARM  STRING	UnM
+
+	VETOR DATE 	Data
+	VETOR INTEGER	Existing INDEX Data
+	VETOR REAL	Capacity-> INDEX Data
+	VETOR REAL	Capacity<- INDEX Data
+	VETOR REAL	LossFactor-> INDEX Data
+	VETOR REAL	LossFactor<- INDEX Data
+	VETOR REAL	TranspCost INDEX Data
+END_MODEL
+//--------------------------------------------------------------------------------------------------
+// Modelo de Dados de Georeferenciamento
+//--------------------------------------------------------------------------------------------------
+DEFINE_MODEL MODL:GEOREFERENCE
+	VECTOR REAL    Latitude
+  	 VECTOR REAL    Longitude
+END_MODEL
+//--------------------------------------------------------------------------------------------------
+// Modelo para Bateria
+//--------------------------------------------------------------------------------------------------
+DEFINE_MODEL MODL:SDDP_V10.2_Bateria
+	PARM REAL 	Einic
+	PARM INTEGER 	RegTime
+	PARM INTEGER 	FlagInterStage
+	PARM REAL ChargeRamp
+	PARM REAL DischargeRamp
+
+	VETOR DATE 	Data
+	VETOR INTEGER	Existing INDEX Data
+	VETOR REAL 	Emin INDEX Data
+	VETOR REAL 	Emax INDEX Data
+	VETOR REAL 	Pmax INDEX Data
+	VETOR REAL 	ChargeEffic INDEX Data
+	VETOR REAL 	DischargeEffic INDEX Data
+END_MODEL
+//--------------------------------------------------------------------------------------------------
+// Modelo para Consumo de Combustivel
+//--------------------------------------------------------------------------------------------------
+DEFINE_MODEL MODL:SDDP_ConsumoCombustivel
+    DIMENSION         block 21
+    DIMENSION        segment 3
+    VETOR DATE        Data
+    VETOR REAL        O&MCost INDEX Data
+    VETOR REAL        G DIM(segment) INDEX Data
+    VETOR REAL        CTransp INDEX Data
+    VETOR DATE        DataCesp
+    VETOR REAL        CEsp DIM(segment,block) INDEX DataCesp
+END_MODEL
+//--------------------------------------------------------------------------------------------------
+// Modelo para injecao de potencia
+//--------------------------------------------------------------------------------------------------
+DEFINE_MODEL MODL:SDDP_V10.2_InjecaoPotencia
+	//--- Cenarios de geracao horaria ---
+	VETOR REAL		HourInjection
+	VETOR REAL		HourPriceInjection
+END_MODEL
+//--------------------------------------------------------------------------------------------------
+// Modelo para Contrato de combustivel
+//--------------------------------------------------------------------------------------------------
+DEFINE_MODEL MODL:SDDP_ContratoCombustivel
+		DIMENSION         block 21
+
+        PARM  INTEGER	Type
+        PARM  REAL	MaxOfftakeRate
+        PARM  REAL	ContractedAmount
+        PARM  REAL	TakeOrPayAmount
+        PARM  REAL	ConsumedAmount
+        PARM  REAL	TakeOrPayCost
+        PARM  REAL	ExtraTakeOrPayCost
+        PARM  DATE	InitialDate
+        PARM  DATE	FinalDate
+        PARM  INTEGER	NumberRenewals
+        PARM  REAL	MaxTransferRenewal
+
+		VETOR DATE DataCost
+		VETOR REAL Cost  INDEX DataCost
+		VETOR DATE DataMaxOfftake
+		VETOR REAL MaxOfftake  DIM(block) INDEX DataMaxOfftake
+END_MODEL
+//--------------------------------------------------------------------------------------------------
+// Modelo para Reservatorio de combustivel
+//--------------------------------------------------------------------------------------------------
+DEFINE_MODEL MODL:SDDP_ReservatorioCombustivel
+		DIMENSION         block 21
+        VETOR	DATE	Data
+        PARM	REAL	InitialCondition
+        PARM	REAL	MaxInjection
+        PARM	REAL	MaxWithdrawal
+        VETOR	REAL	MaxCapacity INDEX Data
+
+		VETOR	DATE	DataChroMaxInjection
+		VETOR	REAL	ChroMaxInjection DIM(block) INDEX DataChroMaxInjection
+
+		VETOR	DATE	DataChroMaxWithdrawal
+		VETOR	REAL	ChroMaxWithdrawal DIM(block) INDEX DataChroMaxWithdrawal
+END_MODEL
+//--------------------------------------------------------------------------------------------------
+// Modelo para Soma de Restriçao de Interconexão
+//--------------------------------------------------------------------------------------------------
+DEFINE_MODEL MODL:SDDP_RestricaoSomaInterconexao
+	MERGE_MODEL MODL:SDDP_V10.2_RestricaoSoma
+END_MODEL
+//--------------------------------------------------------------------------------------------------
+// Modelo para Soma de Restriçao de Interconexão
+//--------------------------------------------------------------------------------------------------
+DEFINE_MODEL MODL:SDDP_RestricaoSomaInterconexao21
+	MERGE_MODEL MODL:SDDP_V10.2_RestricaoSoma21
+END_MODEL
+//--------------------------------------------------------------------------------------------------
+// Modelo para Soma de Restriçao de Circuito
+//--------------------------------------------------------------------------------------------------
+DEFINE_MODEL MODL:SDDP_RestricaoSomaCircuito
+	MERGE_MODEL MODL:SDDP_V10.2_RestricaoSoma
+END_MODEL
+//--------------------------------------------------------------------------------------------------
+// Modelo para Soma de Restriçao de Circuito
+//--------------------------------------------------------------------------------------------------
+DEFINE_MODEL MODL:SDDP_RestricaoSomaCircuito21
+	MERGE_MODEL MODL:SDDP_V10.2_RestricaoSoma21
+END_MODEL
+//--------------------------------------------------------------------------------------------------
+// Modelo para Ciclo combinado
+//--------------------------------------------------------------------------------------------------
+DEFINE_MODEL MODL:SDDP_CicloCombinadoTermica
+	VETOR	DATE	DataOperativeState
+	VETOR	INTEGER	OperativeState INDEX DataOperativeState
+END_MODEL

@@ -1,0 +1,237 @@
+! ---------------------------------------------------------------------------
+! Define graph output
+! ---------------------------------------------------------------------------
+
+procedure set_graphs_tu(AA: integer, BB: integer, CC: integer, DD: string, EE: string, GG: set of string, HH: array(range,range) of real, II: integer, JJ: integer, KK: integer, LL: integer, MM: string)
+
+	! AA: Varies by block
+	! BB: Varies by Series
+	! CC: Number of Agents
+	! DD: Unit name
+	! EE: File name
+	! GG: Set of names
+	! HH: input data
+	! II: output number
+	! JJ: hini
+	! KK: nothing
+	! LL: nothing
+	! MM: nothing
+
+	if (FRUN = 1 or ((HINI = 1 and PARALLEL_WRITE = 1 and IPER = 1 and BB > 0))) then
+
+    	if (CASSANDRA_WRITE = 1) then
+			iograf_tu(II):= PSRIOGrafResultCassandra_create(0)
+		else
+			iograf_tu(II):= PSRIOGrafResultBinary_create(0)
+		end-if
+
+		if (CORE = 1) then
+			PSRIOGrafResultBase_setNameLength(iograf_tu(II), 24)
+		end-if
+
+		PSRIOGrafResultBase_setStageType(iograf_tu(II), TSTG)
+		PSRIOGrafResultBase_setInitialStage(iograf_tu(II), IMTH)
+		PSRIOGrafResultBase_setInitialYear(iograf_tu(II), IYER)
+		PSRIOGrafResultBase_setTotalStages(iograf_tu(II), NPER)
+		PSRIOGrafResultBase_setTotalBlocks(iograf_tu(II), 1)
+		
+		if (PARALLEL_WRITE = 1) then
+			PSRIOGrafResultBase_setTotalSeries(iograf_tu(II), 1)
+		else
+			if (NGAM > 0) then
+				PSRIOGrafResultBase_setTotalSeries(iograf_tu(II), maxlist(BB*NGAM,1))
+			else
+				PSRIOGrafResultBase_setTotalSeries(iograf_tu(II), maxlist(BB*NSIM,1))
+			end-if
+		end-if
+
+		PSRIOGrafResultBase_setVariableByHour(iograf_tu(II), 1)
+
+    	PSRIOGrafResultBase_setVariableByBlock(iograf_tu(II), AA)
+		PSRIOGrafResultBase_setVariableBySerie(iograf_tu(II), BB)
+		PSRIOGrafResultBase_setUnit(iograf_tu(II), DD)
+
+		PSRIOGrafResultBase_useHourlyDurationFrom(iograf_tu(II), study_tu)
+
+		forall(m in GG) PSRIOGrafResultBase_addAgent(iograf_tu(II), m)
+
+		if (CASSANDRA_WRITE = 1) then
+			ret:= PSRIOGrafResultCassandra_initSave(iograf_tu(II), study_tu, EE)
+		else
+			HDR_EXT:= '.hdr'
+			BIN_EXT:= '.bin'
+			if (PARALLEL_WRITE = 1) then
+				HDR_EXT:= '.part-hdr'
+				BIN_EXT:= '.part-bin'
+			end-if
+			ret:= PSRIOGrafResultBinary_initSave(iograf_tu(II), PATH + EE + HDR_EXT, PATH + EE + BIN_EXT)
+			if (PARALLEL_REOPEN = 1) then
+				ret:= PSRIOGrafResultBinary_closeSave(iograf_tu(II))
+			end-if
+		end-if
+		
+		putPSRType('PTR_GRAPH_TU' + strfmt(II,-3),iograf_tu(II))
+
+	else
+
+		iograf_tu(II):= getPSRType('PTR_GRAPH_TU' + strfmt(II,-3))
+
+	end-if
+
+	if (CASSANDRA_WRITE = 0 and PARALLEL_REOPEN = 1) then
+		iograf_tu(II):= PSRIOGrafResultBinary_create(0)
+		HDR_EXT:= '.part-hdr'
+		BIN_EXT:= '.part-bin'
+		ret:= PSRIOGrafResultBinary_initUpdate(iograf_tu(II), PATH + EE + HDR_EXT, PATH + EE + BIN_EXT)
+	end-if
+
+	forall(m in 1..CC) PSRIOGrafResultBase_setData(iograf_tu(II), m - 1, HH(HINI,m))
+
+	PSRIOGrafResultBase_setCurrentStage(iograf_tu(II), IPER)		
+	PSRIOGrafResultBase_setCurrentBlock(iograf_tu(II), HINI)
+
+	if (PARALLEL_WRITE = 1) then
+		PSRIOGrafResultBase_setCurrentSerie(iograf_tu(II), 1)
+	else
+		if (NGAM > 0) then
+			PSRIOGrafResultBase_setCurrentSerie(iograf_tu(II), maxlist(BB*GAME,1))
+		else
+			PSRIOGrafResultBase_setCurrentSerie(iograf_tu(II), maxlist(BB*ISIN,1))
+		end-if
+	end-if
+
+	ret:= PSRIOGrafResultBase_writeRegistry(iograf_tu(II))
+
+	if (CASSANDRA_WRITE = 0 and PARALLEL_REOPEN = 1) then
+		ret:= PSRIOGrafResultBinary_closeSave(iograf_tu(II))
+	end-if
+
+  	clean_data_tu(CC,HH)
+
+end-procedure
+
+! ---------------------------------------------------------------------------
+! Clean temporary data
+! ---------------------------------------------------------------------------
+
+procedure clean_data_tu(CC: integer, HH: array(range,range) of real)
+
+	forall(m in 1..CC) HH(HINI,m):= 0.0
+
+end-procedure
+
+! ---------------------------------------------------------------------------
+! Print results
+! ---------------------------------------------------------------------------
+
+	NMIL:= 1000
+
+	h:= 1
+	s:= ISND
+	
+	if (NGAM > 0) then
+		ISXX:= GAME
+	else
+		ISXX:= ISIM
+	end-if
+
+  ! Calculate hydro dispatch for first hour of analysis
+
+	if (I > 0) then
+	
+	    forall(i in 1..I) AUXHI(h,i):= 0
+	    forall(i in 1..I) TMPHI(h,i):= 0
+	    forall(i in 1..I) DISPI(2+i):= 0
+	    forall(i in 1..I | EXISHY(i) <= 0 and FLINHY(i) = 0 and PCHY(i) <> 0) AUXHI(h,i):= getsol(glinhy(h,i))
+	    forall(i in 1..I | EXISHY(i) <= 0 and PCHY(i) <> 0 ) TMPHI(h,i):= PCHY(i)/CHM3*getsol(uavghy(h,i))
+	    forall(i in 1..I | EXISHY(i) <= 0 and PCHY(i) <> 0)
+	      DISPI(2+i):= ( NETLOADSHA(s,h,AREHY(i)) - NETAVGLOADHA(h,AREHY(i)) )*AUXHI(h,i) + TMPHI(h,i)
+	    forall(t in HINI..HINI,i in 1..I) GRAPH_AUX_TU(t,i):= DISPI(2+i) * CHM3 / NMIL
+	
+	    ! Hydro Generation [GWh]
+	
+	    IGRF := 1	
+	    
+	    if (PARALLEL_WRITE = 0) then
+	    	set_graphs_tu(1, 1, I, 'GWh', 'TrueUpHydroGeneration', SNMH, GRAPH_AUX_TU, IGRF, HINI, HINI, 1, 'Hourly Hydro Generation')
+	    else
+	    	set_graphs_tu(1, 1, I, 'GWh', 'TrueUpHydroGeneration_' + my_fmtisim(ISXX), SNMH, GRAPH_AUX_TU, IGRF, HINI, HINI, 1, 'Hourly Hydro Generation')
+	    end-if		
+	
+  	end-if
+
+  ! Calculate thermal dispatch for first hour of analysis
+
+	if (J > 0) then
+
+	    forall(j in 1..J) AUXHJ(h,j):= 0
+	    forall(j in 1..J) TMPHJ(h,j):= 0
+	    forall(j in 1..J) DISPJ(2+j):= 0
+	    forall(j in 1..J | EXISTH(j) <= 0 and FLINTH(j) = 0) AUXHJ(h,j):= getsol(glinth(h,j))
+	    forall(j in 1..J | EXISTH(j) <= 0 and FLINTH(j) = 0) TMPHJ(h,j):= getsol(gavgth(h,j))
+	    forall(j in 1..J | EXISTH(j) <= 0)
+	      DISPJ(2+j):= ( NETLOADSHA(s,h,ARETH(j)) - NETAVGLOADHA(h,ARETH(j)) )*AUXHJ(h,j) + TMPHJ(h,j)
+	    forall(t in HINI..HINI,j in 1..J) GRAPH_AUX_TU(t,j):= DISPJ(2+j) / NMIL
+
+	    ! Thermal Generation [GWh]
+
+    	IGRF := 2
+	  	
+	  	if (PARALLEL_WRITE = 0) then
+	  		set_graphs_tu(1, 1, J, 'GWh', 'TrueUpThermalGeneration', SNMT, GRAPH_AUX_TU, IGRF, HINI, HINI, 1, 'Hourly Thermal Generation')
+	  	else
+	  		set_graphs_tu(1, 1, J, 'GWh', 'TrueUpThermalGeneration_' + my_fmtisim(ISXX), SNMT, GRAPH_AUX_TU, IGRF, HINI, HINI, 1, 'Hourly Thermal Generation')
+	  	end-if		
+
+	end-if
+
+  ! Renewable generation(GWh) for first hour of analysis
+
+	if( R > 0 ) then
+
+        forall(t in HINI..HINI, r in 1..R) GRAPH_AUX_TU(t,r):= RENEWABLE(r) / NMIL
+
+    	IGRF := 3
+
+		if (PARALLEL_WRITE = 0) then
+			set_graphs_tu(1, 1, R, 'GWh', 'TrueUpRenewableGeneration', SNMR, GRAPH_AUX_TU, IGRF, HINI, HINI, 1, 'Hourly Renewable Generation')
+		else
+			set_graphs_tu(1, 1, R, 'GWh', 'TrueUpRenewableGeneration_' + my_fmtisim(ISXX), SNMR, GRAPH_AUX_TU, IGRF, HINI, HINI, 1, 'Hourly Renewable Generation')
+		end-if
+	end-if
+
+  !  Area load (GWh) for first hour of analysis
+
+	forall(t in HINI..HINI, a in 1..A) GRAPH_AUX_TU(t,a):= DEMAND_AREA(a) / NMIL
+
+	IGRF := 4
+
+	if (PARALLEL_WRITE = 0) then
+		set_graphs_tu(1, 1, A, 'GWh', 'TrueUpAreaLoad', SNMA, GRAPH_AUX_TU, IGRF, HINI, HINI, 1, 'Hourly Area Load')
+	else
+	 	set_graphs_tu(1, 1, A, 'GWh', 'TrueUpAreaLoad_' + my_fmtisim(ISXX), SNMA, GRAPH_AUX_TU, IGRF, HINI, HINI, 1, 'Hourly Area Load')
+	end-if
+	
+	!***********************************************************************************************************************
+
+function my_fmtisim(A:integer):string
+
+	if (A > 10) then
+		if (A > 100) then
+			if (A > 1000) then
+				X:= '0' + A
+			else
+				X:= '00' + A
+			end-if
+		else
+			X:= '000' + A
+		end-if
+	else
+		X:= '0000' + A
+	end-if
+
+	returned:= X
+
+end-function
+
+

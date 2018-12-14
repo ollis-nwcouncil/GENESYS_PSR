@@ -1,0 +1,1659 @@
+!---------------------------------------------------------------------------
+! Input data
+! ---------------------------------------------------------------------------
+
+! ---------------------------------------------------------------------------
+! Declarations
+! ---------------------------------------------------------------------------
+
+declarations
+   PARMS: array(1..17) of real
+   H: integer                                   ! #hours
+   K: integer                                   ! #load blocks (for interconnection capacity from->to & to->from)
+   S: integer                                   ! #hydro inflow scenarios
+   HS: integer                                  ! #selected hydro inflow scenarios
+   I: integer                                   ! #hydroelectric plants I
+   J: integer                                   ! #thermal plants J
+   R: integer                                   ! #renewable plants R
+   A: integer                                   ! #areas A
+   L: integer                                   ! #interconnections among areas
+   F: integer                                   ! #fuels
+   D: integer                                   ! #demands
+   G: integer                                   ! #generators
+   B: integer									! #balancing authorities BA
+   M: integer                                   ! #distribution utilities DU
+   DI: integer                                  ! # inelastic demands
+   DE: integer                                  ! # elastic demands
+   DB: integer                					! Number of loads (bus connection)
+   IPER: integer							    ! Current SDDP stage
+   IPEM: integer            					! Modified SDDP stage (Additional year)
+   ISIM: integer						        ! Hydro scenario
+   ISND: integer            					! Renewable scenario for graphical files
+   ISGN: integer						        ! Renewable scenario local
+   ISIN: integer                                ! Hydro Initial scenario
+   HINI: integer                                ! Initial hour of the study
+   H_RANGE: integer                             ! range of consecutive hours to be analyzed
+   H_MAX: integer                               ! maximum number of hours associated to H_RANGE
+   NGRF: integer                                ! number of graphical files
+   NSIM: integer								! number of scenarios
+   NPER: integer								! number of stages
+   IMTH: integer								! SDDP Initial Stage
+   IYER: integer								! SDDP Initial Year
+   NINJ: integer                                ! Number of injections
+   TSTG: integer								! SDDP Stage Type (1: Weekly / 2: Monthly)
+   PATH: string                                 ! Path of data
+   FRUN: integer                                ! First Run Indicator
+   LRUN: integer                                ! Last Run Indicator
+   NGAM: integer								! Number of games (Genesys)
+   GAME: integer								! Current Genesys game index
+end-declarations
+
+! ---------------------------------------------------------------------------
+! First NCPLite integration: Define path and initial parameters
+! ---------------------------------------------------------------------------
+  initializations from "bin:shmem:path"
+    FRUN LRUN PATH HINI ISIM IPER ISND ISIN NGAM GAME
+  end-initializations
+
+  CORE:=       		getHostInt2('CORE',1)
+  GENESYS:=    		getHostInt2('GENESYS',1)
+  SDDP2:=      		getHostInt2('SDDP2',1)
+  LOAD_MASKS:= 		getHostInt2('LOAD_MASKS',1)
+  PARALLEL_WRITE:=	getHostInt2('PARALLEL_WRITE',0)
+  PARALLEL_REOPEN:=	getHostInt2('PARALLEL_WRITE_REOPEN',0)
+  CASSANDRA_WRITE:=	getHostInt2('CASSANDRA_WRITE',0)
+  DEMAND_SCENARIO:=	getHostInt2('DEMAND_SCENARIO',0)
+
+  if (CASSANDRA_WRITE = 1) then
+  	PARALLEL_WRITE:= 0
+  end-if
+
+! ---------------------------------------------------------------------------
+! Open log file
+! ---------------------------------------------------------------------------
+   if (PRINT_LOG > 0) then
+   		fopen(PATH+'trueup'+strfmt(IPER,6)+strfmt(ISIM,4)+strfmt(HINI,4)+'.log',F_OUTPUT)
+   end-if
+
+! ---------------------------------------------------------------------------
+! Define execution parameters
+! ---------------------------------------------------------------------------
+declarations
+   SEC: integer                              ! max CPU limit (minutes) case MIP
+   ALG: integer                              ! flag to set algorithm used to solve LP:0=dual simplex, 1=barrier+crossover
+end-declarations
+
+   ! Define ioctrl = true to ignore error from reading
+   setparam('IOCTRL',true)
+   fopen(PATH+'datparmhdisp.csv', F_SILENT)
+   if getparam("IOSTATUS") = 0 then
+     ! read data and define parameters
+     fclose(F_INPUT)
+     diskdata(ETC_IN,PATH+'datparmhdisp.csv',PARMS)
+     SEC:= 60*integer(PARMS(12))
+     ALG:= integer(PARMS(16))
+   else
+     ! define default values
+     SEC:= 60
+     ALG:= 0
+   end-if
+
+! ---------------------------------------------------------------------------
+! PSRClasses: data definition
+! ---------------------------------------------------------------------------
+
+declarations
+   study_tu:		  			psrtype
+   igmsk:			  		psrtype
+   igmdl: 				  	psrtype
+   iosddp: 				  	psrtype
+   ilog:				    psrtype
+   ilogcons: 		  		psrtype
+   timectrl_tu:				psrtype
+   ictrlgnd_tu:				psrtype
+   ictrload_tu:				psrtype
+   ictrlres_tu:				psrtype
+   ioimage:				  	psrtype
+   lsts_cen:				psrtype
+
+   list_thermal: 			psrtype
+   list_hydro:   			psrtype
+   list_system: 	  		psrtype
+   list_station: 			psrtype
+   list_fuel:	 		  	psrtype
+   list_demand:			  	psrtype
+   list_inflow:		  		psrtype
+   list_dem_seg:			psrtype
+   list_ela_dem_seg:		psrtype
+   list_interc:	  			psrtype
+   list_renewable:			psrtype
+   list_fuel_consumption:	psrtype
+   list_bus:				psrtype
+   list_bus_demand:			psrtype
+   list_bus_generator:		psrtype
+   list_dclink:				psrtype
+   list_injection:			psrtype
+   list_ele_area:			psrtype
+   list_balancing_area:		psrtype
+
+   map_thermal: 		    psrtype
+   map_thermal_block: 		psrtype
+   map_hydro: 				psrtype
+   map_hydro_block:		  	psrtype
+   map_system:				psrtype
+   map_station:			    psrtype
+   map_dem_seg:			    psrtype
+   map_dem_hour:			psrtype
+   map_ela_dem_seg:		    psrtype
+   map_interc:				psrtype
+   map_interc_block:		psrtype
+   map_renewable:			psrtype
+   map_renewable_block:		psrtype
+   map_bus:					psrtype
+   map_bus_demand:			psrtype
+   map_dclink:				psrtype
+   map_injection:			psrtype
+   map_ele_area:			psrtype
+   map_balancing_area:		psrtype
+
+   cnfg_ptr:				psrtype
+
+   iograf_tu:				array(range) of psrtype
+
+   ret:					  integer
+
+end-declarations
+
+! ---------------------------------------------------------------------------
+! PSRClasses inicialization
+! ---------------------------------------------------------------------------
+
+if (FRUN = 1) then
+
+	! Load Logs
+
+	ilog:= PSRManagerLog_getInstance(ilog)
+	PSRManagerLog_initPortuguese(ilog)
+
+	ilogcons:= PSRLogTextFile_create(PATH + 'psrclasses_trueup.log',0)
+	PSRManagerLog_addLog(ilog, ilogcons)
+
+	if (LOAD_MASKS = 1) then
+
+  		! Load Masks
+
+	    igmsk:= PSRManagerIOMask_getInstance(igmsk)
+	    PSRManagerIOMask_addPath(igmsk,'.//')
+	    PSRManagerIOMask_addPath(igmsk,PATH_PSRCLASSES)
+	    ret:= PSRManagerIOMask_importFile(igmsk,'Masks_SDDP_V10.2.pmk')
+	    ret:= PSRManagerIOMask_importFile(igmsk,'Masks_SDDP_V10.3.pmk')
+	    ret:= PSRManagerIOMask_importFile(igmsk,'Masks_SDDP_Blocks.pmk')
+
+	    ! Load Models
+
+	    igmdl:= PSRManagerModels_getInstance(igmdl)
+	    PSRManagerModels_addPath(igmdl,'.//')
+	    PSRManagerIOMask_addPath(igmdl,PATH_PSRCLASSES)
+	    ret:= PSRManagerModels_importFile(igmdl,'Models_SDDP_V10.2.pmd')
+	    ret:= PSRManagerModels_importFile(igmdl,'Models_SDDP_V10.3.pmd')
+	    ret:= PSRManagerModels_importFile(igmdl,'Models_SDDP_Keywords.pmd')
+
+	end-if
+
+	! Create Study & Data Controllers
+  ! ...............................
+	study_tu:= PSRStudy_create(0)
+
+  if (CORE = 1) then
+
+   		ioimage:= PSRIOImage_create(0)
+   		
+   		fopen(PATH + 'psrclasses.dat',F_SILENT)
+
+		if (getparam("IOSTATUS") = 0) then
+  			ret:= PSRIOImage_load(ioimage, study_tu, PATH + 'psrclasses.dat')
+  		else
+  			ret:= PSRIOImage_load(ioimage, study_tu, PATH + 'psrclasses.bin')
+  		end-if
+
+		fclose(F_INPUT)
+	else
+		iosddp:= PSRIOSDDP_create(0)
+		PSRIOSDDP_useOnlySelectedSystems(iosddp, 1)
+		ret:= PSRIOSDDP_load(iosddp, study_tu, PATH , PATH, 3)
+	end-if
+
+  lsts_cen:= PSRStudy_listHourlyScenario(study_tu)
+
+  if (DEMAND_SCENARIO = 0) then
+  	ictrload_tu:= PSRIOElementHourlyScenariosList_getHourlyScenario(lsts_cen, CLASS_PSRLoad, "HourP")
+  else
+  	ictrload_tu:= PSRIOElementHourlyScenariosList_getHourlyScenario(lsts_cen, CLASS_PSRDemandSegment, "HourDemandScen")	
+  end-if
+  
+  ictrlres_tu:= PSRIOElementHourlyScenariosList_getHourlyScenario(lsts_cen, CLASS_PSRReserveGenerationConstraintData, "HourReserve")
+  ictrlgnd_tu:= PSRIOElementHourlyScenariosList_getHourlyScenario(lsts_cen, CLASS_PSRGndGaugingStation, "HourGeneration")
+
+  if (ictrlgnd_tu <> 0) then
+  	PSRIOSDDPGndGauginStationHourlyScenarios_createReferenceVectors(ictrlgnd_tu)
+  end-if
+
+  !Print data
+	! PSRModel_print(PSRElement_model(study_tu),PATH + 'psrclasses_trueup.log')
+
+	! Updaters
+  ! ........
+	updater:= PSRUpdaterSDDP_create(0)
+
+	PSRUpdaterSDDP_applyMaintenanceData(updater, study_tu)
+	PSRUpdaterSDDP_applyRulesForDefaultBlocks(updater, study_tu)
+
+	if (SDDP2 = 1 and CORE = 0) then
+		PSRUpdaterSDDP_toFuelConsumptionRepresentation(updater, study_tu)
+	end-if
+
+	! Time Controller
+ 	! ...............
+	timectrl_tu:= PSRTimeController_create(0)
+
+	PSRTimeController_addElement(timectrl_tu, study_tu, 1)
+	PSRTimeController_configureFrom(timectrl_tu, study_tu)
+
+  ! Integration with NCPLite
+  ! ........................
+  if (GENESYS = 1) then
+	  putPSRType('PTR_STUDY_TU',study_tu)
+	  putPSRType('PTR_TIMEC_TU',timectrl_tu)
+	  putPSRType('PTR_RENEW_TU',ictrlgnd_tu)
+	  putPSRType('PTR_SCRES_TU',ictrlres_tu)
+    if (CORE = 1) then
+		  putPSRType('PTR_LOADB_TU',ictrload_tu)
+	  end-if
+  end-if
+
+else
+
+	study_tu:= 		getPSRType('PTR_STUDY_TU')
+	timectrl_tu:=  	getPSRType('PTR_TIMEC_TU')
+	ictrlgnd_tu:= 	getPSRType('PTR_RENEW_TU')
+	ictrlres_tu:=  	getPSRType('PTR_SCRES_TU')
+
+	if (CORE = 1) then
+		ictrload_tu:= 	getPSRType('PTR_LOADB_TU')
+	end-if
+
+end-if
+
+! ---------------------------------------------------------------------------
+! PSRClasses: Load Lists
+! ---------------------------------------------------------------------------
+
+  list_thermal:= 		PSRStudy_getCollectionPlants(study_tu, PSR_PLANTTYPE_THERMAL)
+  list_hydro:= 			PSRStudy_getCollectionPlants(study_tu, PSR_PLANTTYPE_HYDRO)
+  list_renewable:=		PSRStudy_getCollectionPlants(study_tu, PSR_PLANTTYPE_GND)
+  list_system:=			PSRStudy_getCollectionSystems(study_tu)
+  list_station:=		PSRStudy_getCollectionGaugingStations(study_tu)
+  list_interc:= 		PSRStudy_getCollectionInterconnections(study_tu)
+  list_fuel:=			PSRStudy_getCollectionFuels(study_tu)
+  list_demand:= 		PSRStudy_getCollectionDemands(study_tu)
+  list_bus:=			PSRStudy_getCollectionBuses(study_tu)
+  list_bus_generator:=  PSRStudy_getCollectionShunts(study_tu, PSR_DEVICETYPE_GENERATOR)
+  list_bus_demand:=		PSRStudy_getCollectionShunts(study_tu, PSR_DEVICETYPE_LOAD)
+  list_dclink:= 		PSRStudy_getCollectionSeries2(study_tu, PSR_DEVICETYPE_LINKDC)
+  list_injection:= 		PSRStudy_getCollectionShunts(study_tu, PSR_DEVICETYPE_POWERINJECTION)
+  list_ele_are:= 		PSRStudy_getCollectionAreas(study_tu)
+  list_balancing_area:= PSRStudy_getCollectionBalancingAreas(study_tu)
+
+  if (SDDP2 = 1) then
+  	list_fuel_consumption:= PSRStudy_getCollectionFuelConsumptions(study_tu)
+  end-if
+
+! ---------------------------------------------------------------------------
+! PSRClasses: Get Dimensions
+! ---------------------------------------------------------------------------
+
+  IPEM := IPER
+
+  J:= 		PSRCollectionElement_maxElements(list_thermal)
+  I:= 		PSRCollectionElement_maxElements(list_hydro)
+  R:= 		PSRCollectionElement_maxElements(list_renewable)
+  A:= 		PSRCollectionElement_maxElements(list_bus)
+  L:= 		PSRCollectionElement_maxElements(list_dclink)
+  G:= 		PSRCollectionElement_maxElements(list_bus_generator)
+  D:= 		PSRCollectionElement_maxElements(list_demand)
+  DB:= 		PSRCollectionElement_maxElements(list_bus_demand)
+  NINJ:= 	PSRCollectionElement_maxElements(list_injection)
+  B:=	  	PSRCollectionElement_maxElements(list_ele_are)
+  !B:=	  	PSRCollectionElement_maxElements(list_balancing_area)
+
+!temporary attribution by DIAS: set one distribution utility per area
+  M:= A
+
+  ! S: corresponds to the number of renewable scenarios
+  !S:= PSRIOElementHourlyScenarios_totalScenarios(ictrlgnd_tu)
+  iow_hourly:=	getPSRType('PTR_HOURLY')
+  S:= PSRIOGrafResultBase_maxAgent(iow_hourly)
+
+
+  ! Define only one inflow scenario (ISIM is fixed)
+  HS := 1
+
+  K:= PSRStudy_getNumberBlocks(study_tu)
+  F:= PSRCollectionElement_maxElements(list_fuel)
+
+  if (GENESYS = 1) then
+    ! Define range
+    H_RANGE := 3
+    H_MAX   := 24
+
+    ! Define relative hour in the range
+    H_STEP := floor((HINI-1) / H_MAX)
+    H_INIC := HINI - H_MAX * H_STEP
+
+    ! Define H size
+    if (H_INIC <= H_MAX-H_RANGE + 1) then
+      H := H_RANGE
+    else
+      h_range := 1
+      while (h_range < H_RANGE) do
+        if (H_INIC = H_MAX - h_range + 1) then
+          H := h_range
+        end-if
+        h_range := h_range + 1
+      end-do
+    end-if
+  end-if
+
+  ! Graphical files
+  NGRF := 2
+
+  ! Get Configuration
+  cnfg_ptr:= PSRStudy_getConfigurationModel(study_tu)
+
+  ! Sddp configuration parameters
+  NPER:= PSRStudy_getNumberStages(study_tu)
+  NSIM:= PSRStudy_getNumberSimulations(study_tu)
+  IMTH:= PSRParm_getInteger(PSRModel_parm2(cnfg_ptr, 'Etapa_inicial'))
+
+  if (SDDP2 = 1) then
+   	
+   	list_inflow:= PSRIOSDDPHydroForwardBackward_create(0)
+
+   	setparam("IOCTRL",true)
+
+    fopen(PATH + 'forw.dat',F_SILENT)
+
+	if (getparam("IOSTATUS") = 0) then
+  		ret:= PSRIOSDDPHydroForwardBackward_load(list_inflow, study_tu , PATH + 'forw.dat', PATH + 'forw.dat')
+  	else
+  		ret:= PSRIOSDDPHydroForwardBackward_load(list_inflow, study_tu , PATH + 'forw.psr', PATH + 'forw.psr')
+  	end-if
+
+	fclose(F_INPUT)
+
+	setparam("IOCTRL",false)
+
+  end-if
+
+  ! Demand
+  list_dem_seg:= 		PSRCollectionElement_create(0)
+  list_ela_dem_seg:= 	PSRCollectionElement_create(0)
+
+  forall(m in 1..D) do
+    demand:= PSRCollectionElement_element(list_demand, m - 1)
+  	demflg:= PSRModel_parm2(PSRElement_model(demand), 'Elastico')
+  	demtyp:= PSRParm_getInteger(demflg)
+
+  	forall(i in 1..PSRDemand_maxSegment(demand))
+      if (demtyp = 0 and i = 1) then
+      	PSRCollectionElement_addElement(list_dem_seg, PSRDemand_segment(demand, 0))
+      else
+      	PSRCollectionElement_addElement(list_ela_dem_seg, PSRDemand_segment(demand, i - 1))
+      end-if
+  end-do
+
+  DI:= PSRCollectionElement_maxElements(list_dem_seg)
+  DE:= PSRCollectionElement_maxElements(list_ela_dem_seg)
+
+  if (DE > 0) then
+  	if (PRINT_LOG > 0) then
+  		writeln('Error: Elastic demand not represented in the current version of True up model')
+  	end-if	
+  	exit(1)
+  end-if
+
+! echo parameters
+!  if (PRINT_LEVEL >= 0) then
+!    writeln("------------------------------------------------------------------------")
+!    writeln("Running True up model")
+!    writeln("------------------------------------------------------------------------")
+!    writeln(" ")
+!    writeln("------------------------------------------------------------------------")
+!    writeln("Entity dimension")
+!    writeln("------------------------------------------------------------------------")
+!    writeln(I," hydro plants")
+!    writeln(J," thermal plants")
+!    writeln(R," renewable plants")
+!    writeln(H," hours in horizon period")
+!    writeln(S," inflow/renewable scenarios")
+!    writeln(A," areas")
+!    writeln(B," balancing authoritiess")
+!    writeln(L," interconnections among areas")
+!    writeln(NINJ," injections")
+!    writeln(M," load distribution utilities")
+!    writeln("------------------------------------------------------------------------")
+!    writeln(" ")
+!    writeln("------------------------------------------------------------------------")
+!    writeln("Execution parameters")
+!    writeln("------------------------------------------------------------------------")
+!    writeln(SEC," max CPU limit (seconds) for LP solver")
+!    writeln("Stage              : ", IPER)
+!    writeln("Hydro scenario     : ", ISIM)
+!    writeln("Initial hour       : ", HINI)
+!    writeln("Renewable scenario : ", ISND)
+!    writeln("------------------------------------------------------------------------")
+!  else
+!    if (PRINT_LEVEL = -1) then
+!      writeln("Running True up model - hour: ", HINI)
+!    end-if
+!  end-if
+
+   !Print data
+	 ! PSRModel_print(PSRElement_model(study_tu),PATH + 'psrclasses_trueup.log')
+	 PSRCollectionElement_printElements( list_thermal, PATH + 'psrclasses_trueup.log')
+
+!  INPUT & AUXILIARY DATA ARRAYS
+! ------------------------------
+declarations
+   DESR: real									                        		! Discount Rate [p.u.]
+
+!hour ->load block BLK mapping data
+   BLK: array(1..H) of integer                            ! internal hour -> block mapping
+   HOR: array(1..H) of integer                            ! internal hour -> clock hour
+
+! balancing authority BA data arrays
+   IDBA: array(1..B) of integer                           ! balancing authority ID, identification number
+   NHYBA: array(1..B) of integer                          ! number of hydro plants
+   NTHBA: array(1..B) of integer                          ! number of thermal plants
+   NRNBA: array(1..B) of integer                          ! number of renewable plants
+   NDUBA: array(1..B) of integer                          ! number of distribution utilities
+   TYPBA: array(1..B) of integer                          ! 1/0 internal/external BA
+
+! area ARE data & aux arrays
+   DATARE: array(1..A) of integer
+   IDARE: array(1..A) of integer                          ! area ID, identification number
+   NTHARE: array(1..H, 1..A) of integer                   ! counts number of thermal plants per area (existent and not fixed in hour 1..H)
+   NHYARE: array(1..A) of integer                         ! counts number of hydro plants per area (existent and not fixed)
+   NRNARE: array(1..A) of integer                         ! counts number of renewable plants per area (existent)
+	 NAMA: array(1..A) of string							              ! Area Name
+	 SNMA: set of string								                    ! Set of areas
+   AHSHED: array(1..A) of real                            ! Average deficit (output)
+   TYPARE: array(1..A) of integer                         ! 1/0 internal/external area
+   BAARE: array(1..A) of integer                          ! area ->balancing authority
+
+! distribution utility DU data arrays
+   IDDU: array(1..M) of integer                          ! distribution utility ID, identification number
+   AREDU: array(1..M) of integer                         ! number of area
+   BADU: array(1..M) of integer                          ! number of balancing authority
+
+! scenario SC probability(weight) data arrays; header & buffer (output)
+   SCEN: array(1..S) of integer
+   PRSC: array(1..S) of real                              ! weight of scenario s
+   BUFAS: array(1..A, 1..S) of real
+   BUFBS: array(1..B, 1..S) of real
+
+!interconnection INT data & aux arrays
+   DATINT: array(1..if(L>0,L,1)) of real                  ! interconnection data
+   IDINT: array(1..if(L>0,L,1)) of integer                ! 1 interconnection ID, identification number
+   EXISINT: array(1..if(L>0,L,1)) of integer              ! 2 0/1 existent/future
+   AFRINT: array(1..if(L>0,L,1)) of integer               ! 3 ID of area origin
+   ATOINT: array(1..if(L>0,L,1)) of integer               ! 4 ID of area destination
+   CFTINT: array(1..if(L>0,L,1), 1..H) of real            ! 5..4+K area origin-destination capacity (MW), per hour
+   CTFINT: array(1..if(L>0,L,1), 1..H) of real            ! 4+K..4+2*K area destination-origin capacity (MW), per hour
+   CFTINT_PSR: array(1..if(L>0,L,1)) of real              ! area origin-destination capacity (MW)
+   CTFINT_PSR: array(1..if(L>0,L,1)) of real              ! area destination-origin capacity (MW)
+   LFTINT: array(1..if(L>0,L,1)) of real                  ! area origin-destination loss factor (p.u.)
+   LTFINT: array(1..if(L>0,L,1)) of real                  ! area destination-origin loss factor (p.u.)
+   SLKINT: array(1..2+L) of real                          ! upper/lower limit flow slacks (MW)
+
+!thermal plant TH data & aux arrays
+   DATTH: array(1..J) of real                             ! thermal plant data
+   IDTH: array(1..J) of integer                           ! 1 thermal plant ID, identification number
+   EXISTH: array(1..J) of integer                         ! 2 0/1 flag existent/future
+   ARETH: array(1..J) of integer                          ! 3 thermal plant area
+   BATH: array(1..J) of integer                           !   thermal plant balancing authority ID
+   PMAXTH: array(1..J) of real                            ! 4 thermal plant maximum generation (MW)
+   PMINTH: array(1..J) of real                            ! 5 thermal plant minimum generation (MW)
+   FLINTH: array(1..J) of integer                         ! 8 0/1 flag allow/forbid dispatch deviation from target (average) generation
+   COSTTH: array(1..J, 1..H) of real                      ! 9..8+K thermal plant unit operating cost ($/MWh) per load block
+   COMMTH: array(1..J, 1..H) of integer                   ! 0/1 hourly committment table
+   FUELTH: array(1..J) of integer                         ! Fuel
+   SPECTH: array(1..J) of real                            ! Specific comsumption
+   OMTH: array(1..J) of real                              ! O&M
+   TCTH: array(1..J) of real                              ! Transportation cost
+	 GENTH: array(1..J) of integer						              ! Thermal Plant to Generator Pointer
+	 NAMETH: array(1..J) of string						 	            ! Thermal Plant Name
+	 SNMT: set of string								                    ! Set of thermal plant names
+   COMT: array(1..J) of integer                           ! Thermal unit commitment type
+   XCMM: array(1..J, range) of integer                     ! Thermal Initial Commitment [0/1]
+   GERT: array(1..J, range) of real                        ! Thermal initial dispatch MW
+   SLKTH: array(1..2+J) of real                           ! upper/lower limit generation slacks (MW)
+
+!thermal fuel data
+   COSTF: array(1..F) of real                             ! Cost
+
+!hydro plant/reservoir HY data & aux arrays
+   DATHY: array(1..I) of real                             ! hydro plant data
+   IDHY: array(1..I) of integer                           ! 1 hydro plant ID, identification number
+   EXISHY: array(1..I) of integer                         ! 2 0/1 existent/future
+   AREHY: array(1..I) of integer                          ! 3 hydro plant area
+   BAHY: array(1..I) of integer                           !   number of hydro plant balancing authority
+   VOLIHY: array(1..I) of real                            ! 4 hydro plant initial volume (hm3)
+   VMAXHY: array(1..I) of real                            ! 5 hydro plant maximum volume (hm3)
+   VMINHY: array(1..I) of real                            ! 6 hydro plant minimum volume (hm3)
+   UMAXHY: array(1..I) of real                            ! 7 hydro plant maximum turbined flow (m3/s, internally converted to hm3/s)
+   PCHY: array(1..I) of real                              ! 8 hydro plant production coefficient (MW/m3/s, internally converted to MW/hm3/s)
+   DWSTU: array(1..I) of integer                          ! 9 index of hydro plant dowstream for turbine
+   DWSTS: array(1..I) of integer                          ! 10 index of hydro plant dowstream for spill
+   OPCSTHY: array(1..I) of real                           ! 11 hydro opportunity cost ($/MWh)
+   FLINHY: array(1..I) of integer                         ! 12 0/1 flag allow/forbid dispatch deviation from target (average) generation
+	 GENHY: array(1..I) of integer		  				            ! Hydro Plant to Generator Pointer
+	 NAMEHY: array(1..I) of string						 	            ! Hydro Plant Name
+	 SNMH: set of string								                    ! Set of hydro plant names
+
+   NUPU: array(1..I) of integer                           ! 10 turbine hydro plant # plants upstream
+   UPU: array(1..5, 1..I) of integer                      ! 11-15 turbine hydro plant list of hydro plants immediately upstream
+   NUPS: array(1..I) of integer                           ! 16 spill hydro plant # plants upstream
+   UPS: array(1..5, 1..I) of integer                      ! 17-21 spill hydro plant list of hydro plants immediately upstream
+   INFLHY: array(1..HS, 1..I) of real                     ! hydro plant inflow (m3/s) per scenario
+	 INFL: array(range) of real							                ! Incremental Inflows per Hydro Plant [m3/s]
+	 INHS: array(range) of real							                ! Incremental Inflows per Hydro Station [m3/s]
+	 HSTA: array(1..I) of integer						                ! Hydro Station Pointer
+
+   VINC: array(1..I) of real                              ! Hydro initial storage hm3
+   GERH: array(1..I, range) of real                        ! Hydro initial dispatch MW
+   OPCH: array(1..I) of real                              ! Hydro opportunity cost $/MWh
+
+!renewable plant RN data & aux arrays
+	 NAMERN: array(1..if(R>0,R,1)) of string						 	    ! Renewable Plant Name
+   DATRN: array(1..if(R>0,R,1)) of real                     ! renewable plant data
+   IDRN: array(1..if(R>0,R,1)) of integer                   ! 1 renewable plant ID, identification number
+   EXISRN: array(1..if(R>0,R,1)) of integer                 ! 2 0/1 existent/future
+   ARERN: array(1..if(R>0,R,1)) of integer                  ! 3 renewable plant area
+   BARN: array(1..if(R>0,R,1)) of integer                   !   renewable plant balancing authority
+   CAPRN: array(1..if(R>0,R,1)) of real                     ! 4 renewable plant capacity (MW)
+   FOPRN: array(1..if(R>0,R,1)) of real                     ! 5 Renewable Operation Factor [p.u.]
+   PRODRN: array(1..if(R>0,H*S,1), 1..if(R>0,R,1)) of real  ! renewable plant production (p.u.) per scenario and hour
+   RENEWABLE: array(1..if(R>0,R,1)) of real					! renewable plant production (MWh) per hour (Graph)
+	 GENRN: array(1..if(R>0,R,1)) of integer						      ! Renewable Plant to Generator Pointer
+	 GRNX: array(range) of real							                  ! Auxiliar Vector - Renewable Generation (p.u.)
+ 	 SNMR: set of string								                      ! Set of renewable plant names
+
+! injection data
+   GERI: array(1..NINJ,range) of real                     ! Injection initial dispatch MW
+
+! generator to area mapping
+	 BUSGEN: array(1..if(G>0,G,1)) of integer						    ! Generator to area Pointer
+
+! injection to area mapping
+	 BUSINJ: array(1..if(NINJ>0,NINJ,1)) of integer 				! Injection to area Pointer
+
+! area LOAD (MW) data, per hour
+   TOTLOADHA: array(1..H, 1..A) of real
+   DEMAND_AREA: array(1..A) of real
+
+! distribution utility LOAD (MW) data, per hour
+   LOADDU: array(1..H, 1..M) of real
+
+! area net LOAD, per scenario & hour
+   NETLOADSHA: array(1..S, 1..H, 1..A) of real
+
+! balancing authority net LOAD, per scenario & hour
+   NETLOADSHB: array(1..S, 1..H, 1..B) of real
+
+! area net LOAD deviation from average, per scenario & hour (auxiliary)
+   NETDLOADSHA: array(1..S, 1..H, 1..A) of real
+
+! blancing authority net LOAD deviation from average, per scenario & hour (auxiliary)
+   NETDLOADSHB: array(1..S, 1..H, 1..B) of real
+
+! area average net load, per hour (auxiliary)
+   NETAVGLOADHA: array(1..H, 1..A) of real
+
+! balancing authority average net load, per hour (auxiliary)
+   NETAVGLOADHB: array(1..H, 1..B) of real
+
+! balancing authority max load deviation from average, per hour (auxiliary)
+   MXDEVLOADHB: array (1..H, 1..B) of real
+
+! balancing authority min load deviation from average, per hour (auxiliary)
+   MNDEVLOADHB: array (1..H, 1..B) of real
+
+!interconnection average hourly flow & scenario hourly flow auxiliary arrays (output)
+   DISPL: array(1..2+L) of real
+
+! thermal plant auxiliary arrays (output); also input fixed commit & dispatch FX*
+   AUXHJ: array(1..H, 1..J) of real
+   TMPHJ: array(1..H, 1..J) of real
+   DISPJ: array(1..2+J) of real
+   TOTTH: array(1..S, 1..H) of real
+   FXTHREF: array(1..H, 1..J) of real
+
+! hydro plant auxiliary arrays (output); also input fixed dispatch input FX*
+   AUXHI: array(1..H, 1..I) of real
+   TMPHI: array(1..H, 1..I) of real
+   VOLFI: array(1..I) of real
+   SPILI: array(1..I) of real
+   DISPI: array(1..2+I) of real
+   TOTHY: array(1..S, 1..H) of real
+   FXHYREF: array(1..H, 1..I) of real
+   SUMFXHYREF: array(1..I) of real
+
+! renewable plant auxiliary arrays (output)
+   DISPR: array(1..2+R) of real
+   TOTRN: array(1..S, 1..H) of real
+
+!  inelastic Demand data
+	 LOAD: array(1..if(DI>0,DI,1)) of integer	                ! Inelastic Load Segments to System Demand Pointer
+	 SEGS: array(1..if(DI>0,DI,1)) of integer	                ! System Load Segments Pointer (inelastic)
+	 LOAS: array(1..if(DB>0,DB,1)) of integer	                ! Bus Demand to Load Pointer
+	 BUSL: array(1..if(DB>0,DB,1)) of integer	                ! Load to Bus Pointer
+     PLOD: array(1..if(DB>0,DB,1)) of real			            ! Demand Participation [MW]
+	 DEMX: array(range) of real							        ! Auxiliar Vector - Bus Demand [MW]
+	 DHSG: array(range) of real			            			! Hourly System Load Segments (inelastic) [MW]
+	 PLOA: array(1..if(D>0,D,1),1..if(DB>0,DB,1),1..K) of real	! Bus Demand Participation [MW]
+
+!  elastic Demand data
+!	 SEGE: array(1..DE) of integer						! System Load Segments Pointer (elastic)
+!  DHSE: array(1..DE) of real							  ! Hourly System Load Segments (elastic) [MW]
+!  DMSE: array(1..DE) of real							  ! Block System Load Segments (elastic) [MW]
+!	 PMSE: array(1..DE) of real							  ! Block System Load Segments Cosy (elastic) [$/MW]
+!	 SEGE: array(1..DE) of integer						! System Load Segments Pointer (elastic)
+!	 LOAE: array(1..DE) of integer						! Elastic Load Segments to System Demand Pointer
+
+! output (graph) structure
+
+	 GRAPH_AUX_TU: array(range,range) of real					! Graph auxiliary array
+
+end-declarations
+
+! ---------------------------------------------------------------------------
+! PSRClasses: Mapping Data
+! ---------------------------------------------------------------------------
+
+   ! Area input data
+   ! ...............
+	 map_bus:= PSRMapData_create(0)
+	 PSRMapData_addElements(map_bus, list_bus)
+
+   ! Injection input data
+   ! ...............
+	 map_injection:= PSRMapData_create(0)
+	 PSRMapData_addElements(map_injection, list_injection)
+
+   ! Balancing Authority input data
+   ! ...............
+	 map_ele_are:= PSRMapData_create(0)
+	 PSRMapData_addElements(map_ele_are, list_ele_are)
+
+	 ret:= PSRMapData_mapParm(map_ele_are, 'code', IDBA, 0)
+
+	 map_balancing_area:= PSRMapData_create(0)
+	 PSRMapData_addElements(map_balancing_area, list_balancing_area)
+
+	 !ret:= PSRMapData_mapParm(map_balancing_area, 'code',  IDBA,  0)
+	 !ret:= PSRMapData_mapParm(map_balancing_area, 'Region',TYPBA, 0)
+
+   ! Interconnection data input
+   ! ..........................
+   map_dclink:= PSRMapData_create(0)
+   PSRMapData_addElements(map_dclink, list_dclink)
+
+   ! Thermal plant data input
+   ! ........................
+   map_thermal:= 		PSRMapData_create(0)
+   map_thermal_block:= PSRMapData_create(0)
+   PSRMapData_addElements(map_thermal, list_thermal)
+   PSRMapData_addElements(map_thermal_block, list_thermal)
+
+   ! Fuel data input
+   ! ...............
+   map_fuel:= 		PSRMapData_create(0)
+   PSRMapData_addElements(map_fuel, list_fuel)
+
+   if (SDDP2 = 1) then
+      map_fuel_consumption:= PSRMapData_create(0)
+  	  PSRMapData_addElements(map_fuel_consumption, list_fuel_consumption)
+   end-if
+
+   ! Hydro data input
+   ! ................
+   map_hydro:= 	  PSRMapData_create(0)
+   map_hydro_block:= PSRMapData_create(0)
+   PSRMapData_addElements(map_hydro, list_hydro)
+   PSRMapData_addElements(map_hydro_block, list_hydro)
+
+   ! Renewable data input
+   ! ....................
+   map_renewable:=	  	  PSRMapData_create(0)
+   map_renewable_block:= PSRMapData_create(0)
+   PSRMapData_addElements(map_renewable, list_renewable)
+   PSRMapData_addElements(map_renewable_block, list_renewable)
+
+   ! Load segment data input
+   ! .......................
+   map_dem_seg:= PSRMapData_create(0)
+   PSRMapData_addElements(map_dem_seg, list_dem_seg)
+
+   map_dem_hour:= PSRMapData_create(0)
+   PSRMapData_addElements(map_dem_hour, list_dem_seg)
+
+   map_bus_demand:= PSRMapData_create(0)
+   PSRMapData_addElements(map_bus_demand, list_bus_demand)
+
+   !Elastic demand data
+   !if (DE > 0) then
+   !  map_ela_dem_seg:= PSRMapData_create(0)
+   !  PSRMapData_addElements(map_ela_dem_seg, list_ela_dem_seg)
+   !end-if
+
+! ---------------------------------------------------------------------------
+! PSRClasses: Define internal data
+! ---------------------------------------------------------------------------
+
+   ! Constants
+   ! .........
+   DESR:= PSRParm_getReal(PSRModel_parm2(cnfg_ptr, 'TaxaDesconto'))
+
+   ! Area data input
+   ! ...............
+   ret:= PSRMapData_mapParm(map_bus, 'code', IDARE, 0)
+
+   if (SDDP2 = 0) then
+     ret:= PSRMapData_mapParm(map_bus, 'name', NAMA, 12)
+   else
+ 		 ret:= PSRMapData_mapParm(map_bus, 'AVId', NAMA, 24)
+   end-if
+
+   ! Define relationship
+   PSRCollectionElement_mapRelationShip(list_bus_generator, list_bus, BUSGEN, PSR_RELATIONSHIP_1TO1, false)
+   PSRCollectionElement_mapRelationShip(list_injection, list_bus, BUSINJ, PSR_RELATIONSHIP_1TO1, false)
+   PSRCollectionElement_mapRelationShip(list_bus, list_ele_are, BAARE, PSR_RELATIONSHIP_1TO1, false)
+   
+   !PSRCollectionElement_mapComplexRelationShip(list_hydro,  	list_balancing_area, KPHF, KPHN, KPHP, PSR_RELATIONSHIP_1TON, false)
+   !PSRCollectionElement_mapComplexRelationShip(list_thermal,  	list_balancing_area, KPTF, KPTN, KPTP, PSR_RELATIONSHIP_1TON, false)
+   !PSRCollectionElement_mapComplexRelationShip(list_renewable, list_balancing_area, KPRF, KPRN, KPRP, PSR_RELATIONSHIP_1TON, false)
+   !PSRCollectionElement_mapComplexRelationShip(list_demand,  	list_balancing_area, KPDF, KPDN, KPDP, PSR_RELATIONSHIP_1TON, false)
+
+   ! Interconnection data input
+   ! ..........................
+   ! Interconection define as dclink
+   ret:= PSRMapData_mapParm(map_dclink, 'code', IDINT, 0)
+   ret:= PSRMapData_mapVector(map_dclink, 'Existing', EXISINT, 0)
+   ret:= PSRMapData_mapVector(map_dclink, 'Capacity->', CFTINT_PSR, 0)
+   ret:= PSRMapData_mapVector(map_dclink, 'Capacity<-', CTFINT_PSR, 0)
+   ret:= PSRMapData_mapVector(map_dclink, 'LossFactor->', LFTINT, 0)
+   ret:= PSRMapData_mapVector(map_dclink, 'LossFactor<-', LTFINT, 0)
+   ! Define relationship
+   PSRCollectionElement_mapRelationShip(list_dclink, list_bus, AFRINT, PSR_RELATIONSHIP_FROM, false)
+   PSRCollectionElement_mapRelationShip(list_dclink, list_bus, ATOINT, PSR_RELATIONSHIP_TO, false)
+
+   ! Thermal plant data input
+   ! ........................
+   nfth:= 0
+   ret:= PSRMapData_mapParm(map_thermal, 'code', IDTH, 0)
+   ret:= PSRMapData_mapVector(map_thermal, 'GerMax', PMAXTH, 0)
+   ret:= PSRMapData_mapVector(map_thermal, 'GerMin', PMINTH, 0)
+   ret:= PSRMapData_mapVector(map_thermal, 'Existing', EXISTH, 0)
+   ret:= PSRMapData_mapVector(map_thermal, 'ComT', COMT, 0)
+
+   if (SDDP2 = 0) then
+     ret:= PSRMapData_mapVector(map_thermal, 'O&MCost', OMTH, 0)
+     ret:= PSRMapData_mapVector(map_thermal, 'CTransp', TCTH, 0)
+   	 ret:= PSRMapData_mapDimensionedVector(map_thermal_block, 'CEsp', SPECTH, 0, 'segment', 'block')
+	   ret:= PSRMapData_mapParm(map_thermal, 'name', NAMETH, 12)
+   else
+ 	   ret:= PSRMapData_mapVector(map_fuel_consumption, 'O&MCost', OMTH, 0)
+ 	   ret:= PSRMapData_mapDimensionedVector(map_fuel_consumption, 'CEsp', SPECTH, 0, 'segment', 'block')
+		 ret:= PSRMapData_mapParm(map_thermal, 'AVId', NAMETH, 24)
+   end-if
+
+   ! Define associated generator
+   PSRCollectionElement_mapRelationShip(list_thermal, list_bus_generator, GENTH, PSR_RELATIONSHIP_1TO1, false)
+   ! Associated thermal generator to the area
+   forall(j in 1..J) do
+     ARETH(j) := BUSGEN(GENTH(j))
+     BATH(j):= BAARE(ARETH(j))
+   end-do
+
+   ! Define relationship with fuel
+   if (SDDP2 = 0) then
+     PSRCollectionElement_mapRelationShip(list_thermal, list_fuel, FUELTH, PSR_RELATIONSHIP_1TO1, false)
+   else
+   	 PSRCollectionElement_mapRelationShip(list_fuel_consumption, list_fuel, FUELTH, PSR_RELATIONSHIP_1TO1, false)
+   end-if
+
+   ! Fuel data input
+   ! ...............
+   ret:= PSRMapData_mapVector(map_fuel, 'Custo', COSTF, 0)
+
+   ! Hydro data input
+   ! ................
+   nfhy:= 0
+   ret:= PSRMapData_mapParm(map_hydro, 'code', IDHY, 0)
+   ret:= PSRMapData_mapVector(map_hydro, 'Existing', EXISHY, 0)
+   ret:= PSRMapData_mapVector(map_hydro, 'Vmax', VMAXHY, 0)
+   ret:= PSRMapData_mapVector(map_hydro, 'Vmin', VMINHY, 0)
+   ret:= PSRMapData_mapVector(map_hydro, 'Qmax', UMAXHY, 0)
+   ret:= PSRMapData_mapVector(map_hydro, 'FPMed', PCHY, 0)
+
+   if (SDDP2 = 0) then
+   	 ret:= PSRMapData_mapParm(map_hydro, 'name', NAMEHY, 12)
+   else
+	   ret:= PSRMapData_mapParm(map_hydro, 'AVId', NAMEHY, 24)
+   end-if
+
+   ! Define associated generator
+   PSRCollectionElement_mapRelationShip(list_hydro, list_bus_generator, GENHY, PSR_RELATIONSHIP_1TO1, false)
+
+   ! Associated hydro generator to the area
+   forall(i in 1..I) do
+     AREHY(i) := BUSGEN(GENHY(i))
+     BAHY(i):= BAARE(AREHY(i))
+   end-do
+
+   PSRCollectionElement_mapRelationShip(list_hydro, list_hydro, DWSTU, PSR_RELATIONSHIP_TURBINED_TO, false)
+   PSRCollectionElement_mapRelationShip(list_hydro, list_hydro, DWSTS, PSR_RELATIONSHIP_SPILLED_TO, false)
+   PSRCollectionElement_mapRelationShip(list_hydro, list_station, HSTA, PSR_RELATIONSHIP_1TO1, false)
+
+   ! Renewable data input
+   ! ....................
+   ret:= PSRMapData_mapParm(map_renewable, 'code', IDRN, 0)
+   ret:= PSRMapData_mapVector(map_renewable, 'Existing', EXISRN, 0)
+   ret:= PSRMapData_mapVector(map_renewable, 'PotInst', CAPRN, 0)
+   ret:= PSRMapData_mapVector(map_renewable, 'FatOpe', FOPRN, 0)
+
+   if (ictrlgnd_tu <> 0) then
+	   ret:= PSRMapData_mapVector(map_renewable_block, 'HourGeneration', GRNX, 0)
+   end-if
+
+   if (SDDP2 = 0) then
+   	 ret:= PSRMapData_mapParm(map_renewable, 'name', NAMERN, 12)
+   else
+	   ret:= PSRMapData_mapParm(map_renewable, 'AVId', NAMERN, 24)
+   end-if
+
+   ! Define associated generator
+   PSRCollectionElement_mapRelationShip(list_renewable, list_bus_generator, GENRN, PSR_RELATIONSHIP_1TO1, false)
+   ! Associate renewable plant to its area
+   forall(r in 1..R) do
+     ARERN(r) := BUSGEN(GENRN(r))
+     BARN(r):= BAARE(ARERN(r))
+   end-do
+
+   ! Demand data input
+   ! .................
+   if (DEMAND_SCENARIO = 0) then
+   	ret:= PSRMapData_mapVector(map_dem_hour, 'HourDemand', DHSG, 0)
+   else
+   	ret:= PSRMapData_mapVector(map_dem_hour, 'HourDemandScen', DHSG, 0)
+   end-if
+
+   ret:= PSRMapData_mapDimensionedVector(map_bus_demand, 'P', PLOD, 0, 'block', ' ')
+
+   if (ictrload_tu <> 0 and DEMAND_SCENARIO = 0) then
+   	 ret:= PSRMapData_mapVector(map_bus_demand, 'HourP', DEMX, 0)
+   end-if
+
+   !Elastic demand data
+   !if (DE > 0) then
+   !  ret:= PSRMapData_mapVector(map_ela_dem_seg, 'HourDemand', DHSE, 0)
+   !  ret:= PSRMapData_mapDimensionedVector(map_ela_dem_seg, 'Demanda', DMSE, 0, 'block', ' ')
+   !  ret:= PSRMapData_mapDimensionedVector(map_ela_dem_seg, 'Custo', PMSE, 0, 'block', ' ')
+   !  ! Define relationship
+   !  PSRCollectionElement_mapRelationShip(list_ela_dem_seg, list_system, SEGE, PSR_RELATIONSHIP_1TO1, false)
+   !  PSRCollectionElement_mapRelationShip(list_ela_dem_seg, list_demand, LOAE, PSR_RELATIONSHIP_1TO1, false)
+   !end-if
+
+   ! Define relationship
+   PSRCollectionElement_mapRelationShip(list_dem_seg, list_system, SEGS, PSR_RELATIONSHIP_1TO1, false)
+   PSRCollectionElement_mapRelationShip(list_dem_seg, list_demand, LOAD, PSR_RELATIONSHIP_1TO1, false)
+   PSRCollectionElement_mapRelationShip(list_bus_demand, list_demand, LOAS, PSR_RELATIONSHIP_1TO1, false)
+   PSRCollectionElement_mapRelationShip(list_bus_demand, list_bus, BUSL, PSR_RELATIONSHIP_1TO1, false)
+
+   ! Second NCPLite integration
+   initializations from "bin:shmem:input"
+     XCMM VINC GERT GERH OPCH GERI
+   end-initializations
+
+   forall(i in 1..I)
+     VOLIHY(i):= VINC(i)
+
+   forall(h in 1..H, j in 1..J)
+     FXTHREF(h,j):= GERT(j,h + HINI - 1)
+
+   forall(h in 1..H, i in 1..I)
+     FXHYREF(h,i):= GERH(i,h + HINI - 1)
+
+! Lujan: discard negtive hydro opportunity costs; truncated to 0.1
+   forall(i in 1..I)
+     if (OPCH(i) > 0.0) then
+       OPCSTHY(i):= OPCH(i)
+     else
+       OPCSTHY(i):= 0.1
+     end-if
+
+   forall(j in 1..J, h in 1..H)
+     COMMTH(j,h):= 0
+
+   forall(j in 1..J, h in 1..H|COMT(j) = 0 and GERT(j,h + HINI - 1) > 0 )
+     COMMTH(j,h):= 1
+
+   forall(j in 1..J, h in 1..H|COMT(j) > 0 and XCMM(j,h + HINI - 1) = 1 and GERT(j,h + HINI - 1) > 0 )
+     COMMTH(j,h):= 1
+
+   ! scenario weights
+   iow_hourly:=	getPSRType('PTR_HOURLY')
+
+   forall(s in 1..S) do
+ 
+     PSRIOElementHourlyScenarios_gotoStageHour(ictrlgnd_tu, IPEM, IPER, s)
+ 
+     PSRMapData_pullToMemory(map_renewable_block)
+ 
+     PRSC(s):=  PSRIOGrafResultBase_getData(iow_hourly, s - 1)
+ 
+     if( PRSC(s) < 0.000001 ) then
+       PRSC(s):= 0
+     end-if
+   end-do
+
+! GCO debug: only first scenario
+!   PRSC(1):= 1
+
+   aux:= sum(s in 1..S) PRSC(s)
+
+   forall(s in 1..S)
+     PRSC(s):= PRSC(s)/aux
+
+   forall(j in 1..J)
+     FLINTH(j):= 0
+
+!GCO debug: to obey NCPLITE dispatch set to 1 for all hydro plants (default 0 value means redispatch is allowed)
+   forall(i in 1..I)
+     FLINHY(i):= 0
+
+! ---------------------------------------------------------------------------
+! Update data
+! ---------------------------------------------------------------------------
+
+   ! Create Dimensioned Mappers
+   PSRTimeController_createDimensionMappers(timectrl_tu)
+
+   ! Lujan: somente representado para 1 segmento
+   ISEG := 1
+   PSRTimeController_setDimension(timectrl_tu, 'segment', ISEG)
+
+   ! Update data depending on stage
+
+   ! Go to stage
+   PSRTimeController_gotoStage(timectrl_tu, IPEM)
+
+   ! Update mapping
+   PSRMapData_pullToMemory(map_bus)
+   PSRMapData_pullToMemory(map_injection)
+   PSRMapData_pullToMemory(map_dclink)
+   PSRMapData_pullToMemory(map_thermal)
+   PSRMapData_pullToMemory(map_fuel)
+   PSRMapData_pullToMemory(map_hydro)
+   PSRMapData_pullToMemory(map_renewable)
+   PSRMapData_pullToMemory(map_ele_are)
+   PSRMapData_pullToMemory(map_balancing_area)
+   PSRMapData_pullToMemory(map_dem_seg)
+   PSRMapData_pullToMemory(map_dem_hour)
+   PSRMapData_pullToMemory(map_bus_demand)
+
+   if (SDDP2 = 1) then
+     PSRMapData_pullToMemory(map_fuel_consumption)
+   end-if
+
+   ! Define agent name for graphical files
+   forall(i in 1..I) SNMH+= {NAMEHY(i)}
+   forall(j in 1..J) SNMT+= {NAMETH(j)}
+   forall(a in 1..A) SNMA+= {NAMA(a)}
+   forall(r in 1..R) SNMR+= {NAMERN(r)}
+
+   ! Update data
+
+   ! Parameters for output
+   IYER:= PSRTimeController_getFirstYear(timectrl_tu)
+   TSTG:= PSRTimeController_getStageType(timectrl_tu)
+
+   ! Thermal plant
+   indj:= 0
+
+   forall(j in 1..J)
+     if (EXISTH(j) <= 0) then
+       ! Existent
+       if (FLINTH(j)=0) then
+         indj+= 1
+         NTHBA(BATH(j))+= 1
+
+         forall(h in 1..H|COMMTH(j,h) = 1)
+           NTHARE(h,ARETH(j))+= 1
+       end-if
+     else
+       ! Future
+       PMAXTH(j):= 0.0
+       PMINTH(j):= 0.0
+     end-if
+
+   ! Hydro plant
+   indi:= 0
+   indu:= 0
+   inds:= 0
+
+!  conversion constant, used below to convert hydro plant's UMAXHY & PCHY
+   CHM3:= 0.0036
+
+   forall(i in 1..I) do
+     UMAXHY(i):= UMAXHY(i)*CHM3
+     PCHY(i):= PCHY(i)/CHM3
+
+     ! Turbining data structure
+     if( DWSTU(i) > 0 ) then
+       indu+=  1
+       NUPU(DWSTU(i))+= 1
+
+      if( NUPU(DWSTU(i)) > 5 ) then
+         if (PRINT_LOG > 0) then
+         	writeln(IDHY(DWSTU(i))," hydro plant has >5 plants upstream (turbine): ERROR")
+         end-if	
+         exit(1)
+       end-if
+
+       UPU(NUPU(DWSTU(i)),DWSTU(i)):= i
+     end-if
+
+     ! Spilling data structure
+     if( DWSTS(i) > 0 ) then
+       inds+=  1
+       NUPS(DWSTS(i))+= 1
+
+       if( NUPS(DWSTS(i)) > 5 ) then
+         if (PRINT_LOG > 0) then
+         	writeln(IDHY(DWSTS(i))," hydro plant has >5 plants upstream (spill): ERROR")
+         end-if	
+         exit(1)
+       end-if
+
+       UPS(NUPS(DWSTS(i)),DWSTS(i)):= i
+     end-if
+
+     if (EXISHY(i) <= 0) then
+       ! Existent
+       if (FLINHY(i)=0) then
+         indi+= 1
+         NHYBA(BAHY(i))+= 1
+         NHYARE(AREHY(i))+= 1
+       end-if
+     else
+       ! Future
+       PCHY(i):= 0
+       UMAXHY(i):= 0.0
+       VMINHY(i):= 0.0
+       VMAXHY(i):= 0.0
+     end-if
+   end-do
+
+   ! Renewable plant
+   indr := 0
+
+   if( R > 0 ) then
+     forall(r in 1..R)
+       if (EXISRN(r) = 0) then
+         ! Existent
+         indr+= 1
+         NRNBA(BARN(r))+= 1
+         NRNARE(ARERN(r))+= 1
+       else
+         ! Future
+         CAPRN(r):= 0.0
+       end-if
+   end-if
+
+   ! Bus Demand Participation
+   forall(m in 1..D) do
+   
+   		forall(IBLK in 1..K) do
+
+	     	 PLOT:= 0.0
+
+	    	 PSRTimeController_setDimension(timectrl_tu, 'block', IBLK)
+
+	    	 PSRMapData_pullToMemory(map_bus_demand)
+
+	    	 forall(k in 1..DB|LOAS(k) = m) do
+	    	 	 PLOA(m,k,IBLK):= PLOA(m,k,IBLK) + PLOD(k)
+	    		 PLOT:= PLOT + PLOD(k)
+	    	 end-do
+
+	    	 forall(k in 1..DB|PLOT > 0.0) PLOA(m,k,IBLK):= PLOA(m,k,IBLK) / PLOT
+
+   		end-do
+
+   end-do
+
+   ! Mapping internal hour -> real hour
+   forall(h in 1..H) HOR(h):= HINI + (h - 1)
+
+   ! Mapping hour -> block
+   forall(h in 1..H) do
+     ! BLK(h):= PSRTimeController_getBlockFromStageHour(timectrl_tu, IPEM, h)
+     IHOR:= HOR(h)
+     BLK(h):= PSRTimeController_getBlockFromStageHour(timectrl_tu, IPEM, IHOR)
+   end-do
+
+     forall(m in 1..M, k in 1..DB|BUSL(k) = m) AREDU(m):= k
+
+      forall(m in 1..M) do
+        IDDU(m):= IDARE(AREDU(m))
+        BADU(m):= BAARE(m)
+      end-do
+
+   ! Update data depending on hour\block
+
+   forall(h in 1..H) do
+     ! Go to block
+     IBLK:= BLK(h)
+     IHOR:= HOR(h)
+     PSRTimeController_setDimension(timectrl_tu, 'block', IBLK)
+   	 PSRTimeController_gotoStageHour(timectrl_tu, IPEM, IHOR)
+   	 
+   	 if (ictrload_tu <> 0) then
+	   	 if (NGAM > 0) then
+	    	PSRIOElementHourlyScenarios_gotoStageHour(ictrload_tu, IPEM, IHOR, ISND)
+	     else
+	    	PSRIOElementHourlyScenarios_gotoStageHour(ictrload_tu, IPEM, IHOR, ISIM)
+	     end-if
+	 end-if    
+
+     ! Update mapping
+
+     PSRMapData_pullToMemory(map_dem_hour)
+
+     PSRMapData_pullToMemory(map_thermal_block)
+     PSRMapData_pullToMemory(map_hydro_block)
+     PSRMapData_pullToMemory(map_renewable_block)
+
+     if (SDDP2 = 1) then
+       PSRMapData_pullToMemory(map_fuel_consumption)
+     end-if
+
+     ! Update data
+
+     ! Interchange
+     forall(l in 1..L) do
+       CFTINT(l,h):= CFTINT_PSR(l)
+       CTFINT(l,h):= CTFINT_PSR(l)
+     end-do
+
+     ! Thermal plant
+     forall(j in 1..J)
+       COSTTH(j,h):= SPECTH(j) * (COSTF(FUELTH(j)) + TCTH(j)) + OMTH(j)
+
+     ! System Inelastic Demand
+     ! Bus Inelastic Demand
+
+     if (ictrload_tu <> 0 and DEMAND_SCENARIO = 0) then
+
+       	PSRMapData_pullToMemory(map_bus_demand)
+
+       	forall(a in 1..A) TOTLOADHA(h,a):= DEMX(a)
+
+     else
+
+ 	     forall(l in 1..DI) do
+         	forall(k in 1..DB|LOAS(k) = LOAD(l)) do
+ 	    		 abus:= BUSL(k)
+ 	    		 TOTLOADHA(h,abus):= TOTLOADHA(h,abus) + sum(m in 1..D) DHSG(l) * PLOA(m,k,IBLK)
+         	end-do
+ 	     end-do
+
+     end-if
+
+     forall(m in 1..M)
+       LOADDU(h,m):= TOTLOADHA(h,m)
+
+     ! Renewable Generation
+     if (R > 0) then
+       if (ictrlgnd_tu <> 0) then
+    	   forall(s in 1..S) do
+  		     ISGN:= s
+      	 	 PSRIOElementHourlyScenarios_gotoStageHour(ictrlgnd_tu, IPEM, IHOR, ISGN)
+     		 PSRMapData_pullToMemory(map_renewable_block)
+           	 forall (r in 1..R) PRODRN(H*(s-1)+h,r):= GRNX(r) * CAPRN(r) * FOPRN(r)
+           end-do
+       	end-if
+     end-if
+   end-do
+   
+   ! Renewable Generation (Graph)
+   
+   if (ictrlgnd_tu <> 0) then
+   		PSRIOElementHourlyScenarios_gotoStageHour(ictrlgnd_tu, IPEM, IHOR, ISND)
+       	PSRMapData_pullToMemory(map_renewable_block)
+       	forall (r in 1..R) RENEWABLE(r):= GRNX(r) * CAPRN(r) * FOPRN(r)
+   end-if
+   
+   ! Demand (Graph)
+   
+    if (ictrload_tu <> 0) then
+
+     	if (NGAM > 0) then
+    		PSRIOElementHourlyScenarios_gotoStageHour(ictrload_tu, IPEM, HINI, ISND)
+    	else
+    		PSRIOElementHourlyScenarios_gotoStageHour(ictrload_tu, IPEM, HINI, ISIM)
+    	end-if
+
+       	PSRMapData_pullToMemory(map_bus_demand)
+
+       	forall(a in 1..A) DEMAND_AREA(a):= DEMX(a)
+
+     else
+
+ 	    forall(a in 1..A) DEMAND_AREA(a):= 0.0
+ 	    
+ 	    forall(l in 1..DI) do
+        	forall(k in 1..DB | LOAS(k) = LOAD(l)) do
+ 	    		abus:= BUSL(k)
+ 	    		DEMAND_AREA(abus)+= sum(m in 1..D) DHSG(l) * PLOA(m,k,IBLK)
+         	end-do
+ 	    end-do
+
+     end-if
+
+   ! Inflow data input
+   ! .................
+   if (I > 0) then
+     if (SDDP2 = 1) then
+     	 PSRIOSDDPHydroForwardBackward_mapTo(list_inflow, INHS)
+     	 PSRIOSDDPHydroForwardBackward_setForward(list_inflow, IPER, ISIM)
+       PSRIOSDDPHydroForwardBackward_close(list_inflow)
+
+       forall(s in 1..HS, i in 1..I)
+         INFLHY(s,i):= INHS(HSTA(i))
+     else
+       if (GENESYS = 1) then
+       	 getHostArray('INFLOW',INFL)
+       end-if
+
+       forall(s in 1..HS, i in 1..I)
+         INFLHY(s,i):= INFL(i)
+     end-if
+   end-if
+
+! Hard code area internal/external 1/0 flag TYPARE(*) until PSRclass provides information, defined in true_up_input.mos; Hard code BA int/ext flag TYPBA(*)
+   forall(a in 1..A)
+      TYPARE(a):= 1
+
+   forall(a in 1..A|IDARE(a) = 131)
+      TYPARE(a):= 0
+
+   forall(a in 1..A|IDARE(a) = 141)
+      TYPARE(a):= 0
+
+   forall(a in 1..A|IDARE(a) = 201)
+      TYPARE(a):= 0
+
+   forall(a in 1..A|IDARE(a) >= 500)
+      TYPARE(a):= 0
+
+   forall(a in 1..A)
+     TYPBA(BAARE(a)):= TYPARE(a)
+
+! Report (internal) balancing authorities with renewable production, with less than 2 hydro or thermal plants
+!   if (PRINT_LEVEL >= 0) then
+!    forall(b in 1..B|NRNBA(b) > 0 and NTHBA(b) + NHYBA(b) <= 1 and TYPARE(b) > 0)
+!      writeln(IDBA(b)," (internal) balancing authority has ",NRNBA(b)," renewable plants -> ERROR: true-up model must have at least 2 hydro/thermal plants")
+!   end-if
+
+! Gerson # distribution utilities per Balancing Authority; hard coded (temporary)
+   forall(b in 1..B)
+     NDUBA(b):= 1
+
+! Set production in all scenarios equal to selected HS scenario case area of renewable plant is external
+   forall(r in 1..R|TYPARE(ARERN(r)) = 0 )
+     forall(h in 1..H, s in 1..S|PRSC(s) > 0 and s <> HS)
+       PRODRN(H*(s-1)+h,r):= PRODRN(H*(HS-1)+h,r)
+
+! ---------------------------------------------------------------------------
+! Print input data
+! ---------------------------------------------------------------------------
+!  if (PRINT_LEVEL >= 1) then
+!  Echo Area data input
+!    indl:= 0
+!    writeln(" ")
+!    writeln("------------------------------------------------------------------------")
+!    writeln("Area data input")
+!    writeln("------------------------------------------------------------------------")
+!
+!    forall(a in 1..A) do
+!      writeln(a," area has numerical label ",IDARE(a))
+!      writeln(" area type(1=internal; 0=external): ",TYPARE(a))
+!      writeln(" area belongs to balancing authority ",IDBA(BAARE(a)))
+!      writeln(" area has ",NHYARE(a)," hydro plants")
+!      writeln(" area has ",NRNARE(a)," renewable plants")
+!
+!      forall(h in 1..H)
+!        writeln(" area has ",NTHARE(h,a)," existent thermal plants, dispatchable in hour ",h)
+!    end-do
+!
+! Echo Balancing authority data input
+!    writeln(" ")
+!    writeln("------------------------------------------------------------------------")
+!    writeln("Balancing authority data input")
+!    writeln("------------------------------------------------------------------------")
+!      writeln(b,"  balancing authority has numerical label ",IDBA(b))
+!      writeln(" balancing authority has ",NTHBA(b)," thermal plants")
+!      writeln(" balancing authority has ",NHYBA(b)," hydro plants")
+!      writeln(" balancing authority has ",NRNBA(b)," renewable plants")
+!      writeln(" balancing authority has ",NDUBA(b)," distribution utilities")
+!    end-do
+!
+! Echo Distribution utility data input
+!    writeln(" ")
+!    writeln("------------------------------------------------------------------------")
+!    writeln("Distribution utility data input")
+!    writeln("------------------------------------------------------------------------")
+!
+!    forall(m in 1..M) do
+!      writeln(m," distribution utility has numerical label ",IDDU(m))
+!      writeln(" distribution utility belongs to area ",AREDU(m))
+!      writeln(" distribution utility belongs to balancing authority ",BADU(m))
+!    end-do
+!
+! Echo Interconnection data input
+!    if (L > 0) then
+!      writeln("------------------------------------------------------------------------")
+!      writeln("interconnection label , #area_origin & #area_destination:")
+!
+!      forall(l in 1..L|EXISINT(l) <= 0) do
+!         indl+= 1
+!         writeln(IDINT(l)," interconnection has area terminals: ",IDARE(AFRINT(l))," - ",IDARE(ATOINT(l)))
+!         writeln(" From->To loss factor: ", LFTINT(l))
+!         writeln(" To->From loss factor: ", LTFINT(l))
+!
+!         forall(h in 1..H) do
+!           writeln(" From->To interconnection capacity (block ",h,"): ", CFTINT(l,h))
+!           writeln(" To->From interconnection capacity (block ",h,"): ", CTFINT(l,h))
+!         end-do
+!      end-do
+!
+!      writeln("------------------------------------------------------------------------")
+!    end-if
+!
+!    writeln(indl,' existent interconnections in current stage')
+!    writeln("------------------------------------------------------------------------")
+!
+!  Echo thermal plant data input
+!    writeln(" ")
+!    writeln("------------------------------------------------------------------------")
+!    writeln("Thermal plant data input")
+!    writeln("------------------------------------------------------------------------")
+!    writeln(indj,' existent thermal plants in current stage')
+!
+!    forall(j in 1..J) do
+!      writeln(j," Thermal plant ID: ", IDTH(j))
+!      writeln(" Area               ", IDARE(ARETH(j)))
+!      writeln(" Balancing authority ", IDBA(BATH(j)))
+!      writeln(" Generation limits: [",PMINTH(j),",",PMAXTH(j),"]")
+!      writeln(" Dispatch cost (segment 1): ", COSTTH(j,1))
+!
+!      forall(h in 1..H)
+!        writeln(" Hour: ", h, " - Initial generation: ", FXTHREF(h,j))
+!    end-do
+!
+!    if(nfth > 0) then
+!      writeln("------------------------------------------------------------------------")
+!      writeln(nfth," thermal plants have fixed target hourly dispatch")
+!    end-if
+!
+!    writeln("------------------------------------------------------------------------")
+!
+!  Echo hydro plant data input
+!    indv:= 0
+!    indp:= 0
+!    writeln(" ")
+!    writeln("------------------------------------------------------------------------")
+!    writeln("Hydro plant data input")
+!    writeln("------------------------------------------------------------------------")
+!    writeln("Hydro plants with reservoir:[min,max] volume")
+!
+!    forall(i in 1..I|EXISHY(i) <= 0) do
+!      writeln("Hydro plant ID: ", IDHY(i))
+!
+!      if( VMINHY(i) < VMAXHY(i) ) then
+!        indv+=  1
+!        writeln(IDHY(i),": volume within [",VMINHY(i),",",VMAXHY(i),"]")
+!      end-if
+!
+!      if( VMINHY(i) > VMAXHY(i) ) then
+!        writeln(IDHY(i)," hydro plant data ERROR: minimum volume above than maximum")
+!        exit(1)
+!      end-if
+!
+!      if( PCHY(i) <> 0 ) then
+!        indp+=  1
+!      end-if
+!    end-do
+!
+!    writeln("------------------------------------------------------------------------")
+!    writeln(indi,' existent hydro plants in current stage')
+!    writeln("------------------------------------------------------------------------")
+!    writeln(indv," existent hydro have reservoir storage capacity")
+!    writeln(indu," hydro have upstream reservoirs (turbine)")
+!    writeln(inds," hydro have upstream reservoirs (spill)")
+!    writeln(indp," existent hydro have turbine")
+!
+!    if( nfhy > 0 ) then
+!      writeln(nfhy," hydro plants have fixed target hourly dispatch")
+!    end-if
+!
+!    writeln("------------------------------------------------------------------------")
+!
+!    forall(i in 1..I|EXISHY(i) <= 0) do
+!      writeln(i," Hydro plant ID ", IDHY(i))
+!      writeln(" area               ",IDARE(AREHY(i)))
+!      writeln(" balancing authority ",IDBA(BAHY(i)))
+!      writeln(" maximum turbining ",UMAXHY(i))
+!
+!      if (DWSTU(i) > 0) then
+!        writeln(" turbining plant ", IDHY(DWSTU(i)))
+!      else
+!        writeln(" turbining plant ", 0)
+!      end-if
+!
+!      if (DWSTS(i) > 0) then
+!        writeln(" spilling plant ", IDHY(DWSTS(i)))
+!      else
+!        writeln(" spilling plant ", 0)
+!      end-if
+!
+!      writeln(" minimum volume ", VMINHY(i))
+!      writeln(" maximum volume ", VMAXHY(i))
+!      writeln(" production factor ", PCHY(i))
+!      writeln(" inflow            ", INFLHY(1,i))
+!      writeln(" opportunity cost  ", OPCSTHY(i))
+!    end-do
+!
+!    writeln("------------------------------------------------------------------------")
+!
+!  Renewable plant data input
+    if( R > 0 ) then
+!      writeln(" ")
+!      writeln("------------------------------------------------------------------------")
+!      writeln("Renewable plant data input")
+!      writeln("------------------------------------------------------------------------")
+!      writeln(indr,' existent renewable plants in current stage')
+!
+       forall(r in 1..R|EXISRN(r) = 0) do
+!           writeln(r," Renewable plant ID ", IDRN(r))
+!           writeln(" Installed capacity ", CAPRN(r))
+
+           forall(h in 1..H, s in 1..S) do
+             IHOR:= h
+             ISGN:= s
+             PSRIOElementHourlyScenarios_gotoStageHour(ictrlgnd_tu, IPEM, ISGN, IHOR)
+             PSRMapData_pullToMemory(map_renewable_block)
+!             writeln(" Hour: ", h, " - Scen: ", s, " - Renewable generation (p.u.): ", GRNX(r))
+           end-do
+
+!           writeln(" Renewable generation (p.u.) - 1st scenario-hour: ", GRNX(r))
+       end-do
+
+!       writeln("------------------------------------------------------------------------")
+     end-if
+!
+!  Echo load data input
+!    writeln(" ")
+!    writeln("------------------------------------------------------------------------")
+!    writeln("Load data input")
+!    writeln("------------------------------------------------------------------------")
+!
+!    forall(a in 1..A) do
+!      writeln(a," Area ID: ", IDARE(a))
+!
+!      forall(h in 1..H)
+!        writeln(" Hour: ", h, " - Load (MW): ", TOTLOADHA(h,a))
+!    end-do
+!    writeln("------------------------------------------------------------------------")
+!
+!  Echo injection input
+!    writeln(" ")
+!    writeln("------------------------------------------------------------------------")
+!    writeln("Injection data input")
+!    writeln("------------------------------------------------------------------------")
+!
+!    forall(inj in 1..NINJ) do
+!      writeln(inj," Injection in Area: ", IDARE(BUSINJ(inj)))
+!
+!      forall(h in 1..H)
+!        writeln(" Hour: ", h, " - Injection (MW): ", GERI(inj,h))
+!    end-do
+!
+!    writeln("------------------------------------------------------------------------")
+!  end-if
+
+   forall(s in 1..S)
+     SCEN(s):= s
+
+   forall(i in 1..I|EXISHY(i) <= 0 and PCHY(i) <> 0)
+     SUMFXHYREF(i):= sum(h in 1..H) FXHYREF(h,i)
+
+!  if (PRINT_LEVEL >= 0) then
+!    forall(j in 1..J|EXISTH(j) <= 0 and FLINTH(j) = 1) do
+!      writeln("------------------------------------------------------------------------")
+!      writeln(IDTH(j)," thermal plant has fixed reference dispatch")
+!      writeln("------------------------------------------------------------------------")
+!    end-do
+!  end-if
+
+!  Define area hourly net load per scenario NETLOADSHA and hourly average NETAVGLOADHA
+
+   forall(a in 1..A)
+     if(NRNARE(a) > 0) then
+       forall(h in 1..H, s in 1..S|PRSC(s) > 0)
+         NETLOADSHA(s,h,a):= TOTLOADHA(h,a) - sum(r in 1..R|ARERN(r) = a) PRODRN(H*(s-1)+h,r) -
+           if( NINJ=0, 0, sum(inj in 1..NINJ|BUSINJ(inj) = a) GERI(inj,h + HINI - 1) )
+     else
+       forall(h in 1..H, s in 1..S|PRSC(s) > 0)
+         NETLOADSHA(s,h,a):= TOTLOADHA(h,a) -
+           if( NINJ=0, 0, sum(inj in 1..NINJ|BUSINJ(inj) = a) GERI(inj,h + HINI - 1) )
+     end-if
+
+   if (PRINT_LEVEL >= 1) then
+     forall(h in 1..H) do
+       forall(a in 1..A, s in 1..S|PRSC(s) > 0)
+         BUFAS(a,s):= NETLOADSHA(s,h,a)
+
+       diskdata(ETC_OUT+ETC_TRANS,PATH+'net_load_area_H'+strfmt(h,1)+strfmt(IPER,2)+strfmt(ISIM,3)+strfmt(HINI,4)+'.csv',SCEN)
+       diskdata(ETC_OUT+ETC_APPEND,PATH+'net_load_area_H'+strfmt(h,1)+strfmt(IPER,2)+strfmt(ISIM,3)+strfmt(HINI,4)+'.csv',BUFAS)
+     end-do
+   end-if
+
+   forall(a in 1..A, h in 1..H)
+     NETAVGLOADHA(h,a):= sum(s in 1..S|PRSC(s) > 0) PRSC(s)*NETLOADSHA(s,h,a)
+
+! Define area hourly net load deviation per scenario wrt average
+   forall(h in 1..H, a in 1..A)
+     forall(s in 1..S|PRSC(s) > 0)
+       NETDLOADSHA(s,h,a):= NETLOADSHA(s,h,a) - NETAVGLOADHA(h,a)
+
+   if (PRINT_LEVEL >= 1) then
+     diskdata(ETC_OUT+ETC_TRANS,PATH+'netavg_load.csv',IDARE)
+     diskdata(ETC_OUT+ETC_APPEND,PATH+'netavg_load.csv',NETAVGLOADHA)
+   end-if
+
+! Define balancing authority hourly net load NETLOADSHB per scenario, average NETAVGLOADHB & aux arrays
+   forall(b in 1..B)
+     if (NRNBA(b) > 0) then
+       forall(h in 1..H, s in 1..S|PRSC(s) > 0)
+         NETLOADSHB(s,h,b):= sum(m in 1..M|BADU(m) = b) LOADDU(h,m) - sum(r in 1..R|BARN(r) = b) PRODRN(H*(s-1)+h,r)
+     else
+       forall(h in 1..H, s in 1..S|PRSC(s) > 0)
+         NETLOADSHB(s,h,b):= sum(m in 1..M|BADU(m) = b) LOADDU(h,m)
+     end-if
+
+   if( NINJ > 0 ) then
+     forall(a in 1..A, h in 1..H) do
+       aux:= sum(inj in 1..NINJ|BUSINJ(inj) = a) GERI(inj,h + HINI - 1)
+
+       forall(s in 1..S|PRSC(s) > 0)
+         NETLOADSHB(s,h,BAARE(a))-= aux
+     end-do
+   end-if
+
+   if (PRINT_LEVEL >= 1) then
+     forall(h in 1..H) do
+       forall(b in 1..B, s in 1..S|PRSC(s) > 0)
+         BUFBS(b,s):= NETLOADSHB(s,h,b)
+
+       diskdata(ETC_OUT+ETC_TRANS,PATH+'net_load_BA_H'+strfmt(h,1)+strfmt(IPER,2)+strfmt(ISIM,3)+strfmt(HINI,4)+'.csv',SCEN)
+       diskdata(ETC_OUT+ETC_APPEND,PATH+'net_load_BA_H'+strfmt(h,1)+strfmt(IPER,2)+strfmt(ISIM,3)+strfmt(HINI,4)+'.csv',BUFBS)
+     end-do
+   end-if
+
+   forall(b in 1..B, h in 1..H)
+     NETAVGLOADHB(h,b):= sum(s in 1..S|PRSC(s) > 0) PRSC(s)*NETLOADSHB(s,h,b)
+
+   forall(h in 1..H, b in 1..B)
+     forall(s in 1..S|PRSC(s) > 0)
+       NETDLOADSHB(s,h,b):= NETLOADSHB(s,h,b) - NETAVGLOADHB(h,b)
+
+   forall(h in 1..H, b in 1..B) do
+     aux:= 0.
+
+     forall(s in 1..S|PRSC(s) > 0)
+       if( NETLOADSHB(s,h,b) > aux ) then
+         aux:= NETLOADSHB(s,h,b)
+       end-if
+
+     MXDEVLOADHB(h,b):= aux - NETAVGLOADHB(h,b)
+   end-do
+
+   forall(h in 1..H, b in 1..B) do
+     aux:= 100000.
+
+     forall(s in 1..S|PRSC(s) > 0)
+       if( NETLOADSHB(s,h,b) < aux ) then
+         aux:= NETLOADSHB(s,h,b)
+       end-if
+
+     MNDEVLOADHB(h,b):= aux - NETAVGLOADHB(h,b)
+   end-do
+
+   if (PRINT_LEVEL >= 1) then
+     diskdata(ETC_OUT,PATH+'mxdevloadBA.csv',MXDEVLOADHB)
+     diskdata(ETC_OUT,PATH+'mndevloadBA.csv',MNDEVLOADHB)
+   end-if

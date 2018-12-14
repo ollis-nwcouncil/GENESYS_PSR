@@ -1,0 +1,3770 @@
+! **********
+! Input data
+! **********
+
+declarations
+
+! ***********
+! PSR Classes
+! ***********
+
+	study:					psrtype
+    igmsk:					psrtype
+    igmdl: 					psrtype
+    iosddp: 				psrtype
+    ilog:					psrtype
+    ilogcons: 				psrtype
+    timectrl:				psrtype
+    ictrlgnd:				psrtype
+    ictrlinj:				psrtype
+    ictrlpri:				psrtype
+    ictrlres:				psrtype
+    ictrload:				psrtype
+    dc_network:				psrtype
+    ioimage:				psrtype
+    lsts_cen:				psrtype
+    iow_daily:				psrtype
+    iow_hourly:				psrtype
+    istring:				psrtype
+
+    list_thermal: 			psrtype
+    list_thermal_aux: 		psrtype
+    list_hydro: 			psrtype
+    list_system: 			psrtype
+    list_station: 			psrtype
+    list_fuel:	 			psrtype
+    list_demand:			psrtype
+    list_inflow:			psrtype
+    list_ine_dem_seg:		psrtype
+    list_ela_dem_seg:		psrtype
+    list_interc:			psrtype
+    list_renewable:			psrtype
+    list_gen_ctr:			psrtype
+    list_bus:				psrtype
+    list_bus_network:		psrtype
+    list_bus_generator:		psrtype
+    list_bus_demand:		psrtype
+    list_dclink:			psrtype
+    list_sec_res:			psrtype
+    list_ele_are:			psrtype
+    list_injection:			psrtype
+    list_circuit:			psrtype
+    list_circuit_network:	psrtype
+    list_transformer:		psrtype
+    list_sum_cir:			psrtype
+    list_sum_int:			psrtype
+    list_battery:			psrtype
+    list_fuel_consumption:	psrtype
+    list_combined_cycle:	psrtype
+    list_gas_node:			psrtype
+    list_gas_pipeline:		psrtype
+    list_balancing_area:	psrtype
+    list_ctg_res:			psrtype
+
+    map_thermal: 			psrtype
+    map_thermal_block: 		psrtype
+    map_hydro: 				psrtype
+    map_hydro_block:		psrtype
+    map_hydro_point:		psrtype
+    map_system:				psrtype
+    map_station:			psrtype
+    map_fuel:				psrtype
+    map_ine_dem_seg:		psrtype
+    map_dem_hour:			psrtype
+    map_ela_dem_seg:		psrtype
+    map_interc:				psrtype
+    map_interc_block:		psrtype
+    map_renewable:			psrtype
+    map_renewable_block:	psrtype
+    map_gen_ctr:			psrtype
+    map_bus:				psrtype
+    map_dclink:				psrtype
+    map_bus_demand:			psrtype
+    map_sec_res:			psrtype
+    map_ele_are:			psrtype
+    map_injection:			psrtype
+    map_circuit: 			psrtype
+    map_sum_cir:			psrtype
+    map_sum_int:			psrtype
+    map_battery:			psrtype
+    map_fuel_consumption:	psrtype
+    map_combined_cycle:		psrtype
+    map_gas_node:			psrtype
+    map_gas_node_block:		psrtype
+    map_gas_pipeline:		psrtype
+    map_balancing_area:		psrtype
+    map_ctg_res:			psrtype
+    map_demand:				psrtype
+
+    cnfg_ptr:				psrtype
+    cdef_ptr:				psrtype
+    cseg_ptr:				psrtype
+
+    True_Up:				Model
+
+    iograf:					array(range) of psrtype
+
+    ret:					integer
+    lpstatus:  				integer
+  	mipstatus: 				integer
+
+! *********
+! Constants
+! *********
+
+	NSIM: integer									! Number of scenarios
+	NPER: integer									! Number of stages
+	NBLK: integer									! Number of blocks
+	NHID: integer                                   ! Number of hydro plants
+	NTER: integer                                   ! Number of thermal plants (SDDP 1) / fuel consumptions (SDDP 2)
+	NTRM: integer                                   ! Number of thermal plants (SDDP 2)
+	NRNW: integer                                   ! Number of renewable plants
+	NSYS: integer									! Number of systems
+	NBUS: integer									! Number of buses
+	NBAT: integer									! Number of batteries
+	NINT: integer									! Number of interconnections
+	NSTG: integer									! Number of time steps
+	NRTG: integer									! Number of system generation constraints
+	NDEF: integer									! Number of deficit levels
+	NRSG: integer									! Number of secondary reserve constraints
+	NFUL: integer									! Number of fuels
+	NDEM: integer									! Number of demands
+	NLVL: integer									! Number of load segments (inelastic)
+	NLVE: integer									! Number of load segments (elastic)
+	NCUT: integer									! Number of future cost function cuts
+	NDAM: integer									! Number of reservoirs
+	NFCF: integer									! Number of future cost functions
+	NFIT: integer									! Number of interconnections x flow directions
+	NGEN: integer									! Number of generators (bus connection)
+	NLOA: integer									! Number of loads (bus connection)
+	NLNK: integer									! Number of DC links
+	NSLC: integer									! Number of execution slices
+	NFOC: integer									! Number of objective function terms
+	NFOX: integer									! Number of execution time terms
+	NARE: integer									! Number of electrical areas
+	NINJ: integer                                   ! Number of injections
+	NLIN: integer                                   ! Number of circuits + transformers
+	NISL: integer									! Number of transmission islands
+	NVIO: integer									! Number of AC circuit flow violations
+	NBET: integer									! Number of sensitive matrix (Beta) columns
+	NSUM: integer									! Number of sum of circuit flow constraints
+	NSMI: integer									! Number of sum of interconnection constraints
+	NFID: integer									! Number of DC links x flow directions
+	NGRF: integer									! Number of selected outputs
+	NSSL: integer									! Number of selected scenarios
+	NBDF: integer									! Number of buses with deficit (SDDP)
+	NBCG: integer									! Number of buses with deficit (NCPL)
+	NCOR: integer									! Number of server cores (Total)
+	NPRC: integer									! Number of server cores (Used)
+	NTHR: integer									! Number of individual execution threads
+	NCOM: integer									! Number of combined cycles
+	NSND: integer									! Number of renewable scenarios
+	NGNO: integer									! Number of gas nodes
+	NGLP: integer									! Number of gas pipelines
+	NGAM: integer									! Number of games (Genesys)
+	NBAL: integer									! Number of balancing areas (Genesys)
+	NCTG: integer									! Number of contingency reserves (Genesys)
+
+	LANG: integer									! Study language (0:English / 1: Spanish / 2: Portuguese)
+	NETW: integer									! Network Representation (0: No / >0: Yes)
+	LOSS: integer									! Losses Representation (0: No / >0: Yes)
+	DEMH: integer									! Demand Representation (1: Hourly / 0 or 3: Block)
+	PARL: integer									! Parallel Execution (0: No / 1: Yes)
+	COMM: integer									! MPI Communicator
+	BINF: integer									! Binary Writing (0: No / >0: Yes)
+	AWSF: integer									! AWS (S3) Writing (0: No / >0: Yes)
+	DSLC: integer									! Slice Duration (hours)
+	IREP: integer									! Adjustment Execution - Load Marginal Cost (0: No / >0: Yes)
+	IRUN: integer									! Adjustment Execution (0: No / 1: Deficit / 2: Gap)
+	ISSL: integer									! Selected Scenarios (0: No / 1: Yes)
+	NAAD: integer									! Number of additional years
+	WAAD: integer									! Write results for the additional years? (0: No / 1: Yes)
+	DAAD: integer									! Consider chronological data for additional years? (0: No / 1: Yes)
+	MAXT: integer									! MIP Maximum Execution Time (sec)
+	MAXX: integer									! MIP Maximum Execution Auxiliar Time (sec)
+	SCRS: integer									! System Secondary Reserve (0: Both / 1: Up [default] / 2: Down)
+	SCRT: integer									! System Secondary Reserve Type (0: >= [default] / 1: =)
+	SLCE: integer									! Slice Execution (0: No / 1: Yes [default])
+	RALG: integer									! Root Optmization Algorithm (0: Barrier [default] / 1: Dual / 2: Primal)
+	DEMV: integer									! System Demand Uncertainty (0: No / >0: Yes)
+	INIC: integer									! Commitment Initial Condition? (0: No / 1: Yes)
+	WRLP: integer									! Write LP Problem? (0: No / 1: Yes)
+	RMIP: integer									! MIP Representation? (0: No / 1: Yes)
+	NCSP: integer									! Non-Controllable Spillage Representation? (0: No / 1: Default)
+	CHMP: integer									! MIP Status Change Algorithm (0: No / >1: Yes)
+	CHLP: integer									! LP Status Change Algorithm  (0: No / >1: Yes)
+	CHIF: integer									! Network Infeasibility? (0: No / 1: Yes)
+	CRSV: integer									! Crossover Enabled? (0: No / 1: Yes [default])
+	CKDF: integer									! Deficit Automatic Check? (0: No / 1: Yes [default])
+	TERF: integer									! Terminal Function (-1: FCF / 0: FCF + Target Storage [default] / 1: Target Storage (Minimum Operative Storage Penalty) / 2: Target Storage (Fixed) / 3: Target Storage (Water Value Penalty) / 4: Final Storage = Initial Storage (VIVF))
+	DEBG: integer									! Debug Mode (0: No [default] / 1: Low / 2: Medium / 3: High)
+	CCOS: integer									! Combined Cycle Operative State (0: Optimized / 1: User Defined [default])
+	CLOD: integer									! Elastic Demand Price Representation (0: Block / 1: Hourly)
+	RGAS: integer									! Gas Network Representation (0: No / 1: With Thermal Costs / 2: With Gas Node Costs)
+	MEMO: integer									! Maximum Amount of RAM Memory
+	FMNU: integer									! Minimum Spillage Unit [0: m3/s / 1: % of total Outflow]
+	IEMP: integer									! Empty Output Files? (0: No / 1: Yes)
+	RLOS: integer									! Transmission Losses Representation (0: Implicit / 1: Implicit + NCPL Explicit)
+	MIPR: real										! MIP Relative Tolerance (p.u.)
+	RGAP: real										! MIP Relative Gap (p.u.)
+
+	IPER: integer									! Current SDDP stage
+	ISIM: integer									! Current SDDP scenario
+	ISLC: integer									! Current SDDP slice
+	ISIN: integer									! Current SDDP scenario index
+	ISND: integer									! Current SDDP renewable scenario
+	IPEM: integer									! Modified SDDP stage (Additional year)
+	IMTH: integer									! SDDP Initial Stage
+	IYER: integer									! SDDP Initial Year
+	TSTG: integer									! SDDP Stage Type (1: Weekly / 2: Monthly)
+	GSTG: integer									! SDDP Stage Total Duration (hours)
+	IGEN: integer									! Genesys Execution Mode (0: Weekly / 1: Daily / 2: Intra-Daily)
+	HINI: integer									! Current Genesys Initial Hour (Intra-Daily Execution)
+	FRUN: integer									! First Run Indicator - True-up Integration (0: No / 1: Yes)
+	LRUN: integer									! Last  Run Indicator - True-up Integration (0: No / 1: Yes)
+	GAME: integer									! Current Genesys game index
+
+	TINC: real										! Initial Time
+	TLOA: real										! PSR Classes Time (Loading)
+	TMAP: real										! PSR Classes Time (Mapping)
+	THOU: real										! PSR Classes Time (Hourly Mapping)
+	TCLS: real										! PSR Classes Time (Total)
+	TINT: real										! SDDP Integration Time
+	TADJ: real										! Auxiliar Time (Adjustment Vectors)
+	TINE: real										! Xpress Execution Time (Initial)
+	TMNT: real										! Xpress Execution Time (Mounting)
+	TEXE: real										! Xpress Execution Time (Final)
+	TXPR: real										! Xpress Execution Time (Total)
+	TOU1: real										! Output Initial Time
+	TOU2: real										! Output Final Time
+	TFIM: real										! Final Time
+
+! ******
+! Arrays
+! ******
+
+! Dimension #1
+
+	HCOD: array(range) of integer					! Hydro Plant Code (SDDP Order)
+
+! Sets
+
+	SHID: set of integer                            ! Set of hydro plants
+	STER: set of integer                            ! Set of thermal plants (SDDP 1) / fuel consumptions (SDDP 2)
+	STRM: set of integer                            ! Set of thermal plants (SDDP 2)
+	SRNW: set of integer                            ! Set of renewable plants
+	SBAT: set of integer                            ! Set of batteries
+	SSYS: set of integer                            ! Set of systems
+	SINT: set of integer                            ! Set of interconnections
+	SBUS: set of integer							! Set of buses
+	SSEG: set of integer                            ! Set of thermal consumption segments
+	SRTG: set of integer                            ! Set of system generation constraints
+	SDEF: set of integer                            ! Set of deficit levels
+	SRSG: set of integer                            ! Set of secondary reserve constraints
+	SFLW: set of integer                            ! Set of flow directions (1: To / 2: From)
+	SFUL: set of integer                            ! Set of fuels
+	SDEM: set of integer                            ! Set of demands
+	SLVL: set of integer                            ! Set of load segments (inelastic)
+	SLVE: set of integer                            ! Set of load segments (elastic)	
+	SBLK: set of integer                            ! Set of load blocks
+	SFIT: set of integer							! Set of interconnections x flow directions
+	SGEN: set of integer							! Set of generators (bus connection)
+	SLOA: set of integer							! Set of loads (bus connection)
+	SLNK: set of integer                            ! Set of DC links
+	SDAM: set of integer                            ! Set of reservoirs
+	SFOC: set of integer                            ! Set of objective function terms
+	SFOX: set of integer                            ! Set of execution time terms
+	SARE: set of integer							! Set of electrical areas
+	SINJ: set of integer                            ! Set of injections
+	SLIN: set of integer							! Set of circuits + transformers
+	SSUM: set of integer							! Set of sum of circuit flows
+	SSMI: set of integer							! Set of sum of interconnections
+	SCOM: set of integer							! Set of combined cycles
+	SFID: set of integer							! Set of DC links x flow directions
+	SCMM: set of integer							! Set of thermal commitment plants
+	SROR: set of integer                            ! Set of run of river additional data
+	SBIG: set of integer                            ! Set of auxiliar big data
+	SUNI: set of integer                            ! Set of auxiliar unitary data
+	SSND: set of integer							! Set of renewable scenarios
+	SGNO: set of integer                            ! Set of gas nodes
+	SGLP: set of integer                            ! Set of gas pipelines
+	SBAL: set of integer                            ! Set of balancing areas (Genesys)
+	SCTG: set of integer							! Set of contingency reserves (Genesys)
+	SCMH: set of integer                            ! Set of hydro commitment additional data
+	SFCF: set of integer                            ! Set of future cost functions
+	SCUT: set of integer                            ! Set of future cost function cuts
+
+	SNMS: set of string								! Set of system names
+	SNMH: set of string								! Set of hydro plant names
+	SNMT: set of string								! Set of thermal plant names
+	SNMG: set of string								! Set of renewable plant names
+	SNMR: set of string								! Set of reservoirs names
+	SNMI: set of string								! Set of interconnections names
+	SNMB: set of string								! Set of bus names
+	SNMK: set of string								! Set of DC link names
+	SNMD: set of string								! Set of DC link names (-> / <-)
+	SNMA: set of string								! Set of battery names
+	SNMF: set of string								! Set of objective function names
+	SNMX: set of string								! Set of execution time names
+	SNMJ: set of string								! Set of injection names
+	SNML: set of string								! Set of fuel names
+	SNMC: set of string								! Set of AC circuit names
+	SNMM: set of string								! Set of commitment thermal plant names
+	SNMP: set of string								! Set of gas pipeline names
+	SNMN: set of string								! Set of gas node names
+
+	SNM0: set of string								! Set of auxiliary names (length)
+	SNM1: set of string								! Set of secondary reserve constraint names
+	SNM2: set of string								! Set of generation constraint names
+	SNM3: set of string								! Set of gas pipeline names (From -> To)
+	SNM4: set of string								! Set of gas pipeline names (To -> From)
+	SNM5: set of string								! Set of thermal plants names (SDDP 2)
+	SNM6: set of string								! Set of contingency reserve constraint names
+	SNM7: set of string								! Set of demand names
+	SNM8: set of string								! Set of balancing area names
+
+end-declarations
+
+! ***********
+! PSR Classes
+! ***********
+
+TINC:= currenttime / 1000. + currentdate * 3600 * 24
+
+if (FIRST_RUN = 1) then
+
+	! Load Logs
+
+	ilog:= PSRManagerLog_getInstance(ilog)
+	PSRManagerLog_initPortuguese(ilog)
+
+	ilogcons:= PSRLogTextFile_create(PATH + 'psrclasses_ncplite.log',0)
+	PSRManagerLog_addLog(ilog, ilogcons)
+
+	PSRLog_addFilterExcludeClass(ilogcons, PSR_LOG_BUS)
+	PSRLog_addFilterExcludeClass(ilogcons, PSR_LOG_CIRCUIT)
+
+	if (LOAD_MASKS = 1) then
+
+		! Load Masks
+
+	    igmsk:= PSRManagerIOMask_getInstance(igmsk)
+	    PSRManagerIOMask_addPath(igmsk,'.//')
+	    PSRManagerIOMask_addPath(igmsk,'D://Repositories//NcpLite//psrclassesinterfacemosel//release//windows//')
+	    PSRManagerIOMask_addPath(igmsk,PATH_PSRCLASSES)
+	    ret:= PSRManagerIOMask_importFile(igmsk,'Masks_SDDP_V10.2.pmk')
+	    ret:= PSRManagerIOMask_importFile(igmsk,'Masks_SDDP_V10.3.pmk')
+	    ret:= PSRManagerIOMask_importFile(igmsk,'Masks_SDDP_Blocks.pmk')
+
+	    ! Load Models
+
+	    igmdl:= PSRManagerModels_getInstance(igmdl)
+	    PSRManagerModels_addPath(igmdl,'.//')
+	    PSRManagerIOMask_addPath(igmdl,'D://Repositories//NcpLite//psrclassesinterfacemosel//release//windows//')
+	    PSRManagerIOMask_addPath(igmdl,PATH_PSRCLASSES)
+	    ret:= PSRManagerModels_importFile(igmdl,'Models_SDDP_V10.2.pmd')
+	    ret:= PSRManagerModels_importFile(igmdl,'Models_SDDP_V10.3.pmd')
+	    ret:= PSRManagerModels_importFile(igmdl,'Models_SDDP_Keywords.pmd')
+
+	end-if
+
+	! Create Study & Data Controllers
+
+	study:= PSRStudy_create(0)
+
+    if (CORE = 1) then
+
+    	ioimage:= PSRIOImage_create(0)
+
+    	setparam("IOCTRL",true)
+
+    	fopen(PATH + 'psrclasses.dat',F_SILENT)
+
+		if (getparam("IOSTATUS") = 0) then
+  			ret:= PSRIOImage_load(ioimage, study, PATH + 'psrclasses.dat')
+  		else
+  			ret:= PSRIOImage_load(ioimage, study, PATH + 'psrclasses.bin')
+  		end-if
+
+		fclose(F_INPUT)
+
+		setparam("IOCTRL",false)
+
+	else
+
+		iosddp:= PSRIOSDDP_create(0)
+		PSRIOSDDP_useOnlySelectedSystems(iosddp, 1)
+		ret:= PSRIOSDDP_load(iosddp, study, PATH , PATH, 3)
+
+	end-if
+
+    lsts_cen:= PSRStudy_listHourlyScenario(study)
+
+    if (DEMAND_SCENARIO = 0) then
+    	ictrload:= PSRIOElementHourlyScenariosList_getHourlyScenario(lsts_cen, CLASS_PSRLoad, "HourP")
+    else
+    	ictrload:= PSRIOElementHourlyScenariosList_getHourlyScenario(lsts_cen, CLASS_PSRDemandSegment, "HourDemandScen")
+	end-if
+
+    ictrlinj:= PSRIOElementHourlyScenariosList_getHourlyScenario(lsts_cen, CLASS_PSRPowerInjection, "HourInjection")
+
+    ictrlpri:= PSRIOElementHourlyScenariosList_getHourlyScenario(lsts_cen, CLASS_PSRPowerInjection, "HourPriceInjection")
+
+	ictrlres:= PSRIOElementHourlyScenariosList_getHourlyScenario(lsts_cen, CLASS_PSRReserveGenerationConstraintData, "HourReserve")
+
+	ictrlgnd:= PSRIOElementHourlyScenariosList_getHourlyScenario(lsts_cen, CLASS_PSRGndGaugingStation, "HourGeneration")
+
+	if (ictrlgnd <> 0) then
+		PSRIOSDDPGndGauginStationHourlyScenarios_createReferenceVectors(ictrlgnd)
+	end-if
+
+	!PSRModel_print(PSRElement_model(study),PATH + 'study_model.out')
+
+	! Updaters
+
+	updater:= PSRUpdaterSDDP_create(0)
+
+	PSRUpdaterSDDP_applyMaintenanceData(updater, study)
+	PSRUpdaterSDDP_applyRulesForDefaultBlocks(updater, study)
+
+	if (SDDP2 = 1 and CORE = 0) then
+		PSRUpdaterSDDP_toFuelConsumptionRepresentation(updater, study)
+	end-if
+
+	! Load DC Network
+
+	dc_network:= PSRNetwork_create(study, 0, 0)
+
+	! Load Input Data Weights
+
+	if (GENESYS = 1) then
+
+		iow_daily:=  PSRIOGrafResultBinary_create(0)
+		iow_hourly:= PSRIOGrafResultBinary_create(0)
+
+		ret:= PSRIOGrafResultBinary_initLoad(iow_daily,  PATH + 'genesysweights1.hdr', PATH + 'genesysweights1.bin')
+		ret:= PSRIOGrafResultBinary_initLoad(iow_hourly, PATH + 'genesysweights2.hdr', PATH + 'genesysweights2.bin')
+
+		putPSRType('PTR_DAILY',iow_daily)
+		putPSRType('PTR_HOURLY',iow_hourly)
+
+	end-if
+
+	! Time Controller
+
+	timectrl:= PSRScenarioTimeController_create(0)
+
+	PSRTimeController_addElement(timectrl, study, 1)
+	PSRTimeController_configureFrom(timectrl, study)
+
+	putPSRType('PTR_STUDY',study)
+	putPSRType('PTR_TIMEC',timectrl)
+	putPSRType('PTR_RENEW',ictrlgnd)
+	putPSRType('PTR_INJEC',ictrlinj)
+	putPSRType('PTR_PRINJ',ictrlpri)
+	putPSRType('PTR_SCRES',ictrlres)
+	putPSRType('PTR_DCNET',dc_network)
+
+	if (CORE = 1) then
+		putPSRType('PTR_LOADB',ictrload)
+	end-if
+
+else
+
+	study:= 		getPSRType('PTR_STUDY')
+	timectrl:=  	getPSRType('PTR_TIMEC')
+	ictrlgnd:= 		getPSRType('PTR_RENEW')
+	ictrlinj:=  	getPSRType('PTR_INJEC')
+	ictrlpri:=  	getPSRType('PTR_PRINJ')
+	ictrlres:=  	getPSRType('PTR_SCRES')
+	dc_network:=  	getPSRType('PTR_DCNET')
+
+	if (CORE = 1) then
+		ictrload:= 	getPSRType('PTR_LOADB')
+	end-if
+
+	if (GENESYS = 1) then
+		iow_daily:=		getPSRType('PTR_DAILY')
+		iow_hourly:=	getPSRType('PTR_HOURLY')
+	end-if
+
+end-if
+
+! Convergence Log
+
+if (FIRST_RUN = 1) then
+	fdelete(PATH + 'convergence.log')
+	fdelete(PATH + 'execution.log')
+	fdelete(PATH + 'message.log')
+end-if
+
+! Parallel Execution
+
+PARL:= getHostInt2('PARALLEL',0)
+
+if (LOAD_HOST) then
+	PARL:= 0
+end-if
+
+! Historic Scenarios Definition
+
+if (HISTORIC_SCENARIO = 1) then
+	ret:= PSRScenarioTimeController_load(timectrl, "scenarioyearmap")
+end-if
+
+! Load Lists
+
+list_hydro:= 			PSRStudy_getCollectionPlants(study, PSR_PLANTTYPE_HYDRO)
+list_renewable:=		PSRStudy_getCollectionPlants(study, PSR_PLANTTYPE_GND)
+list_system:=			PSRStudy_getCollectionSystems(study)
+list_station:=			PSRStudy_getCollectionGaugingStations(study)
+list_fuel:=				PSRStudy_getCollectionFuels(study)
+list_demand:= 			PSRStudy_getCollectionDemands(study)
+list_interc:= 			PSRStudy_getCollectionInterconnections(study)
+list_bus:=				PSRStudy_getCollectionBuses(study)
+list_battery:=			PSRStudy_getCollectionShunts(study, PSR_DEVICETYPE_BATTERY)
+list_bus_generator:=	PSRStudy_getCollectionShunts(study, PSR_DEVICETYPE_GENERATOR)
+list_bus_demand:=		PSRStudy_getCollectionShunts(study, PSR_DEVICETYPE_LOAD)
+list_injection:= 		PSRStudy_getCollectionShunts(study, PSR_DEVICETYPE_POWERINJECTION)
+list_circuit:= 			PSRStudy_getCollectionSeries2(study, PSR_DEVICETYPE_SERIE)
+list_transformer:= 		PSRStudy_getCollectionSeries2(study, PSR_DEVICETYPE_TRANSFORMER)
+list_dclink:= 			PSRStudy_getCollectionSeries2(study, PSR_DEVICETYPE_LINKDC)
+list_combined_cycle:= 	PSRStudy_getCollectionThermalCombinedCycles(study)
+list_balancing_area:= 	PSRStudy_getCollectionBalancingAreas(study)
+list_gas_node:= 		PSRCollectionElement_create(0)
+list_gas_pipeline:= 	PSRCollectionElement_create(0)
+
+if (SDDP2 = 1) then
+
+	list_fuel_consumption:= PSRStudy_getCollectionFuelConsumptions(study)
+	list_thermal_aux:= PSRStudy_getCollectionPlants(study, PSR_PLANTTYPE_THERMAL)
+	list_thermal:= PSRCollectionElement_create(0)
+
+	NTXX:= PSRCollectionElement_maxElements(list_fuel_consumption)
+
+	forall(k in 1..NTXX) do
+		FCXX:= PSRCollectionElement_element(list_fuel_consumption,k - 1)
+		PSRCollectionElement_addElement(list_thermal,PSRFuelConsumption_plant(FCXX))
+	end-do
+
+else
+
+	list_thermal:= PSRStudy_getCollectionPlants(study, PSR_PLANTTYPE_THERMAL)
+
+end-if
+
+! Gas Network
+
+istring:= PSRCollectionString_create(0)
+PSRCollectionString_addString(istring, "PSRGasNode")
+list_gas_node:= PSRStudy_getCollectionElements(study, list_gas_node, istring)
+PSRCollectionElement_removeRedundant(list_gas_node)
+
+istring:= PSRCollectionString_create(0)
+PSRCollectionString_addString(istring, "PSRGasPipeline")
+list_gas_pipeline:= PSRStudy_getCollectionElements(study, list_gas_pipeline, istring)
+PSRCollectionElement_removeRedundant(list_gas_pipeline)
+
+! Add Transformers -> Circuits
+
+PSRCollectionElement_addCollection(list_circuit, list_transformer)
+
+! Purge Optgen Modification
+
+ret:= PSRCollectionElement_query(list_hydro,     "REMOVEDATA WHERE Existing>=2")
+ret:= PSRCollectionElement_query(list_thermal,   "REMOVEDATA WHERE Existing>=2")
+ret:= PSRCollectionElement_query(list_renewable, "REMOVEDATA WHERE Existing>=2")
+ret:= PSRCollectionElement_query(list_battery,   "REMOVEDATA WHERE Existing>=2")
+ret:= PSRCollectionElement_query(list_interc,    "REMOVEDATA WHERE Existing>=2")
+ret:= PSRCollectionElement_query(list_dclink,    "REMOVEDATA WHERE Existing>=2")
+
+! Get Dimensions
+
+NTER:= PSRCollectionElement_maxElements(list_thermal)
+NHID:= PSRCollectionElement_maxElements(list_hydro)
+NSYS:= PSRCollectionElement_maxElements(list_system)
+NFUL:= PSRCollectionElement_maxElements(list_fuel)
+NDEM:= PSRCollectionElement_maxElements(list_demand)
+NINT:= PSRCollectionElement_maxElements(list_interc)
+NRNW:= PSRCollectionElement_maxElements(list_renewable)
+NBUS:= PSRCollectionElement_maxElements(list_bus)
+NBAT:= PSRCollectionElement_maxElements(list_battery)
+NGEN:= PSRCollectionElement_maxElements(list_bus_generator)
+NLOA:= PSRCollectionElement_maxElements(list_bus_demand)
+NLNK:= PSRCollectionElement_maxElements(list_dclink)
+NINJ:= PSRCollectionElement_maxElements(list_injection)
+NLIN:= PSRCollectionElement_maxElements(list_circuit)
+NCOM:= PSRCollectionElement_maxElements(list_combined_cycle)
+NGNO:= PSRCollectionElement_maxElements(list_gas_node)
+NGLP:= PSRCollectionElement_maxElements(list_gas_pipeline)
+NBAL:= PSRCollectionElement_maxElements(list_balancing_area)
+
+if (GENESYS = 1) then
+	NSND:= PSRIOGrafResultBase_maxAgent(iow_daily)
+end-if
+
+if (SDDP2 = 1) then
+	NTRM:= PSRCollectionElement_maxElements(list_thermal_aux)
+else
+	NTRM:= NTER
+end-if
+
+if (SDDP2 = 0 and NHID > 0) then
+	getHostArray('HYD_CODE',HCOD)
+	ret:= PSRCollectionElement_sortByArray(list_hydro, "code", HCOD, getsize(HCOD))
+end-if
+
+NPER:= PSRStudy_getNumberStages(study)
+NSIM:= PSRStudy_getNumberSimulations(study)
+NBLK:= PSRStudy_getNumberBlocks(study)
+
+! Get Configuration
+
+cnfg_ptr:= PSRStudy_getConfigurationModel(study)
+
+!PSRModel_print(cnfg_ptr,PATH + 'configuration.out')
+
+ISSL:= 	   PSRParm_getInteger(PSRModel_parm2(cnfg_ptr, 'Series_Simular'))
+
+if (ISSL = 0) then
+	NSSL:= NSIM
+else
+	NSSL:= PSRVector_size(PSRModel_vector2(cnfg_ptr, 'IndexSeriesSimulacao'))
+end-if
+
+if (DEBUG or DEBG >= 1) then
+	NSSL:= 1
+end-if
+
+NDEF:= 	PSRVector_size(PSRModel_vector2(cnfg_ptr, 'DeficitCost'))
+LANG:= 	PSRParm_getInteger(PSRModel_parm2(cnfg_ptr, 'Idioma'))
+NETW:= 	PSRParm_getInteger(PSRModel_parm2(cnfg_ptr, 'Rede'))
+LOSS:= 	PSRParm_getInteger(PSRModel_parm2(cnfg_ptr, 'Perdas'))
+NAAD:= 	PSRParm_getInteger(PSRModel_parm2(cnfg_ptr, 'NumeroAnosAdicionais'))
+WAAD:= 	PSRParm_getInteger(PSRModel_parm2(cnfg_ptr, 'NumeroAnosAdicionaisParm2'))
+DAAD:=	PSRParm_getInteger(PSRModel_parm2(cnfg_ptr, 'NumeroAnosAdicionaisParm3'))
+FMNU:= 	0
+!FMNU:=	PSRParm_getInteger(PSRModel_parm2(cnfg_ptr, 'MinSpillageUnit'))
+
+! Inflow Definition
+
+if (SDDP2 = 1) then
+
+	list_inflow:= PSRIOSDDPHydroForwardBackward_create(0)
+
+	setparam("IOCTRL",true)
+
+    fopen(PATH + 'forw.dat',F_SILENT)
+
+	if (getparam("IOSTATUS") = 0) then
+  		ret:= PSRIOSDDPHydroForwardBackward_load(list_inflow, study , PATH + 'forw.dat', PATH + 'forw.dat')
+  	else
+  		ret:= PSRIOSDDPHydroForwardBackward_load(list_inflow, study , PATH + 'forw.psr', PATH + 'forw.psr')
+  	end-if
+
+	fclose(F_INPUT)
+
+	setparam("IOCTRL",false)
+
+end-if
+
+! Get Load Segments
+
+list_ine_dem_seg:= 	PSRCollectionElement_create(0)
+list_ela_dem_seg:= 	PSRCollectionElement_create(0)
+
+forall(m in 1..NDEM) do
+
+	demand:= PSRCollectionElement_element(list_demand, m - 1)
+  	demflg:= PSRModel_parm2(PSRElement_model(demand), 'Elastico')
+  	demtyp:= PSRParm_getInteger(demflg)
+
+  	forall(i in 1..PSRDemand_maxSegment(demand)) do
+	    if (demtyp = 0 and i = 1) then
+	    	PSRCollectionElement_addElement(list_ine_dem_seg, PSRDemand_segment(demand, 0))
+	    else
+	    	PSRCollectionElement_addElement(list_ela_dem_seg, PSRDemand_segment(demand, i - 1))
+	    end-if
+  	end-do
+
+end-do
+
+NLVL:= PSRCollectionElement_maxElements(list_ine_dem_seg)
+NLVE:= PSRCollectionElement_maxElements(list_ela_dem_seg)
+
+! Get Generation Constraints
+
+list_gen_ctr:= PSRStudy_getCollectionGenerationConstraints(study)
+NRTG:= 		   PSRCollectionElement_maxElements(list_gen_ctr)
+
+! Get Secondary Reserves
+
+list_sec_res:= PSRStudy_getCollectionReserveGenerationConstraints(study)
+NRSG:= 		   PSRCollectionElement_maxElements(list_sec_res)
+
+! Get Sum of Circuit Flow Constraints
+
+list_sum_cir:= PSRConstraintSumList_asCollectionElements(PSRStudy_listConstraintSumCircuits(study))
+NSUM:= 		   PSRCollectionElement_maxElements(list_sum_cir)
+
+! Get Sum of Interconnections
+
+list_sum_int:= PSRConstraintSumList_asCollectionElements(PSRStudy_listConstraintSumInterconnections(study))
+NSMI:= 		   PSRCollectionElement_maxElements(list_sum_int)
+
+! Get Electrical Areas
+
+list_ele_are:= PSRStudy_getCollectionAreas(study)
+NARE:=		   PSRCollectionElement_maxElements(list_ele_are)
+
+EXAR:= false
+size_attr_area:= 0
+
+if (NARE >= 1) then
+	forall(k in 0..NARE - 1) do
+		area_model:= PSRElement_model(PSRCollectionElement_element(list_ele_are, k))
+		forall(m in 0..PSRModel_maxVector(area_model) - 1) size_attr_area+= PSRVector_size(PSRModel_vector(area_model, m))
+  		if (size_attr_area > 0) then
+    		EXAR:= true
+    		break 1
+  		end-if
+	end-do
+end-if
+
+if (EXAR = false) then
+	NARE:= 0
+	PSRCollectionElement_clear(list_ele_are)
+end-if
+
+! Get Contingency Reserves
+
+list_ctg_res:= PSRStudy_getCollectionReserveConstraints(study)
+NCTG:= 		   PSRCollectionElement_maxElements(list_ctg_res)
+
+! Stage / Scenario Definition
+
+IPER:= getHostInt('IPER')
+ISIM:= getHostInt('ISIM')
+ISIN:= getHostInt('INDSIM')
+
+! Games Definition (Genesys)
+
+GAME:= getHostInt2('GAME',0)
+NGAM:= getHostInt2('TOTAL_GAMES',0)
+
+! Output Data
+
+IMTH:= PSRParm_getInteger(PSRModel_parm2(cnfg_ptr, 'Etapa_inicial'))
+IYER:= PSRTimeController_getFirstYear(timectrl)
+TSTG:= PSRTimeController_getStageType(timectrl)
+
+! Time Controller
+
+IPEM:= IPER
+
+if (NAAD > 0) then
+	if (IPER = NPER + 1) then
+		updater:= PSRUpdaterSDDP_create(0)
+		PSRUpdaterSDDP_freezeConfiguration(updater, study)
+	end-if
+	if (DAAD = 0 and IPER > NPER) then
+		if (TSTG = 1) then
+			IPEM:= NPER - 52 + (IPER mod 52)
+			if ((IPER mod 52) = 0) then
+				IPEM+= 52
+			end-if
+		else
+			IPEM:= NPER - 12 + (IPER mod 12)
+			if ((IPER mod 12) = 0) then
+				IPEM+= 12
+			end-if
+		end-if
+	end-if
+end-if
+
+if (HISTORIC_SCENARIO = 0) then
+	PSRTimeController_gotoStage(timectrl, IPEM)
+else
+	ret:= PSRScenarioTimeController_gotoStageScenario(timectrl, IPEM, ISIM)
+end-if
+
+if (NETW > 0) then
+	PSRNetwork_updateStage(dc_network, IPEM)
+end-if
+
+! Number of time steps
+
+NSTG:= integer(PSRStudy_getStageDuration2(study, IPEM))
+
+! Load Debug Option
+
+DEBG:= 0
+
+ExecutionParameters:= PSRModel_model2(cnfg_ptr, 'ExecutionParameters')
+
+if (ExecutionParameters <> 0) then
+    if (PSRModel_parm2(ExecutionParameters,'NCPL_DEBG') <> 0) then
+        ret:= PSRParm_noParm(PSRModel_parm2(ExecutionParameters,'NCPL_DEBG'))
+        if (ret <> 1) then
+        	DEBG:= PSRParm_getInteger(PSRModel_parm2(ExecutionParameters, 'NCPL_DEBG'))
+        end-if
+    end-if
+end-if
+
+! Execution / Profile Logs
+
+if ((DEBUG or DEBG >= 2) and PARL = 0) then
+	fopen('tee:' + PATH + 'execution.log',F_APPEND + F_OUTPUT + F_LINBUF)
+end-if
+
+if (GENESYS_LOG) then
+	if (FIRST_RUN = 1) then
+		fdelete(PATH + 'genesys_' + ISIM + '.log')
+	end-if
+	fopen('tee:' + PATH + 'genesys_' + ISIM + '.log',F_APPEND + F_OUTPUT + F_LINBUF)
+end-if
+
+! PSR Classes Loading Time
+
+if ((DEBUG or PROFILER) and PARL = 0) then
+
+	if (FIRST_RUN = 1) then
+		fdelete(PATH + 'ncplite.log')
+	end-if
+
+	if (PROFILER) then
+		fopen(PATH + 'ncplite.log',F_APPEND)
+		my_out:= getfid(F_APPEND)
+		fselect(my_out)
+	end-if
+
+	TLOA:= currenttime / 1000. + currentdate * 3600 * 24
+	if (PROFILER) then
+		writeln('**************************************************')
+	end-if
+	writeln('PSR Classes Loading Time: ', (TLOA - TINC), ' sec')
+
+end-if
+
+if (DEBUG or DEBG >= 2) then
+	writeln('Case Loaded: ',IPER,'-',ISIM)
+end-if
+
+! Constants
+
+NUM1:= 1
+NUM2:= 2
+NUM3:= 3
+NUM4:= 4
+NUM5:= 5
+NUMB:= 1E20
+NFOX:= 1
+NFOC:= 34
+NMIN:= 60
+NCEM:= 100
+NTRZ:= 300
+NMIL:= 1000
+NDLL:= 10000
+NMLL:= 1000000
+NBIG:= 9999
+NCV1:= 0.0036
+NCV2:= 277.7777777
+NM01:= 0.1
+NM02:= 0.01
+NM03:= 0.001
+NM04:= 0.0001
+NM05:= 0.00001
+NANO:= 8760
+NFIT:= NINT*NUM2
+NFID:= NLNK*NUM2
+
+forall(i in 1..NHID) SHID+= {i}
+forall(i in 1..NTER) STER+= {i}
+forall(i in 1..NRNW) SRNW+= {i}
+forall(i in 1..NSYS) SSYS+= {i}
+forall(i in 1..NBUS) SBUS+= {i}
+forall(i in 1..NINT) SINT+= {i}
+forall(i in 1..NBAT) SBAT+= {i}
+forall(i in 1..NRTG) SRTG+= {i}
+forall(i in 1..NRSG) SRSG+= {i}
+forall(i in 1..NDEF) SDEF+= {i}
+forall(i in 1..NFUL) SFUL+= {i}
+forall(i in 1..NDEM) SDEM+= {i}
+forall(i in 1..NLVL) SLVL+= {i}
+forall(i in 1..NLVE) SLVE+= {i}
+forall(i in 1..NBLK) SBLK+= {i}
+forall(i in 1..NUM2) SFLW+= {i}
+forall(i in 1..NUM3) SSEG+= {i}
+forall(i in 1..NUM4) SROR+= {i}
+forall(i in 1..NFIT) SFIT+= {i}
+forall(i in 1..NGEN) SGEN+= {i}
+forall(i in 1..NLOA) SLOA+= {i}
+forall(i in 1..NLNK) SLNK+= {i}
+forall(i in 1..NFOC) SFOC+= {i}
+forall(i in 1..NFOX) SFOX+= {i}
+forall(i in 1..NARE) SARE+= {i}
+forall(i in 1..NINJ) SINJ+= {i}
+forall(i in 1..NLIN) SLIN+= {i}
+forall(i in 1..NSUM) SSUM+= {i}
+forall(i in 1..NSMI) SSMI+= {i}
+forall(i in 1..NFID) SFID+= {i}
+forall(i in 1..NBIG) SBIG+= {i}
+forall(i in 1..NUM1) SUNI+= {i}
+forall(i in 1..NCOM) SCOM+= {i}
+forall(i in 1..NSND) SSND+= {i}
+forall(i in 1..NGNO) SGNO+= {i}
+forall(i in 1..NGLP) SGLP+= {i}
+forall(i in 1..NTRM) STRM+= {i}
+forall(i in 1..NBAL) SBAL+= {i}
+forall(i in 1..NCTG) SCTG+= {i}
+forall(i in 1..NUM4) SCMH+= {i}
+
+declarations
+
+! *********
+! Constants
+! *********
+
+	SPLG: real											! General Spillage Cost [k$/Hm3]
+	SMNG: real											! General Minimum Total Outflow Cost [$/Hm3]
+	TRMC: real											! Most Expensive Thermal Plant [$/MWh]
+	DESR: real											! Discount Rate [p.u.]
+
+	CMG_AUX: real										! Graph Auxiliar Variable
+
+! ******
+! Arrays
+! ******
+
+! Dimension #1
+
+	NAMT: array(STER) of string							! Thermal Plant Name (SDDP 1) / Fuel Consumption Name (SDDP 2)
+	NAMM: array(STRM) of string							! Thermal Plant Name (SDDP 2)
+	CODT: array(STER) of integer						! Thermal Plant Code
+	EXST: array(STER) of integer						! Thermal Plant Status [<= 0: Yes / > 0: No]
+	COMT: array(STER) of integer						! Thermal Commitment Status (0: No / > 0: Yes)
+	NSEG: array(STER) of integer						! Number of Thermal Consumption Segments
+	NCPT: array(STER) of integer                        ! Number of Commitment Profiles (< NSTG: Yes / NSTG: No)
+	SYST: array(STER) of integer						! Thermal System
+	FULT: array(STER) of integer						! Thermal Fuel Pointer
+	FCTP: array(STER) of integer						! Thermal Fuel Consumption Pointer
+	MUST: array(STER) of integer						! Must Run [0: No / 1: Yes]
+	TFIC: array(STER) of integer						! Multi-Fuel Thermal Plant Pointer
+	NTFC: array(STER) of integer						! Multi-Fuel Thermal Plant Count
+	GENT: array(STER) of integer						! Thermal Plant to Generator Pointer
+	CONC: array(STER) of integer						! Thermal Concave Function [0: No / 1: Yes]
+	MXSP: array(STER) of integer						! Thermal Maximum Number of Start-Ups
+	MXSD: array(STER) of integer						! Thermal Maximum Number of Shutdowns
+	CCOM: array(STER) of integer						! Thermal Combined Cycle Pointer
+	NINI: array(STER) of integer						! Thermal Initial Condition
+	NPRE: array(STER) of integer						! Thermal Commitment Precedence [0: No / > 0: # of precedences]
+	IPRE: array(STER) of integer						! Thermal Commitment Precedence Pointer
+	TCMT: array(STER) of integer						! Thermal Commitment Fixed Solution [-1: No Fixed Solution / 0: Off / 1: On]
+	IFIX: array(STER) of integer						! Thermal Commitment Fixed Status [0: No / 1: Yes / 2: Previous Slice Decision]
+	GNOT: array(STER) of integer						! Thermal Gas Node
+	GFLM: array(STER) of integer						! Thermal Gas Fueling Limitation [0: No / 1: Yes]
+	TCO2: array(STER) of real							! Thermal CO2 Emission Coefficient [p.u.]
+	TBAL: array(STER) of integer						! Thermal -> Balancing Area Reserve [0: No / 1: Yes]
+	GMNF: array(STER) of real							! Thermal Minimum Generation [MW]
+	RMPU: array(STER) of real							! Thermal Ramp-Up [MW/min]
+	RMPD: array(STER) of real							! Thermal Ramp-Down [MW/min]
+	MUPT: array(STER) of real							! Thermal Minimum Uptime [hours]
+	MDWT: array(STER) of real							! Thermal Minimum Downtime [hours]
+	CSTP: array(STER) of real							! Thermal Start-Up Cost [k$]
+	CSTD: array(STER) of real							! Thermal Shutdown Cost [k$]
+	CTRS: array(STER) of real							! Fuel Transport Cost [$/Fuel Unit]
+	GINI: array(STER) of real							! Initial Generation Condition [MW]
+	MNCN: array(STER) of real							! Thermal Minimum Consumption [1000 * Fuel Unit]
+	MXCN: array(STER) of real							! Thermal Maximum Consumption [1000 * Fuel Unit]
+	GMAX: array(STER) of real							! Thermal Maximum Generation [MW]
+	OMCT: array(STER) of real							! Thermal O&M Cost [$/MWh]
+	PINT: array(STER) of real							! Thermal Installed Capacity [MW]
+	GFLX: array(STER) of real							! Thermal Maximum Gas Fueling Limitation [%]
+
+	CCOP: array(SCOM) of integer						! Combined Cycle Operative State
+
+	DMNX: array(range) of integer						! Auxiliar Vector - Thermal Minimum Generation Data
+	DMHX: array(range) of integer						! Auxiliar Vector - Hydro Secondary Reserve Limit Data
+	DPHX: array(range) of integer						! Auxiliar Vector - Hydro Secondary Reserve Bid Data
+	DRHX: array(range) of integer						! Auxiliar Vector - Hydro Primary Reserve Data
+	DMTX: array(range) of integer						! Auxiliar Vector - Thermal Secondary Reserve Limit Data
+	DPTX: array(range) of integer						! Auxiliar Vector - Thermal Secondary Reserve Bid Data
+	DRTX: array(range) of integer						! Auxiliar Vector - Thermal Primary Reserve Data
+	DNCN: array(range) of integer						! Auxiliar Vector - Thermal Minimum Consumption Data
+	DXCN: array(range) of integer						! Auxiliar Vector - Thermal Maximum Consumption Data
+	DNNX: array(range) of integer						! Auxiliar Vector - Gas Node Production Cost Data
+
+	CESX: array(range) of real							! Auxiliar Vector - Thermal Specific Consumption [Fuel Unit / MWh]
+	GESX: array(range) of real							! Auxiliar Vector - Thermal Generation by Segment Maximum Limit [MW]
+	GMNX: array(range) of real							! Auxiliar Vector - Thermal Minimum Generation [MW]
+	PRTX: array(range) of real							! Auxiliar Vector - Thermal Primary Reserve [MW]
+	RMTX: array(range) of real							! Auxiliar Vector - Thermal Secondary Reserve Limit [MW]
+	PMTX: array(range) of real							! Auxiliar Vector - Thermal Secondary Reserve Bid [$/MWh]
+	RMHX: array(range) of real							! Auxiliar Vector - Hydro Secondary Reserve Limit [MW]
+	PMHX: array(range) of real							! Auxiliar Vector - Hydro Secondary Reserve Bid [$/MWh]
+	GRNX: array(range) of real							! Auxiliar Vector - Renewable Generation [p.u.]
+	INJX: array(range) of real							! Auxiliar Vector - System Injection [MW]
+	PRIX: array(range) of real							! Auxiliar Vector - System Price Injection [$/MWh]
+	DEMX: array(range) of real							! Auxiliar Vector - Bus Demand [MW]
+	TGTX: array(range) of real							! Auxiliar Vector - Target Storage [Hm3]
+	OPCX: array(range) of real							! Auxiliar Vector - Opportunity Cost [k$/MWh]
+	WVLX: array(range) of real							! Auxiliar Vector - Water Value [k$/Hm3]
+	GNNX: array(range) of real							! Auxiliar Vector - Gas Node Production Cost [$/UV]
+
+	NAMH: array(SHID) of string							! Hydro Plant Name
+	CODH: array(SHID) of integer						! Hydro Plant Code
+	EXSH: array(SHID) of integer						! Hydro Plant Status [<= 0: Yes / > 0: No]
+	RESV: array(SHID) of integer						! Reservoir Status [0: No / > 0: Reservoir / -1: RoR with Regulation Factor]
+	HSTA: array(SHID) of integer						! Hydro Station Pointer
+	JUST: array(SHID) of integer						! Downstream Plant for Turbining
+	JUSV: array(SHID) of integer						! Downstream Plant for Spillage
+	JUSF: array(SHID) of integer						! Downstream Plant for Infiltration
+	SYSH: array(SHID) of integer						! Hydro System
+	POTH: array(SHID) of real							! Hydro Maximum Capacity [MW]
+	PINH: array(SHID) of real							! Hydro Installed Capacity [MW]
+	VINI: array(SHID) of real							! Initial Storage [Hm3]
+	VINC: array(SHID) of real							! Initial Storage - True Up Integration [Hm3]
+	VFIM: array(SHID) of real							! Final Storage [Hm3]
+	VINX: array(SHID) of real							! Auxiliar Initial Storage [Hm3]
+	VMIN: array(SHID) of real							! Minimum Operative Storage [Hm3]
+	VMAX: array(SHID) of real							! Maximum Operative Storage [Hm3]
+	VMNO: array(SHID) of real							! Minimum Original Storage [Hm3]
+	VMXO: array(SHID) of real							! Maximum Original Storage [Hm3]
+	TMIN: array(SHID) of real							! Minimum Turbining [m3/s]
+	TMAX: array(SHID) of real							! Maximum Turbining [m3/s]
+	TINH: array(SHID) of real							! Maximum Installed Turbining [m3/s]
+	TOMG: array(SHID) of real							! General Minimum Total Outflow [m3/s]
+	TOMN: array(SHID) of real							! Minimum Total Outflow [m3/s]
+	PDMN: array(SHID) of real							! Minimum Total Outflow Penalty [k$/Hm3]
+	TOMX: array(SHID) of real							! Maximum Total Outflow [m3/s]
+	PDMX: array(SHID) of real							! Maximum Total Outflow Penalty [k$/Hm3]
+	TVAL: array(SHID) of real							! Alert Storage [Hm3]
+	PVAL: array(SHID) of real							! Alert Storage Penalty [k$/Hm3]
+	TVMN: array(SHID) of real							! Minimum Operative Storage [Hm3]
+	PVMN: array(SHID) of real							! Minimum Operative Storage Penalty [k$/Hm3]
+	TFCL: array(SHID) of real							! Flood Control Storage [Hm3]
+	TMNS: array(SHID) of real							! Minimum Spillage [m3/s]
+	PMNS: array(SHID) of real							! Minimum Spillage Penalty [k$/Hm3]
+	FPRM: array(SHID) of real							! Average Production Factor [MW/m3/s]
+	FPRA: array(SHID) of real							! Accumulated Average Production Factor [MW/m3/s]
+	OMCH: array(SHID) of real							! Hydro O&M Cost [$/MWh]
+	SPLC: array(SHID) of real							! Spillage Cost [k$/Hm3]
+	SPLT: array(SHID) of integer						! Spillage Cost Type [0: General / 1: Individual]
+	VNOC: array(SHID) of integer						! Non-Controllable Spillage [0: No / 1: Yes (maximum storage) / 2: Yes (with specified value)]
+	VNCV: array(SHID) of real							! Non-Controllable Spillage Specified Volume [Hm3]
+	PIRT: array(SHID) of integer						! Irrigation Penalty Type [0: Irrigation Priority / 1: Irrigation Priority / 2: Fixed Penalty]
+	PIRR: array(SHID) of real							! Irrigation Penalty [k$/Hm3]
+	TIRR: array(SHID) of real							! Irrigation [m3/s]
+	EVAP: array(SHID) of real							! Evaporation [Hm3]
+	FILT: array(SHID) of real							! Infiltration [Hm3]	
+	GENH: array(SHID) of integer						! Hydro Plant to Generator Pointer
+	REGF: array(SHID) of real							! Regulation Factor [0: Total Regulation / 1: Zero Regulation]
+	RORN: array(SHID) of real							! Minimum Operative Limit - Run Of River [Hm3]
+	RORX: array(SHID) of real							! Maximum Operative Limit - Run Of River [Hm3]
+	NCYH: array(SHID) of integer						! Run of River # of Cycles
+	RORR: array(SHID) of integer						! Maximum Run of River Regulation Time [hours]
+	NSPL: array(SHID) of integer						! Flag - Spilling Penalty [0: Yes / 1: No]
+	MXSL: array(SHID) of real							! Maximum Spillage Limit - Non-Controllable Spillage [m3/s]
+	HELV: array(SHID) of integer						! Flag - Elevation x Storage Data [0: No / 1: Yes]
+	HTWT: array(SHID) of integer						! Flag - Tailwater x Outflow Data [0: No / 1: Yes]
+	HNTH: array(SHID) of integer						! Flag - Net Head x Power Data [0: No / 1: Yes]
+	SIGH: array(SHID) of integer						! Production Factor Signal [1: Hydro Plant / -1: Pumped Storage]
+	TGTS: array(SHID) of real							! Target Storage [Hm3]
+	PGTS: array(SHID) of real							! Target Storage Penalty [k$/Hm3]
+	COMH: array(SHID) of integer						! Hydro Commitment Status (0: No / > 0: Yes)
+	NCPH: array(SHID) of integer                        ! Number of Commitment Profiles (< NSTG: Yes / NSTG: No)
+	PMIN: array(SHID) of real							! Hydro Minimum Generation [MW]
+	FDRD: array(SHID) of real							! Forebay Drawdown Maximum Limit [m/h]
+	FFIU: array(SHID) of real							! Forebay Fillup Maximum Limit [m/h]
+	DSRU: array(SHID) of real							! Maximum Discharge Rate - Up [m3/s/min]
+	DSRD: array(SHID) of real							! Maximum Discharge Rate - Down [m3/s/min]
+	TGTG: array(SHID) of real							! Hydro Target Generation [MW]
+	TMXS: array(SHID) of real							! Maximum Spillage [m3/s]
+	PMXS: array(SHID) of real							! Maximum Spillage Penalty [k$/Hm3]
+	TVMX: array(SHID) of real							! Maximum Operative Storage [Hm3]
+	PVMX: array(SHID) of real							! Maximum Operative Storage Penalty [k$/Hm3]
+	OPCH: array(SHID) of real							! SDDP Opportunity Cost [$/MWh]
+	WAVL: array(SHID) of real							! SDDP Water Value [k$/Hm3]
+	TVTT: array(SHID) of integer                        ! Water Travel Time (Turbining)
+	TVTS: array(SHID) of integer                        ! Water Travel Time (Spilling)
+	FTMX: array(SHID) of real							! Most Valuable Future Cost Function Cut [k$/Hm3]
+	HBAL: array(SHID) of integer						! Hydro -> Balancing Area Reserve [0: No / 1: Yes]
+	MXSH: array(STER) of integer						! Hydro Maximum Number of Start-Ups
+	CSHP: array(STER) of real							! Hydro Start-Up Cost [k$]
+
+	DVMN: array(range) of integer						! Auxiliar Vector - Minimum Operative Storage Data
+	DVAL: array(range) of integer						! Auxiliar Vector - Alert Storage Data
+	DFCL: array(range) of integer						! Auxiliar Vector - Flood Control Storage Data
+	DOMN: array(range) of integer						! Auxiliar Vector - Minimum Total Outflow Data
+	DOMX: array(range) of integer						! Auxiliar Vector - Maximum Total Outflow Data
+	DGTG: array(range) of integer						! Auxiliar Vector - Hydro Minimum Generation Data
+	DVMX: array(range) of integer						! Auxiliar Vector - Maximum Operative Storage Data
+	DMXS: array(range) of integer						! Auxiliar Vector - Maximum Spillage Data
+	DIRR: array(range) of integer						! Auxiliar Vector - Irrigation Data
+	DMNS: array(range) of integer						! Auxiliar Vector - Minimum Spillage Data
+	INHS: array(range) of real							! Incremental Inflows per Hydro Station [m3/s]
+	INFL: array(range) of real							! Incremental Inflows per Hydro Plant [m3/s]
+	PRHX: array(range) of real							! Auxiliar Vector - Hydro Primary Reserve [MW]
+	SHSX: array(range) of real							! Auxiliar Elevation x Storage Table - Storage [Hm3]
+	SHHX: array(range) of real							! Auxiliar Elevation x Storage Table - Elevation [m.a.s.l.]
+	OTOX: array(range) of real							! Auxiliar Outflow x Tailwater Table - Total Outflow [m3/s]
+	OTTX: array(range) of real							! Auxiliar Outflow x Tailwater Table - Tailwater [m.a.s.l.]
+	PNPX: array(range) of real							! Auxiliar Power x Net Head Table - Power [MW]
+	PNNX: array(range) of real							! Auxiliar Power x Net Head Table - Net Head [m]
+
+	SYSR: array(SRNW) of integer						! Renewable System
+	CODR: array(SRNW) of integer						! Renewable Code
+	NAMG: array(SRNW) of string							! Renewable Name
+	EXSR: array(SRNW) of integer						! Renewable Plant Status [<= 0: Yes / > 0: No]
+	POTR: array(SRNW) of real							! Renewable Installed Capacity [MW]
+	FOPR: array(SRNW) of real							! Renewable Operation Factor [p.u.]
+	GENR: array(SRNW) of integer						! Renewable Plant to Generator Pointer
+	OMCR: array(SRNW) of real							! Renewable O&M Cost [$/MWh]
+	CUCR: array(SRNW) of real							! Renewable Curtailment Cost [$/MWh]
+
+	NAMS: array(SSYS) of string							! System Name
+	CODS: array(SSYS) of integer						! System Code
+	MONS: array(SSYS) of string							! System Monetary Unit
+	TUSG: array(SSYS) of integer						! System Secondary Reserve Unit Type
+	TUPH: array(SSYS) of integer						! System Hydro Primary Reserve Unit Type
+	TUPT: array(SSYS) of integer						! System Thermal Primary Reserve Unit Type
+	SENS: array(SSYS) of real							! System Demand Sensitivity
+	CCCT: array(SSYS) of real							! System Carbon Credit Cost
+
+	SYSJ: array(SINJ) of integer						! Injection System
+	CODJ: array(SINJ) of integer						! Injection Code
+	NAMJ: array(SINJ) of string							! Injection Name
+	GENJ: array(SINJ) of integer						! Injection to Generator Pointer
+
+	DEFC: array(SDEF) of real							! System Deficit Cost [$/MWh]
+	DEFG: array(SDEF) of real							! System Deficit Segment [%]
+
+	DHSG: array(SLVL) of real							! Hourly System Load Segments (inelastic) [MW]
+	DMSG: array(SLVL) of real							! Block System Load Segments (inelastic) [MW]
+	SEGS: array(SLVL) of integer						! System Load Segments Pointer (inelastic)
+	LOAD: array(SLVL) of integer						! Inelastic Load Segments to System Demand Pointer
+
+	DHSE: array(SLVE) of real							! Hourly System Load Segments (elastic) [MW]
+	DMSE: array(SLVE) of real							! Block System Load Segments (elastic) [MW]
+	PHSE: array(SLVE) of real							! Hourly System Load Segments Cost (elastic) [$/MW]
+	PMSE: array(SLVE) of real							! Block System Load Segments Cost (elastic) [$/MW]
+	SEGE: array(SLVE) of integer						! System Load Segments Pointer (elastic)
+	LOAE: array(SLVE) of integer						! Elastic Load Segments to System Demand Pointer
+	TLVE: array(SLVE) of integer						! Elastic Load Segments Order
+
+	NAML: array(SFUL) of string							! Fuel Name
+	FCOS: array(SFUL) of real							! Fuel Cost [$ / Fuel Unit]
+	FAVL: array(SFUL) of real							! Fuel Availability [1000 * Fuel Unit]
+	FRAT: array(SFUL) of real							! Fuel Maximum Rate [Fuel Unit / Hour]
+	ECO2: array(SFUL) of real							! Fuel CO2 Emission [tCO2 / Fuel Unit]
+	NTFL: array(SFUL) of integer						! Fuel - Thermal Plant Count
+	FMIN: array(SFUL) of real							! Fuel Minimum Consumption [1000 * Fuel Unit]
+
+	DMIN: array(range) of integer						! Auxiliar Vector - Fuel Minimum Consumption Data
+
+	NAMA: array(SBAT) of string							! Battery Name
+	SYSA: array(SBAT) of integer						! Battery System
+	EXSA: array(SBAT) of integer						! Battery Plant Status [<= 0: Yes / > 0: No]
+	GENB: array(SBAT) of integer						! Battery to Generator Pointer
+	NCYB: array(SBAT) of integer						! Battery # of Cycles
+	RBAT: array(SBAT) of integer						! Battery Maximum Regulation Time [hours]
+	BINI: array(SBAT) of real							! Battery Initial Storage [MWh]
+	BFIM: array(SBAT) of real							! Battery Final Storage	[MWh]
+	EBAT: array(SBAT) of real							! Battery Discharge Efficiency [p.u.]
+	FBAT: array(SBAT) of real							! Battery Charge Efficiency [p.u.]
+	PBAT: array(SBAT) of real							! Battery Installed Capacity [MW]
+	MXBT: array(SBAT) of real							! Battery Maximum Storage [MWh]
+	MNBT: array(SBAT) of real							! Battery Minimum Storage [MWh]
+	BMPU: array(SBAT) of real							! Battery Charge Ramp [MW/min]
+	BMPD: array(SBAT) of real							! Battery Discharge Ramp [MW/min]]
+	BCIN: array(SBAT) of real							! Battery Initial Charge [p.u.]
+	BDIN: array(SBAT) of real							! Battery Initial Discharge [p.u.]
+
+	NAMI: array(SINT) of string							! Interconnection Name
+	INTO: array(SINT) of integer						! Interconnection (System To)
+	INFR: array(SINT) of integer						! Interconnection (System From)
+	EXSI: array(SINT) of integer						! Interconnection Status [<= 0: Yes / > 0: No]
+
+	DSCY: array(range) of integer						! Auxiliar Vector - Sum of Interconnections Data
+	VSUY: array(range) of real							! Auxiliar Vector - Sum of Interconnections Value - Upper Bound [MW]
+	VSLY: array(range) of real							! Auxiliar Vector - Sum of Interconnections Value - Lower Bound [MW]	
+
+	DURB: array(SBLK) of real							! Block Duration [hours]
+
+	NAM2: array(SRTG) of string							! Generation Constraint Name
+	TRTG: array(SRTG) of string							! Generation Constraint Type (> / <)
+	PRTG: array(SRTG) of real							! Generation Constraint Penalty [k$/MWh]
+	DRGT: array(range) of integer						! Auxiliar Vector - Generation Constraint Data
+	VRTX: array(range) of real							! Auxiliar Vector - Generation Constraint Value [MW]
+
+	IPHF: array(range) of integer						! Auxiliar Vector - Hydro Generation Constraint
+	IPHN: array(range) of integer						! Auxiliar Vector - Hydro Generation Constraint
+	IPHP: array(range) of integer						! Auxiliar Vector - Hydro Generation Constraint
+	IPTF: array(range) of integer						! Auxiliar Vector - Thermal Generation Constraint
+	IPTN: array(range) of integer						! Auxiliar Vector - Thermal Generation Constraint
+	IPTP: array(range) of integer						! Auxiliar Vector - Thermal Generation Constraint
+
+	NAM1: array(SRSG) of string							! Secondary Reserve Name
+	TRSG: array(SRSG) of integer						! Secondary Reserve Type
+	SYSG: array(SRSG) of integer						! Secondary Reserve System
+	PRSG: array(SRSG) of real							! Secondary Reserve Penalty [k$/MWh]
+	VRSX: array(range) of real							! Auxiliar Vector - Secondary Reserve Value [MW]
+
+	JPHF: array(range) of integer						! Auxiliar Vector - Hydro Secondary Reserve
+	JPHN: array(range) of integer						! Auxiliar Vector - Hydro Secondary Reserve
+	JPHP: array(range) of integer						! Auxiliar Vector - Hydro Secondary Reserve
+
+	JPTF: array(range) of integer						! Auxiliar Vector - Thermal Secondary Reserve
+	JPTN: array(range) of integer						! Auxiliar Vector - Thermal Secondary Reserve
+	JPTP: array(range) of integer						! Auxiliar Vector - Thermal Secondary Reserve
+
+	KPHF: array(range) of integer						! Auxiliar Vector - Hydro Plant - Balancing Area
+	KPHN: array(range) of integer						! Auxiliar Vector - Hydro Plant - Balancing Area
+	KPHP: array(range) of integer						! Auxiliar Vector - Hydro Plant - Balancing Area
+
+	KPTF: array(range) of integer						! Auxiliar Vector - Thermal Plant - Balancing Area
+	KPTN: array(range) of integer						! Auxiliar Vector - Thermal Plant - Balancing Area
+	KPTP: array(range) of integer						! Auxiliar Vector - Thermal Plant - Balancing Area
+
+	KPRF: array(range) of integer						! Auxiliar Vector - Renewable Plant - Balancing Area
+	KPRN: array(range) of integer						! Auxiliar Vector - Renewable Plant - Balancing Area
+	KPRP: array(range) of integer						! Auxiliar Vector - Renewable Plant - Balancing Area
+
+	KPDF: array(range) of integer						! Auxiliar Vector - Demand - Balancing Area
+	KPDN: array(range) of integer						! Auxiliar Vector - Demand - Balancing Area
+	KPDP: array(range) of integer						! Auxiliar Vector - Demand - Balancing Area
+
+	DSCX: array(range) of integer						! Auxiliar Vector - Sum of Circuit Flows Data
+	VSUX: array(range) of real							! Auxiliar Vector - Sum of Circuit Flows Value - Upper Bound [MW]
+	VSLX: array(range) of real							! Auxiliar Vector - Sum of Circuit Flows Value - Lower Bound [MW]
+
+	BUSG: array(SGEN) of integer						! Generator to Bus Pointer
+
+	BUSL: array(SLOA) of integer						! Load to Bus Pointer
+	LOAS: array(SLOA) of integer						! Bus Demand to Load Pointer
+	PLOD: array(SLOA) of real							! Demand Participation [MW]
+
+	NAMB: array(SBUS) of string							! Bus Name
+	CODB: array(SBUS) of integer						! Bus Code
+	SYSB: array(SBUS) of integer						! Bus to System Pointer
+	AREB: array(SBUS) of integer						! Bus to Electrical Area Pointer
+	BUSI: array(SBUS) of integer						! Bus Connected Elements Pointer [0: No / > 0: # of connections]
+	IBSO: array(SBUS) of integer						! Auxiliar Vector - PSR Network Index
+	BAUX: array(SBUS) of real							! Auxiliar Vector - DC Network [MW]
+
+	NAMC: array(SLIN) of string							! Circuit Name
+	CODC: array(SLIN) of integer						! Circuit Code
+	EXSC: array(SLIN) of integer						! Circuit Status [<= 0: Yes / > 0: No]
+	STAC: array(SLIN) of integer						! Circuit Operative Status [0: Yes / > 0: No]
+	ICSO: array(SLIN) of integer						! Auxiliar Vector - PSR Network Index
+	ACTO: array(SLIN) of integer						! Circuit (Bus To)
+	ACFR: array(SLIN) of integer						! Circuit (Bus From)
+	RESI: array(SLIN) of real							! Circuit Resistance [%]
+	FMAX: array(SLIN) of real							! Circuit Maximum Flow [MW]
+	CAUX: array(SLIN) of real							! Auxiliar Vector - DC Network (Flow) [MW]
+	LAUX: array(SLIN) of real							! Auxiliar Vector - DC Network (Loss) [MW]
+
+	NAMD: array(SLNK) of string							! DC Link Name
+	DCTO: array(SLNK) of integer						! DC Link (Bus To)
+	DCFR: array(SLNK) of integer						! DC Link (Bus From)
+	EXSD: array(SLNK) of integer						! DC Link Status [<= 0: Yes / > 0: No]
+
+	NAMN: array(SGNO) of string							! Gas Node Name
+	EXSN: array(SGNO) of integer						! Gas Node Status [<= 0: Yes / > 0: No]
+	SYSN: array(SGNO) of integer						! Gas Node System
+	GNMN: array(SGNO) of real							! Gas Node Minimum Production [MUV/day]
+	GNMX: array(SGNO) of real							! Gas Node Maximum Production [MUV/day]
+	GNCT: array(SGNO) of real							! Gas Node Production Cost [$/UV]
+
+	NAMP: array(SGLP) of string							! Gas Pipeline Name
+	GNTO: array(SGLP) of integer						! Gas Pipeline (Node To)
+	GNFR: array(SGLP) of integer						! Gas Pipeline (Node From)
+	EXSP: array(SGLP) of integer						! Gas Pipeline Status [<= 0: Yes / > 0: No]
+	GNFP: array(SGLP) of real							! Gas Pipeline Transportation Cost [$/UV]
+
+	WDAY: array(SSND) of real							! Daily  Renewable Weights
+	WHOR: array(SSND) of real							! Hourly Renewable Weights
+
+	TSUK: array(SSUM) of integer						! Sum of Circuit Flow Type [0: Only AC circuits / 1: Only DC links / 2: AC & DC Links]
+	NSUK: array(SSUM) of integer						! Number of circuits (AC & DC) of sum of circuit flow constraints
+
+	NAM8: array(SBAL) of string							! Balancing Area Name
+	BREG: array(SBAL) of integer						! Balancing Area Region [0: External / 1: Pacific Northwest]
+	BHUR: array(SBAL) of real							! Hourly Balancing Area Up Reserve [MW]
+	BHDR: array(SBAL) of real							! Hourly Balancing Area Down Reserve [MW]
+
+	NAM6: array(SCTG) of string							! Contingency Reserve Name 
+	CRAF: array(SCTG) of integer						! Contingency Reserve Active Factor [0: No / 1: Yes]
+	CRBF: array(SCTG) of integer						! Contingency Reserve -> Balancing Area Pointer
+	CRDF: array(SCTG) of real							! Contingency Reserve Demand Factor [%]
+	CRGF: array(SCTG) of real							! Contingency Reserve Generation Factor [%]
+
+	NAM7: array(SDEM) of string							! Demand Name
+
+	MRHX: array(SFCF) of real							! Minimum FCF RHS value
+
+	MAPH: array(range) of integer						! Mapping Index [Hour -> Block]
+	MIPH: array(range) of integer						! MIP Representation by stage [0: No / 1: Yes]
+
+	IBDF: array(range) of integer						! Bus with Deficit Pointer
+	CBDF: array(range) of integer						! Auxiliar Vector - Bus Code   (SDDP - with Deficit)
+	IBCG: array(range) of real							! Auxiliar Vector - Bus Status (NCPL - with Deficit)
+
+	BISL: array(range) of integer						! Bus to Island Pointer
+	XVIO: array(range) of integer						! Violated Circuit or Sum of Circuit Flow Index
+	TVIO: array(range) of integer						! Constraint Type (0: Flow limit / 1: Sum of Circuit Flow)
+	FVIO: array(range) of integer						! Sensitive Matrix (Beta) Index
+	BVIO: array(range) of integer						! Sensitive Matrix (Beta) Block Index
+
+	DAEE: array(range) of integer						! Auxiliar Vector - Export Data
+	DAEI: array(range) of integer						! Auxiliar Vector - Import Data
+	EXPX: array(range) of real							! Auxiliar Vector - Electrical Area Export [MW]
+	IMPX: array(range) of real							! Auxiliar Vector - Electrical Area Import [MW]
+
+	INFX: array(range) of real							! Auxiliar Vector - Interconnection Maximum Limit (From) [MW]
+	INTX: array(range) of real							! Auxiliar Vector - Interconnection Maximum Limit (To) [MW]
+
+	ILFX: array(range) of real							! Auxiliar Vector - Interconnection Losses (From) [p.u.]
+	ILTX: array(range) of real							! Auxiliar Vector - Interconnection Losses (To) [p.u.]
+
+	ICFX: array(range) of real							! Auxiliar Vector - Interconnection Cost (From) [$/MWh]
+	ICTX: array(range) of real							! Auxiliar Vector - Interconnection Cost (To) [$/MWh]
+
+	GNFX: array(range) of real							! Auxiliar Vector - Gas Pipeline Maximum Limit (From) [MUV/day]
+	GNTX: array(range) of real							! Auxiliar Vector - Gas Pipeline Maximum Limit (To) [MUV/day]
+
+	GLFX: array(range) of real							! Auxiliar Vector - Gas Pipeline Losses (From) [p.u.]
+	GLTX: array(range) of real							! Auxiliar Vector - Gas Pipeline Losses (To) [p.u.]
+
+	DURT: array(range) of real							! Time Step Duration [hours]
+	CNV1: array(range) of real							! Converts m3/s to Hm3
+	CNV2: array(range) of real							! Converts Hm3 to m3/s
+	CNV3: array(range) of real							! Converts Hm3/stage to Hm3/step
+
+	FRHS: array(range) of real							! Future Cost Function (RHS)
+	FIND: array(range) of integer						! Future Cost Function - Hydro Plant Index
+	FCFX: array(range) of integer						! Future Cost Function Index
+
+	DNFX: array(range) of real							! Auxiliar Vector - DC Link Maximum Limit (From) [MW]
+	DNTX: array(range) of real							! Auxiliar Vector - DC Link Maximum Limit (To) [MW]
+
+	DLFX: array(range) of real							! Auxiliar Vector - DC Link Losses (From) [p.u.]
+	DLTX: array(range) of real							! Auxiliar Vector - DC Link Losses (To) [p.u.]
+
+	NAMF: array(range) of string						! Graph Auxiliar Variable
+	NAMX: array(range) of string						! Graph Auxiliar Variable
+	NAM0: array(range) of string						! Graph Auxiliar Variable
+
+	CMG_AVG: array(range) of real						! Graph Auxiliar Variable
+
+	OUTI: array(range) of integer						! Selected Output Index
+	OUTH: array(range) of integer						! Selected Output Blocks Type
+	OUTS: array(range) of integer						! Selected Output Series Type
+	OUTO: array(range) of integer						! Selected Output Open Status [-1: Don't create / 0: No / 1: Yes]
+	OUTG: array(range) of integer						! Selected Output Index Status [0: No / 1: Yes]
+	OUTW: array(range) of integer						! Selected Output Write Signal [0: No / > 0: Yes (Scenario Index)]
+	OUTN: array(range) of string						! Selected Output File Name
+	OUTD: array(range) of string						! Selected Output Description
+	OUTU: array(range) of string						! Selected Output Unit
+	OUTK: array(range) of string						! Selected Output Attribute
+
+! Dimension #2
+
+	TRTT: array(STER,SRTG) of integer					! Thermal -> Generation Constraint Pointer
+	TRST: array(STER,SRSG) of integer					! Thermal -> Secondary Reserve Pointer
+	BALT: array(STER,SBAL) of integer					! Thermal -> Balancing Area Pointer
+	CPRT: array(STER,range) of integer					! Thermal Commitment Profile
+	SECT: array(STER,range) of integer					! Thermal Secondary Reserve Indicator
+	XINI: array(STER,range) of integer					! Thermal Initial Commitment [0/1]
+	XCMM: array(STER,range) of integer					! Thermal Initial Commitment - True Up Integration [0/1]
+	XFIX: array(STER,range) of integer					! Thermal Fixed Commitment [0/1]
+	CESS: array(STER,SSEG) of real						! Auxiliar Vector - Thermal Specific Consumption [Fuel Unit / MWh]
+	RMXT: array(STER,range) of real						! Thermal Secondary Reserve Limit [MW]
+	PMXT: array(STER,range) of real						! Thermal Secondary Reserve Bid [$/MWh]
+	GMIN: array(STER,range) of real						! Thermal Minimum Generation [MW]
+	PRMT: array(STER,range) of real						! Thermal Primary Reserve [MW]
+	GERT: array(STER,range) of real						! Thermal Generation - True Up Integration [MWh]
+	GESP: array(STER,range) of real						! Thermal Generation by Segment Maximum Limit [MW]
+
+	TRTH: array(SHID,SRTG) of integer					! Hydro -> Generation Constraint Pointer
+	TRSH: array(SHID,SRSG) of integer					! Hydro -> Secondary Reserve Pointer
+	BALH: array(SHID,SBAL) of integer					! Hydro -> Balancing Area Pointer
+	SECH: array(SHID,range) of integer					! Hydro Secondary Reserve Indicator
+	RMXH: array(SHID,range) of real						! Hydro Secondary Reserve Limit [MW]
+	PMXH: array(SHID,range) of real						! Hydro Secondary Reserve Bid [$/MWh]
+	PRMH: array(SHID,range) of real						! Hydro Primary Reserve [MW]
+	MXSR: array(SHID,range) of real						! Maximum Slack Evaporation / Infiltration [Hm3]
+	CPRH: array(SHID,range) of integer					! Hydro Commitment Profile
+	GERH: array(SHID,range) of real						! Hydro Generation - True Up Integration [MWh]
+	TINI: array(SHID,range) of real						! Initial Turbining - Water Travel Time [m3/s]
+	SINI: array(SHID,range) of real						! Initial Spilling  - Water Travel Time [m3/s]
+	XINH: array(SHID,range) of integer					! Hydro Initial Commitment [0/1]
+
+	RORT: array(SBIG,SROR) of real						! Run of River Additional Data
+	CMMH: array(SBIG,SCMH) of real						! Hydro Commitment Additional Data
+
+	BALR: array(SRNW,SBAL) of integer					! Renewable -> Balancing Area Pointer
+	GRNW: array(SRNW,range) of real						! Renewable Generation [MWh]
+	GRND: array(SRNW,range) of real						! Renewable Generation - Genesys Daily Model [MWh]
+	GRNH: array(SRNW,range) of real						! Renewable Generation - Genesys Hourly Model [MWh]
+
+	INJW: array(SINJ,range) of real						! Injection Generation [MWh]
+	PRIW: array(SINJ,range) of real						! Injection Price [$/MWh]
+	GERI: array(SINJ,range) of real						! Injection - True Up Integration [MWh]
+
+	DEMS: array(SSYS,range) of real						! System Inelastic Demand [MW]
+	FLOS: array(SSYS,range) of real						! System Losses Factor [p.u.]
+	DUNC: array(SSYS,range) of real						! System Demand Uncertainty Factor [p.u.]
+
+	DEMB: array(SBUS,range) of real						! Bus Demand [MW]
+	DEBX: array(SBUS,range) of real						! Bus Demand - Original [MW]
+
+	CIRF: array(SLIN,range) of real						! AC Circuit Flows [MW]
+
+	DCLM: array(SLNK,SFLW) of real						! DC Link Limit [MW]
+	DCLL: array(SLNK,SFLW) of real						! DC Link Losses [p.u]
+
+	GNLM: array(SGLP,SFLW) of real						! Gas Pipeline Limit [MUV/day]
+	GNLL: array(SGLP,SFLW) of real						! Gas Pipeline Losses [p.u]
+
+	VRTG: array(SRTG,range) of real						! Generation Constraint Value [MW]
+
+	VRSG: array(SRSG,range) of real						! Secondary Reserve Value [MW]
+
+	EXPA: array(SARE,range) of real						! Electrical Area Export [MW]
+	IMPA: array(SARE,range) of real						! Electrical Area Import [MW]
+
+	CSUK: array(SSUM,SLNK) of real						! Sum of DC Link Coefficients
+	VSUC: array(SSUM,range) of real						! Sum of Circuit Flow Value - Upper Bound [MW]
+	VSLC: array(SSUM,range) of real						! Sum of Circuit Flow Value - Lower Bound [MW]
+	LSUK: array(SSUM,range) of integer					! Circuit Type (0: AC Circuit / 1: DC Link)
+
+	CSUI: array(SSMI,SINT) of real						! Sum of Interconnection Coefficientes
+	VSUI: array(SSMI,range) of real						! Sum of Interconnection Value - Upper Bound [MW]
+	VSLI: array(SSMI,range) of real						! Sum of Interconnection Value - Lower Bound [MW]
+
+	BALD: array(SDEM,SBAL) of integer					! Demand -> Balancing Area Pointer
+	VHUR: array(SBAL,range) of real						! Hourly Balancing Area Up Reserve [MW]
+	VHDR: array(SBAL,range) of real						! Hourly Balancing Area Down Reserve [MW]
+
+	DMEL: array(SLVE,range) of real						! System Elastic Demand [MW]
+	PMEL: array(SLVE,range) of real						! System Elastic Demand Cost [$/MWh]
+
+	FVOL: array(range,range) of real					! Future Cost Function Coefficients [k$/Hm3]
+	SXHS: array(range,range) of real					! Elevation x Storage Table - Storage [Hm3]
+	SXHH: array(range,range) of real					! Elevation x Storage Table - Elevation [m.a.s.l.]
+	OXTO: array(range,range) of real					! Outflow x Tailwater Table - Total Outflow [m3/s]
+	OXTT: array(range,range) of real					! Outflow x Tailwater Table - Tailwater [m.a.s.l.]
+	PXNP: array(range,range) of real					! Power x Net Head Table - Power [MW]
+	PXNN: array(range,range) of real					! Power x Net Head Table - Net Head [m]
+
+	BETA: array(range,range) of real					! Sensitive Matrix (Beta)
+
+	GRAPH_AUX: 	 array(range,range) of real				! Graph Auxiliar Variable
+	GRAPH_AUX_B: array(range,range) of real				! Graph Auxiliar Variable (Bus Marginal Costs)
+	GRAPH_AUX_C: array(range,range) of real				! Graph Auxiliar Variable (Total Costs)
+
+! Dimension #3
+
+	PLOA: array(SDEM,SLOA,SBLK) of real					! Bus Demand Participation [MW]
+
+	CESP: array(STER,range,range) of real				! Thermal Specific Consumption [Fuel Unit / MWh]
+
+	INTM: array(SINT,SFLW,range) of real				! System Interconnection Limit [MW]
+	INTL: array(SINT,SFLW,range) of real				! System Interconnection Losses [p.u]
+	INTC: array(SINT,SFLW,range) of real				! System Interconnection Cost [$/MWh]
+
+	DBEL: array(SBUS,SLVE,range) of real				! Bus Demand Elastic [MW]
+
+end-declarations
+
+! Creating Pointers
+
+PSRCollectionElement_mapRelationShip(list_hydro, list_station, HSTA, PSR_RELATIONSHIP_1TO1, false)
+PSRCollectionElement_mapRelationShip(list_hydro, list_system,  SYSH, PSR_RELATIONSHIP_1TO1, false)
+
+PSRCollectionElement_mapRelationShip(list_hydro, list_hydro,   JUST, PSR_RELATIONSHIP_TURBINED_TO,   false)
+PSRCollectionElement_mapRelationShip(list_hydro, list_hydro,   JUSV, PSR_RELATIONSHIP_SPILLED_TO,    false)
+PSRCollectionElement_mapRelationShip(list_hydro, list_hydro,   JUSF, PSR_RELATIONSHIP_FILTRATION_TO, false)
+
+PSRCollectionElement_mapRelationShip(list_thermal, list_system, SYST, PSR_RELATIONSHIP_1TO1, false)
+
+if (SDDP2 = 1) then
+	PSRCollectionElement_mapRelationShip(list_fuel_consumption, list_fuel, FULT, PSR_RELATIONSHIP_1TO1, false)
+	PSRCollectionElement_mapRelationShip(list_fuel_consumption, list_thermal_aux,  FCTP, PSR_RELATIONSHIP_1TO1, false)
+else
+	PSRCollectionElement_mapRelationShip(list_thermal, list_fuel, FULT, PSR_RELATIONSHIP_1TO1, false)
+	PSRCollectionElement_mapRelationShip(list_thermal, list_thermal, TFIC, PSR_RELATIONSHIP_CONTROLLED_BY, false)
+end-if
+
+PSRCollectionElement_mapRelationShip(list_battery, list_system, SYSA,PSR_RELATIONSHIP_1TO1, false)
+
+PSRCollectionElement_mapRelationShip(list_interc, list_system, INFR, PSR_RELATIONSHIP_FROM, false)
+PSRCollectionElement_mapRelationShip(list_interc, list_system, INTO, PSR_RELATIONSHIP_TO, false)
+
+PSRCollectionElement_mapRelationShip(list_ine_dem_seg,	list_system, SEGS,PSR_RELATIONSHIP_1TO1, false)
+PSRCollectionElement_mapRelationShip(list_ela_dem_seg, 	list_system, SEGE,PSR_RELATIONSHIP_1TO1, false)
+
+PSRCollectionElement_mapRelationShip(list_renewable, list_system, SYSR, PSR_RELATIONSHIP_1TO1, false)
+
+PSRCollectionElement_mapRelationShip(list_injection, list_system, SYSJ, PSR_RELATIONSHIP_1TO1, false)
+
+PSRCollectionElement_mapRelationShip(list_thermal,   list_bus_generator, GENT, PSR_RELATIONSHIP_1TO1, false)
+PSRCollectionElement_mapRelationShip(list_hydro,     list_bus_generator, GENH, PSR_RELATIONSHIP_1TO1, false)
+PSRCollectionElement_mapRelationShip(list_renewable, list_bus_generator, GENR, PSR_RELATIONSHIP_1TO1, false)
+
+PSRCollectionElement_mapRelationShip(list_injection, list_bus, GENJ, PSR_RELATIONSHIP_1TO1, false)
+PSRCollectionElement_mapRelationShip(list_battery,   list_bus, GENB, PSR_RELATIONSHIP_1TO1, false)
+
+PSRCollectionElement_mapRelationShip(list_ine_dem_seg,	list_demand, LOAD, PSR_RELATIONSHIP_1TO1, false)
+PSRCollectionElement_mapRelationShip(list_ela_dem_seg, 	list_demand, LOAE, PSR_RELATIONSHIP_1TO1, false)
+PSRCollectionElement_mapRelationShip(list_bus_demand, 	list_demand, LOAS, PSR_RELATIONSHIP_1TO1, false)
+
+PSRCollectionElement_mapRelationShip(list_bus_generator,  list_bus, BUSG, PSR_RELATIONSHIP_1TO1, false)
+PSRCollectionElement_mapRelationShip(list_bus_demand,     list_bus, BUSL, PSR_RELATIONSHIP_1TO1, false)
+
+PSRCollectionElement_mapRelationShip(list_bus, list_system, SYSB, PSR_RELATIONSHIP_1TO1, false)
+
+PSRCollectionElement_mapRelationShip(list_dclink, list_bus, DCFR, PSR_RELATIONSHIP_FROM, false)
+PSRCollectionElement_mapRelationShip(list_dclink, list_bus, DCTO, PSR_RELATIONSHIP_TO, false)
+
+PSRCollectionElement_mapRelationShip(list_circuit, list_bus, ACFR, PSR_RELATIONSHIP_FROM, false)
+PSRCollectionElement_mapRelationShip(list_circuit, list_bus, ACTO, PSR_RELATIONSHIP_TO, false)
+
+PSRCollectionElement_mapRelationShip(list_sec_res, list_system, SYSG,PSR_RELATIONSHIP_1TO1, false)
+
+PSRCollectionElement_mapComplexRelationShip(list_hydro,  list_sec_res, JPHF, JPHN, JPHP, PSR_RELATIONSHIP_1TON, false)
+PSRCollectionElement_mapComplexRelationShip(list_thermal,list_sec_res, JPTF, JPTN, JPTP, PSR_RELATIONSHIP_1TON, false)
+
+PSRCollectionElement_mapComplexRelationShip(list_hydro,  list_gen_ctr, IPHF, IPHN, IPHP, PSR_RELATIONSHIP_1TON, false)
+PSRCollectionElement_mapComplexRelationShip(list_thermal,list_gen_ctr, IPTF, IPTN, IPTP, PSR_RELATIONSHIP_1TON, false)
+
+PSRCollectionElement_mapRelationShip(list_bus, list_ele_are, AREB, PSR_RELATIONSHIP_1TO1, false)
+
+PSRCollectionElement_mapRelationShip(list_thermal, list_combined_cycle, CCOM,PSR_RELATIONSHIP_1TO1, false)
+
+PSRCollectionElement_mapRelationShip(list_gas_pipeline, list_gas_node, GNFR, PSR_RELATIONSHIP_FROM, false)
+PSRCollectionElement_mapRelationShip(list_gas_pipeline, list_gas_node, GNTO, PSR_RELATIONSHIP_TO, false)
+
+PSRCollectionElement_mapRelationShip(list_thermal, list_gas_node, GNOT,PSR_RELATIONSHIP_1TO1, false)
+
+PSRCollectionElement_mapRelationShip(list_gas_node, list_system, SYSN, PSR_RELATIONSHIP_1TO1, false)
+
+PSRCollectionElement_mapComplexRelationShip(list_hydro,  	list_balancing_area, KPHF, KPHN, KPHP, PSR_RELATIONSHIP_1TON, false)
+PSRCollectionElement_mapComplexRelationShip(list_thermal,  	list_balancing_area, KPTF, KPTN, KPTP, PSR_RELATIONSHIP_1TON, false)
+PSRCollectionElement_mapComplexRelationShip(list_renewable, list_balancing_area, KPRF, KPRN, KPRP, PSR_RELATIONSHIP_1TON, false)
+PSRCollectionElement_mapComplexRelationShip(list_demand,  	list_balancing_area, KPDF, KPDN, KPDP, PSR_RELATIONSHIP_1TON, false)
+
+PSRCollectionElement_mapRelationShip(list_ctg_res, list_balancing_area, CRBF,PSR_RELATIONSHIP_1TO1, false)
+
+! Mapping Data
+
+! Load System Data
+
+map_system:= PSRMapData_create(0)
+PSRMapData_addElements(map_system, list_system)
+
+if (AVID = 1) then
+	ret:= PSRMapData_mapParm(map_system, 'AVId', NAMS, 24)
+else
+	ret:= PSRMapData_mapParm(map_system, 'name', NAMS, 12)
+end-if
+
+ret:= PSRMapData_mapParm(map_system, 'code', CODS, 0)
+ret:= PSRMapData_mapParm(map_system, 'UnM' , MONS,  3)
+ret:= PSRMapData_mapParm(map_system, 'TipoUnidadeReservaGeracao', TUSG, 0)
+!ret:= PSRMapData_mapParm(map_system, 'TipoUnidadeReservaGiranteHidro', TUPH, 0)
+!ret:= PSRMapData_mapParm(map_system, 'TipoUnidadeReservaGiranteTermica', TUPT, 0)
+ret:= PSRMapData_mapParm(map_system, 'TipoUnidadeReservaGirante', TUPT, 0)
+ret:= PSRMapData_mapParm(map_system, 'TipoUnidadeReservaGirante', TUPH, 0)
+ret:= PSRMapData_mapVector(map_system, 'EmissionCost', CCCT, 0)
+
+! Load Hydro Data
+
+if (HISTORIC_SCENARIO = 1) then
+	PSRScenarioTimeController_addToScenarioMap(timectrl, list_hydro, "VolumeMinimum")
+    PSRScenarioTimeController_addToScenarioMap(timectrl, list_hydro, "AlertStorage")
+    PSRScenarioTimeController_addToScenarioMap(timectrl, list_hydro, "MinTO")
+    PSRScenarioTimeController_addToScenarioMap(timectrl, list_hydro, "MaxTO")
+    PSRScenarioTimeController_addToScenarioMap(timectrl, list_hydro, "MinSpillage")
+    PSRScenarioTimeController_addToScenarioMap(timectrl, list_hydro, "Rieg")
+end-if
+
+map_hydro:= 	  PSRMapData_create(0)
+map_hydro_block:= PSRMapData_create(0)
+map_hydro_point:= PSRMapData_create(0)
+PSRMapData_addElements(map_hydro, list_hydro)
+PSRMapData_addElements(map_hydro_block, list_hydro)
+PSRMapData_addElements(map_hydro_point, list_hydro)
+
+if (AVID = 1) then
+	ret:= PSRMapData_mapParm(map_hydro, 'AVId', NAMH, 24)
+else
+	ret:= PSRMapData_mapParm(map_hydro, 'name', NAMH, 12)
+end-if
+
+ret:= PSRMapData_mapParm(map_hydro, 'code', CODH, 0)
+ret:= PSRMapData_mapVector(map_hydro, 'Existing', EXSH, 0)
+ret:= PSRMapData_mapVector(map_hydro, 'Qmin', TMIN, 0)
+ret:= PSRMapData_mapVector(map_hydro, 'Qmax', TMAX, 0)
+ret:= PSRMapData_mapVector(map_hydro, 'Qmax_orig', TINH, 0)
+ret:= PSRMapData_mapVector(map_hydro, 'Vmin', VMIN, 0)
+ret:= PSRMapData_mapVector(map_hydro, 'Vmax', VMAX, 0)
+ret:= PSRMapData_mapVector(map_hydro, 'PotInst', POTH, 0)
+ret:= PSRMapData_mapVector(map_hydro, 'PotInst_orig', PINH, 0)
+ret:= PSRMapData_mapVector(map_hydro, 'DfTotMin', TOMG, 0)
+ret:= PSRMapData_mapVector(map_hydro, 'O&MCost', OMCH, 0)
+ret:= PSRMapData_mapVector(map_hydro, 'AlertStorage', TVAL, 0)
+ret:= PSRMapData_mapParm(map_hydro, 'AlertStoragePenalty', PVAL, 0)
+ret:= PSRMapData_mapVector(map_hydro, 'DataAlertStorage', DVAL, 0)
+ret:= PSRMapData_mapVector(map_hydro, 'VolumeMinimum', TVMN, 0)
+ret:= PSRMapData_mapParm(map_hydro, 'VolMinPenalty', PVMN, 0)
+ret:= PSRMapData_mapVector(map_hydro, 'DataVolumeMinimum', DVMN, 0)
+ret:= PSRMapData_mapVector(map_hydro, 'FloodControlStorage', TFCL, 0)
+ret:= PSRMapData_mapVector(map_hydro, 'DataFloodControlStorage', DFCL, 0)
+ret:= PSRMapData_mapVector(map_hydro, 'MinTO', TOMN, 0)
+ret:= PSRMapData_mapParm(map_hydro, 'MinTOPenalty', PDMN, 0)
+ret:= PSRMapData_mapVector(map_hydro, 'DataMinTO', DOMN, 0)
+ret:= PSRMapData_mapVector(map_hydro, 'MaxTO', TOMX, 0)
+ret:= PSRMapData_mapParm(map_hydro, 'MaxTOPenalty', PDMX, 0)
+ret:= PSRMapData_mapVector(map_hydro, 'DataMaxTO', DOMX, 0)
+ret:= PSRMapData_mapParm(map_hydro, 'SpillCost', SPLC, 0) 
+ret:= PSRMapData_mapParm(map_hydro, 'SpillCostType', SPLT, 0)
+ret:= PSRMapData_mapParm(map_hydro, 'VNC', VNOC, 0)
+ret:= PSRMapData_mapVector(map_hydro, 'VolVNC', VNCV, 0)
+ret:= PSRMapData_mapVector(map_hydro, 'Rieg', TIRR, 0)
+ret:= PSRMapData_mapParm(map_hydro, 'RiegPenalty', PIRT, 0)
+ret:= PSRMapData_mapParm(map_hydro, 'RiegPenaltyValue', PIRR, 0)
+ret:= PSRMapData_mapVector(map_hydro, 'DataRieg', DIRR, 0)
+ret:= PSRMapData_mapParm(map_hydro, 'RegFactor', REGF, 0)
+ret:= PSRMapData_mapVector(map_hydro, 'MinSpillage', TMNS, 0)
+ret:= PSRMapData_mapParm(map_hydro, 'MinSpillagePenalty', PMNS, 0)
+ret:= PSRMapData_mapVector(map_hydro, 'DataMinSpillage', DMNS, 0)
+!ret:= PSRMapData_mapParm(map_hydro, 'TravelTimeTurb', TVTT, 0)
+!ret:= PSRMapData_mapParm(map_hydro, 'TravelTimeSpil', TVTS, 0)
+!ret:= PSRMapData_mapParm(map_hydro, 'DischargeRampUp', DSRU, 0)
+!ret:= PSRMapData_mapParm(map_hydro, 'DischargeRampDown', DSRD, 0)
+
+ret:= PSRMapData_mapDimensionedParm(map_hydro_point, 'SxH_Storage', SHSX, 0, 'point', ' ')
+ret:= PSRMapData_mapDimensionedParm(map_hydro_point, 'SxH_Head',    SHHX, 0, 'point', ' ')
+ret:= PSRMapData_mapDimensionedVector(map_hydro_point, 'OxT_Outflow', OTOX, 0, 'point', ' ')
+ret:= PSRMapData_mapDimensionedVector(map_hydro_point, 'OxT_Tail',    OTTX, 0, 'point', ' ')
+
+ret:= PSRMapData_mapVector(map_hydro_block, 'DataSpinningReserve', DRHX, 0)
+ret:= PSRMapData_mapDimensionedVector(map_hydro_block, 'SpinningReserve', PRHX, 0, 'block', ' ')
+ret:= PSRMapData_mapVector(map_hydro_block, 'DataMaxSecondaryReserve', DMHX, 0)
+ret:= PSRMapData_mapDimensionedVector(map_hydro_block, 'MaxSecondaryReserve', RMHX, 0, 'block', ' ')
+ret:= PSRMapData_mapVector(map_hydro_block, 'DataPriceSecondaryReserve', DPHX, 0)
+ret:= PSRMapData_mapDimensionedVector(map_hydro_block, 'PriceSecondaryReserve', PMHX, 0, 'block', ' ')
+
+! Load Original Storage Values
+
+PSRTimeController_resetDate(timectrl)
+
+ret:= PSRMapData_mapVector(map_hydro, 'Vmin', VMNO, 0)
+ret:= PSRMapData_mapVector(map_hydro, 'Vmax', VMXO, 0)
+
+PSRTimeController_gotoStage(timectrl, IPEM)
+
+! Load Thermal Data
+
+map_thermal:= 		PSRMapData_create(0)
+map_thermal_block:= PSRMapData_create(0)
+
+PSRMapData_addElements(map_thermal, list_thermal)
+PSRMapData_addElements(map_thermal_block, list_thermal)
+
+if (AVID = 0) then
+	ret:= PSRMapData_mapParm(map_thermal, 'name', NAMT, 12)
+	ret:= PSRMapData_mapParm(map_thermal, 'name', NAMM, 12)
+end-if
+
+ret:= PSRMapData_mapParm(map_thermal, 'code', CODT, 0)
+ret:= PSRMapData_mapParm(map_thermal, 'thermaltype', MUST, 0)
+ret:= PSRMapData_mapVector(map_thermal, 'Existing', EXST, 0)
+ret:= PSRMapData_mapVector(map_thermal, 'GerMin_orig', GMNF, 0)
+ret:= PSRMapData_mapVector(map_thermal, 'GerMax', GMAX, 0)
+ret:= PSRMapData_mapVector(map_thermal, 'GerMax_orig', PINT, 0)
+ret:= PSRMapData_mapVector(map_thermal, 'ComT', COMT, 0)
+ret:= PSRMapData_mapVector(map_thermal, 'StartUp', CSTP, 0)
+ret:= PSRMapData_mapVector(map_thermal, 'CoefE', TCO2, 0)
+ret:= PSRMapData_mapParm(map_thermal, 'ShutDownCost', CSTD, 0)
+ret:= PSRMapData_mapParm(map_thermal, 'RampUp', RMPU, 0)
+ret:= PSRMapData_mapParm(map_thermal, 'RampDown', RMPD, 0)
+ret:= PSRMapData_mapParm(map_thermal, 'MinUptime', MUPT, 0)
+ret:= PSRMapData_mapParm(map_thermal, 'MinDowntime', MDWT, 0)
+ret:= PSRMapData_mapParm(map_thermal, 'MaxStartUps', MXSP, 0)
+ret:= PSRMapData_mapParm(map_thermal, 'MaxShutDowns', MXSD, 0)
+ret:= PSRMapData_mapVector(map_thermal_block, 'DataChroGerMin', DMNX, 0)
+ret:= PSRMapData_mapDimensionedVector(map_thermal_block, 'ChroGerMin', GMNX, 0, 'block', ' ')
+ret:= PSRMapData_mapVector(map_thermal_block, 'DataSpinningReserve', DRTX, 0)
+ret:= PSRMapData_mapDimensionedVector(map_thermal_block, 'SpinningReserve', PRTX, 0, 'block', ' ')
+ret:= PSRMapData_mapVector(map_thermal_block, 'DataMaxSecondaryReserve', DMTX, 0)
+ret:= PSRMapData_mapDimensionedVector(map_thermal_block, 'MaxSecondaryReserve', RMTX, 0, 'block', ' ')
+ret:= PSRMapData_mapVector(map_thermal_block, 'DataPriceSecondaryReserve', DPTX, 0)
+ret:= PSRMapData_mapDimensionedVector(map_thermal_block, 'PriceSecondaryReserve', PMTX, 0, 'block', ' ')
+
+if (SDDP2 = 0) then
+	ret:= PSRMapData_mapVector(map_thermal, 'CTransp', CTRS, 0)
+	ret:= PSRMapData_mapVector(map_thermal, 'O&MCost', OMCT, 0)
+	ret:= PSRMapData_mapDimensionedVector(map_thermal_block, 'CEsp', CESX, 0, 'segment', 'block')
+	ret:= PSRMapData_mapDimensionedVector(map_thermal_block, 'G', GESX, 0, 'segment', ' ')
+end-if
+
+! Load Fuel Consumption
+
+if (SDDP2 = 1) then
+
+	map_fuel_consumption:= PSRMapData_create(0)
+	PSRMapData_addElements(map_fuel_consumption, list_fuel_consumption)
+
+	if (CORE = 1 and AVID = 1) then
+		ret:= PSRMapData_mapParm(map_thermal, 'AVId', NAMM, 24)
+		ret:= PSRMapData_mapParm(map_fuel_consumption, 'AVId', NAMT, 24)
+	end-if
+
+	ret:= PSRMapData_mapVector(map_fuel_consumption, 'CTransp', CTRS, 0)
+	ret:= PSRMapData_mapVector(map_fuel_consumption, 'O&MCost', OMCT, 0)
+	ret:= PSRMapData_mapDimensionedVector(map_fuel_consumption, 'CEsp', CESX, 0, 'segment', 'block')
+	ret:= PSRMapData_mapDimensionedVector(map_fuel_consumption, 'G', GESX, 0, 'segment', ' ')
+
+end-if
+
+! Load Combined Cycle Data
+
+map_combined_cycle:=	PSRMapData_create(0)
+PSRMapData_addElements(map_combined_cycle, list_combined_cycle)
+
+ret:= PSRMapData_mapVector(map_combined_cycle, 'OperativeState', CCOP, 0)
+
+! Load Fuel Data
+
+map_fuel:= PSRMapData_create(0)
+PSRMapData_addElements(map_fuel, list_fuel)
+
+if (AVID = 1) then
+	ret:= PSRMapData_mapParm(map_fuel, 'AVId', NAML, 24)
+else
+	ret:= PSRMapData_mapParm(map_fuel, 'name', NAML, 12)
+end-if
+
+ret:= PSRMapData_mapParm(map_fuel, 'EmiCO2', ECO2, 0)
+ret:= PSRMapData_mapVector(map_fuel, 'Custo', FCOS, 0)
+ret:= PSRMapData_mapVector(map_fuel, 'ConsumptionMax', FRAT, 0)
+ret:= PSRMapData_mapVector(map_fuel, 'Availability', FAVL, 0)
+
+! Load Demand Data
+
+map_demand:= PSRMapData_create(0)
+PSRMapData_addElements(map_demand, list_demand)
+
+if (AVID = 1) then
+	ret:= PSRMapData_mapParm(map_demand, 'AVId', NAM7, 24)
+else
+	ret:= PSRMapData_mapParm(map_demand, 'name', NAM7, 12)
+end-if
+
+! Load Demand Segments Data
+
+map_ine_dem_seg:= PSRMapData_create(0)
+PSRMapData_addElements(map_ine_dem_seg, list_ine_dem_seg)
+
+map_dem_hour:= PSRMapData_create(0)
+PSRMapData_addElements(map_dem_hour, list_ine_dem_seg)
+
+if (DEMAND_SCENARIO = 0) then
+	ret:= PSRMapData_mapVector(map_dem_hour, 'HourDemand', DHSG, 0)
+else
+	ret:= PSRMapData_mapVector(map_dem_hour, 'HourDemandScen', DHSG, 0)
+end-if
+
+ret:= PSRMapData_mapDimensionedVector(map_ine_dem_seg, 'Demanda', DMSG, 0, 'block', ' ')
+
+if (getsize(SLVE) > 0) then
+
+	map_ela_dem_seg:= PSRMapData_create(0)
+	PSRMapData_addElements(map_ela_dem_seg, list_ela_dem_seg)
+
+	if (DEMAND_SCENARIO = 0) then
+		ret:= PSRMapData_mapVector(map_ela_dem_seg, 'HourDemand', DHSE, 0)
+	else
+		ret:= PSRMapData_mapVector(map_ela_dem_seg, 'HourDemandScen', DHSE, 0)
+	end-if
+
+	ret:= PSRMapData_mapVector(map_ela_dem_seg, 'HourDemandPrice', PHSE, 0)
+	ret:= PSRMapData_mapDimensionedVector(map_ela_dem_seg, 'Demanda', DMSE, 0, 'block', ' ')
+	ret:= PSRMapData_mapDimensionedVector(map_ela_dem_seg, 'Custo', PMSE, 0, 'block', ' ')
+
+end-if
+
+! Load Interconnection Data
+
+map_interc:=	   PSRMapData_create(0)
+map_interc_block:= PSRMapData_create(0)
+
+PSRMapData_addElements(map_interc, list_interc)
+PSRMapData_addElements(map_interc_block, list_interc)
+
+if (AVID = 1) then
+	ret:= PSRMapData_mapParm(map_interc, 'AVId', NAMI, 24)
+else
+	ret:= PSRMapData_mapParm(map_interc, 'name', NAMI, 10)
+end-if
+
+ret:= PSRMapData_mapVector(map_interc, 'Existing', EXSI, 0)
+ret:= PSRMapData_mapVector(map_interc, 'LossFactor->', ILFX, 0)
+ret:= PSRMapData_mapVector(map_interc, 'LossFactor<-', ILTX, 0)
+ret:= PSRMapData_mapDimensionedVector(map_interc_block, 'Capacity->', INFX, 0, 'block', ' ')
+ret:= PSRMapData_mapDimensionedVector(map_interc_block, 'Capacity<-', INTX, 0, 'block', ' ')
+ret:= PSRMapData_mapDimensionedVector(map_interc_block, 'Cost->', ICFX, 0, 'block', ' ')
+ret:= PSRMapData_mapDimensionedVector(map_interc_block, 'Cost<-', ICTX, 0, 'block', ' ')
+
+!ret:= PSRMapData_mapDimensionedVector(map_interc_block, 'LossFactor->', ILFX, 0, 'block', ' ')
+!ret:= PSRMapData_mapDimensionedVector(map_interc_block, 'LossFactor<-', ILTX, 0, 'block', ' ')
+
+! Load Sum of Interconnections Data
+
+map_sum_int:= PSRMapData_create(0)
+PSRMapData_addElements(map_sum_int, list_sum_int)
+
+ret:= PSRMapData_mapVector(map_sum_int, 'Data', DSCY, 0)
+ret:= PSRMapData_mapDimensionedVector(map_sum_int, 'LB', VSLY, 0, 'block', ' ')
+ret:= PSRMapData_mapDimensionedVector(map_sum_int, 'UB', VSUY, 0, 'block', ' ')
+
+! Load Renewable Data
+
+map_renewable:=	  	  PSRMapData_create(0)
+map_renewable_block:= PSRMapData_create(0)
+
+PSRMapData_addElements(map_renewable, list_renewable)
+PSRMapData_addElements(map_renewable_block, list_renewable)
+
+if (AVID = 1) then
+	ret:= PSRMapData_mapParm(map_renewable, 'AVId', NAMG, 24)
+else
+	ret:= PSRMapData_mapParm(map_renewable, 'name', NAMG, 12)
+end-if
+
+ret:= PSRMapData_mapParm(map_renewable, 'code', CODR, 0)
+ret:= PSRMapData_mapVector(map_renewable, 'Existing', EXSR, 0)
+ret:= PSRMapData_mapVector(map_renewable, 'PotInst', POTR, 0)
+ret:= PSRMapData_mapVector(map_renewable, 'FatOpe', FOPR, 0)
+ret:= PSRMapData_mapVector(map_renewable, 'O&MCost', OMCR, 0)
+ret:= PSRMapData_mapVector(map_renewable, 'CurtailmentCost', CUCR, 0)
+
+!PSRCollectionElement_printElements(list_renewable, PATH + 'renewable.out')
+
+if (ictrlgnd <> 0) then
+	ret:= PSRMapData_mapVector(map_renewable_block, 'HourGeneration', GRNX, 0)
+end-if
+
+! Load Injection Data
+
+map_injection:=	PSRMapData_create(0)
+
+PSRMapData_addElements(map_injection, list_injection)
+
+if (AVID = 1) then
+	ret:= PSRMapData_mapParm(map_injection, 'AVId', NAMJ, 24)
+else
+	ret:= PSRMapData_mapParm(map_injection, 'name', NAMJ, 12)
+end-if
+
+ret:= PSRMapData_mapParm(map_injection, 'code', CODJ, 0)
+
+if (ictrlinj <> 0) then
+	ret:= PSRMapData_mapVector(map_injection, 'HourInjection', INJX, 0)
+	if (ictrlpri <> 0) then
+		ret:= PSRMapData_mapVector(map_injection, 'HourPriceInjection', PRIX, 0)
+	end-if
+end-if
+
+! Load Battery Data
+
+map_battery:= PSRMapData_create(0)
+PSRMapData_addElements(map_battery, list_battery)
+
+if (AVID = 1) then
+	ret:= PSRMapData_mapParm(map_battery, 'AVId', NAMA, 24)
+else
+	ret:= PSRMapData_mapParm(map_battery, 'name', NAMA, 12)
+end-if
+
+ret:= PSRMapData_mapParm(map_battery, 'Einic', BINI, 0)
+ret:= PSRMapData_mapParm(map_battery, 'RegTime', RBAT, 0)
+ret:= PSRMapData_mapParm(map_battery, 'ChargeRamp', BMPU, 0)
+ret:= PSRMapData_mapParm(map_battery, 'DischargeRamp', BMPD, 0)
+ret:= PSRMapData_mapVector(map_battery, 'Existing', EXSA, 0)
+ret:= PSRMapData_mapVector(map_battery, 'DischargeEffic', EBAT, 0)
+ret:= PSRMapData_mapVector(map_battery, 'ChargeEffic', FBAT, 0)
+ret:= PSRMapData_mapVector(map_battery, 'Pmax', PBAT, 0)
+ret:= PSRMapData_mapVector(map_battery, 'Emax', MXBT, 0)
+ret:= PSRMapData_mapVector(map_battery, 'Emin', MNBT, 0)
+
+! Load Gas Network Data
+
+map_gas_node:=	   		PSRMapData_create(0)
+map_gas_node_block:=	PSRMapData_create(0)
+
+PSRMapData_addElements(map_gas_node, list_gas_node)
+PSRMapData_addElements(map_gas_node_block, list_gas_node)
+
+if (AVID = 1) then
+	ret:= PSRMapData_mapParm(map_gas_node, 'AVId', NAMN, 24)
+else
+	ret:= PSRMapData_mapParm(map_gas_node, 'name', NAMN, 12)
+end-if
+
+ret:= PSRMapData_mapVector(map_gas_node, 'Existing', EXSN, 0)
+ret:= PSRMapData_mapVector(map_gas_node, 'MinProd', GNMN, 0)
+ret:= PSRMapData_mapVector(map_gas_node, 'MaxProd', GNMX, 0)
+ret:= PSRMapData_mapVector(map_gas_node, 'ProdCost', GNCT, 0)
+ret:= PSRMapData_mapVector(map_gas_node_block, 'ChroProdCost', DNNX, 0)
+ret:= PSRMapData_mapDimensionedVector(map_gas_node_block, 'ChroProdCost', GNNX, 0, 'block', ' ')
+
+map_gas_pipeline:=	   PSRMapData_create(0)
+PSRMapData_addElements(map_gas_pipeline, list_gas_pipeline)
+
+if (AVID = 1) then
+	ret:= PSRMapData_mapParm(map_gas_pipeline, 'AVId', NAMP, 24)
+else
+	ret:= PSRMapData_mapParm(map_gas_pipeline, 'name', NAMP, 10)
+end-if
+
+ret:= PSRMapData_mapVector(map_gas_pipeline, 'Existing', EXSP, 0)
+ret:= PSRMapData_mapVector(map_gas_pipeline, 'LossFactor->', GLFX, 0)
+ret:= PSRMapData_mapVector(map_gas_pipeline, 'LossFactor<-', GLTX, 0)
+ret:= PSRMapData_mapVector(map_gas_pipeline, 'Capacity->', GNFX, 0)
+ret:= PSRMapData_mapVector(map_gas_pipeline, 'Capacity<-', GNTX, 0)
+ret:= PSRMapData_mapVector(map_gas_pipeline, 'TranspCost', GNFP, 0)
+
+! Load Balancing Area Data
+
+map_balancing_area:= PSRMapData_create(0)
+PSRMapData_addElements(map_balancing_area, list_balancing_area)
+
+if (AVID = 1) then
+	ret:= PSRMapData_mapParm(map_balancing_area, 'AVId', NAM8, 24)
+else
+	ret:= PSRMapData_mapParm(map_balancing_area, 'name', NAM8, 12)
+end-if
+
+ret:= PSRMapData_mapParm(map_balancing_area, 'Region', BREG, 0)
+ret:= PSRMapData_mapVector(map_balancing_area, 'HourUpReserve',   BHUR, 0)
+ret:= PSRMapData_mapVector(map_balancing_area, 'HourDownReserve', BHDR, 0)
+
+! Load Contingency Reserve Data
+
+map_ctg_res:= PSRMapData_create(0)
+PSRMapData_addElements(map_ctg_res, list_ctg_res)
+
+if (AVID = 1) then
+	ret:= PSRMapData_mapParm(map_ctg_res, 'AVId', NAM6, 24)
+else
+	ret:= PSRMapData_mapParm(map_ctg_res, 'name', NAM6, 12)
+end-if
+
+ret:= PSRMapData_mapParm(map_ctg_res, 'Active', CRAF, 0)
+ret:= PSRMapData_mapParm(map_ctg_res, 'DemandReserve', CRDF, 0)
+ret:= PSRMapData_mapParm(map_ctg_res, 'GenerationReserve', CRGF, 0)
+
+if (NETW > 0) then
+
+	! Load Bus Data
+
+	map_bus:= PSRMapData_create(0)
+	PSRMapData_addElements(map_bus, list_bus)
+
+	if (AVID = 1) then
+		ret:= PSRMapData_mapParm(map_bus, 'AVId', NAMB, 24)
+	else
+		ret:= PSRMapData_mapParm(map_bus, 'name', NAMB, 12)
+	end-if
+
+	ret:= PSRMapData_mapParm(map_bus, 'code', CODB, 0)
+
+	! PSR Network Compatibility
+
+	list_bus_network:= PSRCollectionElement_create(0)
+	PSRCollectionElement_addCollection(list_bus_network, list_bus)
+	PSRCollectionElement_sortOn(list_bus_network, "code")
+	PSRCollectionElement_mapRelationShip(list_bus, list_bus_network, IBSO, PSR_RELATIONSHIP_1TO1, false)
+
+	! Load Bus Demand Data
+
+	map_bus_demand:= PSRMapData_create(0)
+	PSRMapData_addElements(map_bus_demand, list_bus_demand)
+
+	ret:= PSRMapData_mapDimensionedVector(map_bus_demand, 'P', PLOD, 0, 'block', ' ')
+
+	if (ictrload <> 0 and DEMAND_SCENARIO = 0) then
+		ret:= PSRMapData_mapVector(map_bus_demand, 'HourP', DEMX, 0)
+	end-if
+
+	! Load Electrical Area Data
+
+	map_ele_are:= PSRMapData_create(0)
+	PSRMapData_addElements(map_ele_are, list_ele_are)
+
+	ret:= PSRMapData_mapVector(map_ele_are, 'DataExport', DAEE, 0)
+	ret:= PSRMapData_mapVector(map_ele_are, 'DataImport', DAEI, 0)
+	ret:= PSRMapData_mapDimensionedVector(map_ele_are, 'Export', EXPX, 0, 'block', ' ')
+	ret:= PSRMapData_mapDimensionedVector(map_ele_are, 'Import', IMPX, 0, 'block', ' ')
+
+	! Load Circuit Data
+
+	map_circuit:= PSRMapData_create(0)
+	PSRMapData_addElements(map_circuit, list_circuit)
+
+	if (AVID = 1) then
+		ret:= PSRMapData_mapParm(map_circuit, 'AVId', NAMC, 24)
+	else
+		ret:= PSRMapData_mapParm(map_circuit, 'name', NAMC, 12)
+	end-if
+
+	ret:= PSRMapData_mapParm(map_circuit, 'code', CODC, 0)
+	ret:= PSRMapData_mapVector(map_circuit, 'I', EXSC, 0)
+	ret:= PSRMapData_mapVector(map_circuit, 'R', RESI, 0)
+	ret:= PSRMapData_mapVector(map_circuit, 'Status', STAC, 0)
+	ret:= PSRMapData_mapVector(map_circuit, 'Rn', FMAX, 0)
+
+	! PSR Network Compatibility
+
+	list_circuit_network:= PSRCollectionElement_create(0)
+	PSRCollectionElement_addCollection(list_circuit_network, list_circuit)
+	PSRCollectionElement_sortOn(list_circuit_network, "code")
+	PSRCollectionElement_mapRelationShip(list_circuit_network, list_circuit, ICSO, PSR_RELATIONSHIP_1TO1, false)
+
+	! Load DC Link Data
+
+	map_dclink:= PSRMapData_create(0)
+	PSRMapData_addElements(map_dclink, list_dclink)
+
+	if (AVID = 1) then
+		ret:= PSRMapData_mapParm(map_dclink, 'AVId', NAMD, 24)
+	else
+		ret:= PSRMapData_mapParm(map_dclink, 'name', NAMD, 12)
+	end-if
+
+	ret:= PSRMapData_mapVector(map_dclink, 'Existing', EXSD, 0)
+	ret:= PSRMapData_mapVector(map_dclink, 'Capacity->', DNFX, 0)
+	ret:= PSRMapData_mapVector(map_dclink, 'Capacity<-', DNTX, 0)
+	ret:= PSRMapData_mapVector(map_dclink, 'LossFactor->', DLFX, 0)
+	ret:= PSRMapData_mapVector(map_dclink, 'LossFactor<-', DLTX, 0)
+
+	! Load Sum of Circuit Flows Data
+
+	map_sum_cir:= PSRMapData_create(0)
+	PSRMapData_addElements(map_sum_cir, list_sum_cir)
+
+	ret:= PSRMapData_mapVector(map_sum_cir, 'Data', DSCX, 0)
+	ret:= PSRMapData_mapDimensionedVector(map_sum_cir, 'LB', VSLX, 0, 'block', ' ')
+	ret:= PSRMapData_mapDimensionedVector(map_sum_cir, 'UB', VSUX, 0, 'block', ' ')
+
+end-if
+
+if (GENESYS = 1) then
+
+	ret:= PSRMapData_mapParm(map_hydro, 'ComH', COMH, 0)
+	ret:= PSRMapData_mapParm(map_hydro, 'ForebayDrawdown', FDRD, 0)
+	ret:= PSRMapData_mapParm(map_hydro, 'ForebayFillup', FFIU, 0)
+	ret:= PSRMapData_mapParm(map_hydro, 'VolMaxPenalty', PVMX, 0)
+	ret:= PSRMapData_mapParm(map_hydro, 'MaxSpillagePenalty', PMXS, 0)
+
+	ret:= PSRMapData_mapVector(map_hydro, 'GerMin', PMIN, 0)
+	ret:= PSRMapData_mapVector(map_hydro, 'DataTargetGeneration', DGTG, 0)
+	ret:= PSRMapData_mapVector(map_hydro, 'TargetGeneration', TGTG, 0)
+	ret:= PSRMapData_mapVector(map_hydro, 'DataVolumeMaximum', DVMX, 0)
+	ret:= PSRMapData_mapVector(map_hydro, 'VolumeMaximum', TVMX, 0)
+	ret:= PSRMapData_mapVector(map_hydro, 'DataMaxSpillage', DMXS, 0)
+	ret:= PSRMapData_mapVector(map_hydro, 'MaxSpillage', TMXS, 0)
+
+	ret:= PSRMapData_mapDimensionedParm(map_hydro_point, 'Power', 	PNPX, 0, 'point', ' ')
+	ret:= PSRMapData_mapDimensionedParm(map_hydro_point, 'NetHead', PNNX, 0, 'point', ' ')
+
+	ret:= PSRMapData_mapParm(map_fuel_consumption, 'GasFuelLimit', GFLM, 0)
+	ret:= PSRMapData_mapParm(map_fuel_consumption, 'GasFuelLimitMax', GFLX, 0)
+
+	ret:= PSRMapData_mapVector(map_fuel_consumption, 'DataConsumptionMin', DNCN, 0)
+	ret:= PSRMapData_mapVector(map_fuel_consumption, 'ConsumptionMin', MNCN, 0)
+	ret:= PSRMapData_mapVector(map_fuel_consumption, 'DataConsumptionMax', DXCN, 0)
+	ret:= PSRMapData_mapVector(map_fuel_consumption, 'ConsumptionMax', MXCN, 0)
+
+	ret:= PSRMapData_mapVector(map_fuel, 'DataConsumptionMin', DMIN, 0)
+	ret:= PSRMapData_mapVector(map_fuel, 'ConsumptionMin', FMIN, 0)
+
+end-if
+
+! Inflow Definition
+
+if (getsize(SHID) > 0) then
+	if (SDDP2 = 1) then
+		PSRIOSDDPHydroForwardBackward_mapTo(list_inflow, INHS)
+		PSRIOSDDPHydroForwardBackward_setForward(list_inflow, IPER, ISIM)
+		PSRIOSDDPHydroForwardBackward_close(list_inflow)
+	else
+		getHostArray('INFLOW',INFL)
+	end-if
+end-if
+
+! Load Deficit Cost
+
+cdef_ptr:= PSRModel_vector2(cnfg_ptr, 'DeficitCost')
+cseg_ptr:= PSRModel_vector2(cnfg_ptr, 'DeficitSegment')
+
+forall(k in SDEF) do
+	DEFC(k):= PSRVector_getReal(cdef_ptr, k - 1)
+	DEFG(k):= PSRVector_getReal(cseg_ptr, k - 1)
+end-do
+
+! Load Discount Rate
+
+DESR:= PSRParm_getReal(PSRModel_parm2(cnfg_ptr, 'TaxaDesconto'))
+
+! Load Spillage Cost
+
+SPLG:= PSRParm_getReal(PSRModel_parm2(cnfg_ptr, 'SpillagePenalty'))
+
+! Load Minimum Outflow Cost
+
+SMNG:= PSRParm_getReal(PSRModel_parm2(cnfg_ptr, 'MinOutflowPenalty'))
+
+! Load Generation Constraints
+
+map_gen_ctr:= PSRMapData_create(0)
+PSRMapData_addElements(map_gen_ctr, list_gen_ctr)
+
+if (AVID = 1) then
+	ret:= PSRMapData_mapParm(map_gen_ctr, 'AVId', NAM2, 24)
+else
+	ret:= PSRMapData_mapParm(map_gen_ctr, 'name', NAM2, 12)
+end-if
+
+ret:= PSRMapData_mapParm(map_gen_ctr, 'sign', TRTG, 3)
+ret:= PSRMapData_mapParm(map_gen_ctr, 'Penalty', PRTG, 0)
+ret:= PSRMapData_mapVector(map_gen_ctr, 'Data', DRGT, 0)
+ret:= PSRMapData_mapDimensionedVector(map_gen_ctr, 'Restricao', VRTX, 0, 'block', ' ')
+
+! Load Secondary Reserves
+
+map_sec_res:= PSRMapData_create(0)
+PSRMapData_addElements(map_sec_res, list_sec_res)
+
+if (AVID = 1) then
+	ret:= PSRMapData_mapParm(map_sec_res, 'AVId', NAM1, 24)
+else
+	ret:= PSRMapData_mapParm(map_sec_res, 'name', NAM1, 12)
+end-if
+
+ret:= PSRMapData_mapParm(map_sec_res, 'Type', TRSG, 0)
+ret:= PSRMapData_mapParm(map_sec_res, 'Penalty', PRSG, 0)
+
+if (ictrlres <> 0) then
+	ret:= PSRMapData_mapVector(map_sec_res, 'HourReserve', VRSX, 0)
+else
+	ret:= PSRMapData_mapDimensionedVector(map_sec_res, 'Restricao', VRSX, 0, 'block', ' ')
+end-if
+
+! Load Demand Representation
+
+if (SDDP2 = 1) then
+	DEMH:= 1
+else
+	DEMH:= 3
+
+	HourlyParameters:= PSRModel_model2(cnfg_ptr, 'HourlyData')
+
+	if (HourlyParameters <> 0) then
+		if (PSRModel_parm2(HourlyParameters,'LOAD') <> 0 ) then
+			ret:= PSRParm_noParm(PSRModel_parm2(HourlyParameters,'LOAD'))
+			if (ret <> 1) then
+	    		DEMH:= PSRParm_getInteger(PSRModel_parm2(HourlyParameters,'LOAD'))
+	    	end-if
+		end-if
+	end-if
+
+end-if
+
+! Load Binary Writing Option
+
+if (SDDP2 = 1) then
+	BINF:= 1
+else
+	BINF:= 0
+
+	if (ExecutionParameters <> 0) then
+	    if (PSRModel_parm2(ExecutionParameters,'BINF') <> 0) then
+	        ret:= PSRParm_noParm(PSRModel_parm2(ExecutionParameters,'BINF'))
+	        if (ret <> 1) then
+	        	BINF:= PSRParm_getInteger(PSRModel_parm2(ExecutionParameters, 'BINF'))
+	        end-if
+	    end-if
+	end-if
+
+end-if
+
+! Load AWS (S3) Writing Option
+
+AWSF:= 0
+
+if (ExecutionParameters <> 0) then
+    if (PSRModel_parm2(ExecutionParameters,'S3FI') <> 0) then
+    	ret:= PSRParm_noParm(PSRModel_parm2(ExecutionParameters,'S3FI'))
+        if (ret <> 1) then
+        	AWSF:= PSRParm_getInteger(PSRModel_parm2(ExecutionParameters, 'S3FI'))
+        end-if
+    end-if
+end-if
+
+if (AWSF <> 0) then
+	BINF:= 0
+	PARALLEL_WRITE:= 0
+	CASSANDRA_WRITE:= 0
+end-if
+
+! Load MIP Relative Tolerance
+
+MIPR:= 0.005
+
+if (ExecutionParameters <> 0) then
+    if (PSRModel_parm2(ExecutionParameters,'NCPL_MIPR') <> 0) then
+    	ret:= PSRParm_noParm(PSRModel_parm2(ExecutionParameters,'NCPL_MIPR'))
+    	if (ret <> 1) then
+        	MIPR:= PSRParm_getReal(PSRModel_parm2(ExecutionParameters, 'NCPL_MIPR'))
+        end-if
+    end-if
+end-if
+
+! Load MIP Maximum Execution Time
+
+MAXT:= NTRZ
+
+if (ExecutionParameters <> 0) then
+    if (PSRModel_parm2(ExecutionParameters,'NCPL_NMXT') <> 0) then
+        ret:= PSRParm_noParm(PSRModel_parm2(ExecutionParameters,'NCPL_NMXT'))
+    	if (ret <> 1) then
+        	MAXT:= PSRParm_getInteger(PSRModel_parm2(ExecutionParameters, 'NCPL_NMXT'))
+        end-if
+    end-if
+end-if
+
+! Load Secondary Reserve Option
+
+SCRS:= 1
+
+if (ExecutionParameters <> 0) then
+    if (PSRModel_parm2(ExecutionParameters,'NCPL_SCRS') <> 0) then
+        ret:= PSRParm_noParm(PSRModel_parm2(ExecutionParameters,'NCPL_SCRS'))
+    	if (ret <> 1) then
+        	SCRS:= PSRParm_getInteger(PSRModel_parm2(ExecutionParameters, 'NCPL_SCRS'))
+        end-if
+    end-if
+end-if
+
+! Load Secondary Reserve Type Option
+
+SCRT:= 0
+
+if (ExecutionParameters <> 0) then
+    if (PSRModel_parm2(ExecutionParameters,'NCPL_SCRT') <> 0) then
+        ret:= PSRParm_noParm(PSRModel_parm2(ExecutionParameters,'NCPL_SCRT'))
+    	if (ret <> 1) then
+        	SCRT:= PSRParm_getInteger(PSRModel_parm2(ExecutionParameters, 'NCPL_SCRT'))
+        end-if
+    end-if
+end-if
+
+! Load Slice Execution Option
+
+SLCE:= 1
+
+if (ExecutionParameters <> 0) then
+    if (PSRModel_parm2(ExecutionParameters,'NCPL_SLCE') <> 0) then
+        ret:= PSRParm_noParm(PSRModel_parm2(ExecutionParameters,'NCPL_SLCE'))
+    	if (ret <> 1) then
+        	SLCE:= PSRParm_getInteger(PSRModel_parm2(ExecutionParameters, 'NCPL_SLCE'))
+        end-if
+    end-if
+end-if
+
+! Load Root Optimization Algorithm
+
+RALG:= 0
+
+if (ExecutionParameters <> 0) then
+    if (PSRModel_parm2(ExecutionParameters,'NCPL_RALG') <> 0) then
+        ret:= PSRParm_noParm(PSRModel_parm2(ExecutionParameters,'NCPL_RALG'))
+    	if (ret <> 1) then
+        	RALG:= PSRParm_getInteger(PSRModel_parm2(ExecutionParameters, 'NCPL_RALG'))
+        end-if
+    end-if
+end-if
+
+! Load MIP Representation
+
+RMIP:= 1
+
+if (ExecutionParameters <> 0) then
+    if (PSRModel_parm2(ExecutionParameters,'NCPL_RMIP') <> 0) then
+        ret:= PSRParm_noParm(PSRModel_parm2(ExecutionParameters,'NCPL_RMIP'))
+    	if (ret <> 1) then
+        	RMIP:= PSRParm_getInteger(PSRModel_parm2(ExecutionParameters, 'NCPL_RMIP'))
+        end-if
+    end-if
+end-if
+
+! Write LP Problem
+
+WRLP:= 0
+
+if (ExecutionParameters <> 0) then
+    if (PSRModel_parm2(ExecutionParameters,'NCPL_WRLP') <> 0) then
+        ret:= PSRParm_noParm(PSRModel_parm2(ExecutionParameters,'NCPL_WRLP'))
+    	if (ret <> 1) then
+        	WRLP:= PSRParm_getInteger(PSRModel_parm2(ExecutionParameters, 'NCPL_WRLP'))
+        end-if
+    end-if
+end-if
+
+! Load Non-Controllable Spillage Representation
+
+NCSP:= 1
+
+if (ExecutionParameters <> 0) then
+    if (PSRModel_parm2(ExecutionParameters,'NCPL_NCSP') <> 0) then
+        ret:= PSRParm_noParm(PSRModel_parm2(ExecutionParameters,'NCPL_NCSP'))
+    	if (ret <> 1) then
+        	NCSP:= PSRParm_getInteger(PSRModel_parm2(ExecutionParameters, 'NCPL_NCSP'))
+        end-if
+    end-if
+end-if
+
+! Load Slice Duration
+
+DSLC:= -1
+
+if (ExecutionParameters <> 0) then
+    if (PSRModel_parm2(ExecutionParameters,'NCPL_DSLC') <> 0) then
+        ret:= PSRParm_noParm(PSRModel_parm2(ExecutionParameters,'NCPL_DSLC'))
+    	if (ret <> 1) then
+        	DSLC:= PSRParm_getInteger(PSRModel_parm2(ExecutionParameters, 'NCPL_DSLC'))
+        end-if
+    end-if
+end-if
+
+! Load Crossover Option
+
+CRSV:= 1
+
+if (ExecutionParameters <> 0) then
+    if (PSRModel_parm2(ExecutionParameters,'NCPL_CRSV') <> 0) then
+        ret:= PSRParm_noParm(PSRModel_parm2(ExecutionParameters,'NCPL_CRSV'))
+    	if (ret <> 1) then
+        	CRSV:= PSRParm_getInteger(PSRModel_parm2(ExecutionParameters, 'NCPL_CRSV'))
+        end-if
+    end-if
+end-if
+
+! Load Deficit Automatic Check
+
+CKDF:= 1
+
+if (ExecutionParameters <> 0) then
+    if (PSRModel_parm2(ExecutionParameters,'NCPL_CKDF') <> 0) then
+        ret:= PSRParm_noParm(PSRModel_parm2(ExecutionParameters,'NCPL_CKDF'))
+    	if (ret <> 1) then
+        	CKDF:= PSRParm_getInteger(PSRModel_parm2(ExecutionParameters, 'NCPL_CKDF'))
+        end-if
+    end-if
+end-if
+
+! Load Terminal Function Representation
+
+TERF:= 0
+
+if (ExecutionParameters <> 0) then
+    if (PSRModel_parm2(ExecutionParameters,'NCPL_TERF') <> 0) then
+        ret:= PSRParm_noParm(PSRModel_parm2(ExecutionParameters,'NCPL_TERF'))
+    	if (ret <> 1) then
+        	TERF:= PSRParm_getInteger(PSRModel_parm2(ExecutionParameters, 'NCPL_TERF'))
+        end-if
+    end-if
+end-if
+
+! Load Combined Cycle Representation
+
+CCOS:= 1
+
+if (ExecutionParameters <> 0) then
+    if (PSRModel_parm2(ExecutionParameters,'NCPL_CCOS') <> 0) then
+        ret:= PSRParm_noParm(PSRModel_parm2(ExecutionParameters,'NCPL_CCOS'))
+    	if (ret <> 1) then
+        	CCOS:= PSRParm_getInteger(PSRModel_parm2(ExecutionParameters, 'NCPL_CCOS'))
+        end-if
+    end-if
+end-if
+
+! Load Elastic Demand Price Representation
+
+CLOD:= 0
+
+HourlyParameters:= PSRModel_model2(cnfg_ptr, 'HourlyData')
+
+if (HourlyParameters <> 0) then
+    if (PSRModel_parm2(HourlyParameters,'CLOD') <> 0) then
+        ret:= PSRParm_noParm(PSRModel_parm2(HourlyParameters,'CLOD'))
+    	if (ret <> 1) then
+        	CLOD:= PSRParm_getInteger(PSRModel_parm2(HourlyParameters, 'CLOD'))
+        end-if
+    end-if
+end-if
+
+! Load Gas Network Representation
+
+RGAS:= 0
+
+if (ExecutionParameters <> 0) then
+    if (PSRModel_parm2(ExecutionParameters,'RGAS') <> 0) then
+    	ret:= PSRParm_noParm(PSRModel_parm2(ExecutionParameters,'RGAS'))
+        if (ret <> 1) then
+        	RGAS:= PSRParm_getInteger(PSRModel_parm2(ExecutionParameters, 'RGAS'))
+        end-if
+    end-if
+end-if
+
+! Load Transmission Losses Representation
+
+RLOS:= 0
+
+if (ExecutionParameters <> 0) then
+    if (PSRModel_parm2(ExecutionParameters,'NCPL_RLOS') <> 0) then
+    	ret:= PSRParm_noParm(PSRModel_parm2(ExecutionParameters,'NCPL_RLOS'))
+    	if (ret <> 1) then
+        	RLOS:= PSRParm_getInteger(PSRModel_parm2(ExecutionParameters, 'NCPL_RLOS'))
+        end-if
+    end-if
+end-if
+
+! Create Dimensioned Mappers
+
+PSRTimeController_createDimensionMappers(timectrl)
+
+! Pull to Memory
+
+PSRMapData_pullToMemory(map_system)
+PSRMapData_pullToMemory(map_thermal)
+PSRMapData_pullToMemory(map_thermal_block)
+PSRMapData_pullToMemory(map_hydro)
+PSRMapData_pullToMemory(map_hydro_block)
+PSRMapData_pullToMemory(map_hydro_point)
+PSRMapData_pullToMemory(map_ine_dem_seg)
+PSRMapData_pullToMemory(map_dem_hour)
+PSRMapData_pullToMemory(map_fuel)
+PSRMapData_pullToMemory(map_interc)
+PSRMapData_pullToMemory(map_interc_block)
+PSRMapData_pullToMemory(map_renewable)
+PSRMapData_pullToMemory(map_renewable_block)
+PSRMapData_pullToMemory(map_gen_ctr)
+PSRMapData_pullToMemory(map_sec_res)
+PSRMapData_pullToMemory(map_injection)
+PSRMapData_pullToMemory(map_sum_int)
+PSRMapData_pullToMemory(map_battery)
+PSRMapData_pullToMemory(map_combined_cycle)
+PSRMapData_pullToMemory(map_gas_node)
+PSRMapData_pullToMemory(map_gas_node_block)
+PSRMapData_pullToMemory(map_gas_pipeline)
+PSRMapData_pullToMemory(map_balancing_area)
+PSRMapData_pullToMemory(map_ctg_res)
+PSRMapData_pullToMemory(map_demand)
+
+if (SDDP2 = 1) then
+	PSRMapData_pullToMemory(map_fuel_consumption)
+end-if
+
+if (NETW > 0) then
+	PSRMapData_pullToMemory(map_bus)
+	PSRMapData_pullToMemory(map_dclink)
+	PSRMapData_pullToMemory(map_ele_are)
+	PSRMapData_pullToMemory(map_bus_demand)
+	PSRMapData_pullToMemory(map_circuit)
+end-if
+
+! PSR Classes Mapping Time
+
+if ((DEBUG or PROFILER) and PARL = 0) then
+	if (PROFILER) then
+		fselect(my_out)
+	end-if
+	TMAP:= currenttime / 1000. + currentdate * 3600 * 24
+	writeln('PSR Classes Mapping Time: ', (TMAP - TLOA), ' sec')
+end-if
+
+if (DEBUG or DEBG >= 2) then
+	writeln('Pull to Memory Finished: ',IPER,'-',ISIM)
+end-if
+
+! Mounting N-Dimensional Vectors
+
+! Monetary Unit
+
+if (substr(MONS(1),3,3) = ' ') then
+	MONS(1):= substr(MONS(1),1,2)
+end-if	
+
+if (substr(MONS(1),2,2) = ' ') then
+	MONS(1):= substr(MONS(1),1,1)
+end-if
+
+! Step Duration  @@@ TEMPORARIO
+
+if (TSTG = 1) then
+	GSTG:= 168
+	if (NAAD > 0 and WAAD = 1) then
+		NPER:= NPER + NAAD*52
+	end-if
+else
+	GSTG:= 744
+	if (NAAD > 0 and WAAD = 1) then
+		NPER:= NPER + NAAD*12
+	end-if
+end-if
+
+forall(t in 1..GSTG) DURT(t):= 1
+
+! Conversion m3/s -> Hm3
+
+forall(t in 1..NSTG) CNV1(t):= NCV1 * DURT(t)
+
+! Conversion Hm3 -> m3/s
+
+forall(t in 1..NSTG) CNV2(t):= NCV2 / DURT(t)
+
+! Conversion Hm3/stage -> Hm3/step
+
+forall(t in 1..NSTG) CNV3(t):= DURT(t) / NSTG
+
+! Reservoir Indicator
+
+IDAM:= 0
+IDMX:= 0
+
+forall(i in SHID) do
+
+	if (VMXO(i) <> VMNO(i)) then
+
+		IDAM+= 1
+
+		RESV(i):= IDAM
+		IDMX+= 1
+		VRES(IDMX):= i
+		SDAM+= {IDMX}
+
+	end-if
+
+	if (VMXO(i) = VMNO(i) and REGF(i) < 1) then
+
+		RESV(i):= -1
+		IDMX+= 1
+		VRES(IDMX):= i
+		SDAM+= {IDMX}
+
+	end-if
+
+end-do
+
+finalize(SDAM)
+
+! Names
+
+NAMF(01):= 'Future Cost '
+NAMF(02):= 'T. O&M Cost '
+NAMF(03):= 'Deficit Cost'
+NAMF(04):= 'T. Ope. Cost'
+NAMF(05):= 'T. StUp Cost'
+NAMF(06):= 'Ale. Storage'
+NAMF(07):= 'Min. Op. Sto'
+NAMF(08):= 'Min. To. Out'
+NAMF(09):= 'Max. To. Out'
+NAMF(10):= 'Spill. Cost '
+NAMF(11):= 'Min. Turb.  '
+NAMF(12):= 'Irrigation  '
+NAMF(13):= 'Sec. Reserve'
+NAMF(14):= 'Gen. Constr.'
+NAMF(15):= 'Min. Spilla.'
+NAMF(16):= 'T. StDw Cost'
+NAMF(17):= 'Elastic Load'
+NAMF(18):= 'Interc. Cost'
+NAMF(19):= 'H. O&M Cost '
+NAMF(20):= 'Max. Spilla.'
+NAMF(21):= 'R. O&M Cost '
+NAMF(22):= 'Curt. Cost  '
+NAMF(23):= 'Target Sto. '
+NAMF(24):= 'Inj. Price  '
+NAMF(25):= 'Max. Op. Sto'
+NAMF(26):= 'Sec. Res Bid'
+NAMF(27):= 'Min. F. Con.'
+NAMF(28):= 'Emis. Cost  '
+NAMF(29):= 'Gas P. Cost '
+NAMF(30):= 'Gas T. Cost '
+NAMF(31):= 'Bal. Up Res.'
+NAMF(32):= 'Bal. Dw Res.'
+NAMF(33):= 'Ctg. Reserve'
+NAMF(34):= 'H. StUp Cost'
+
+NAMX(01):= 'Total       '
+
+NAM0(01):= 'Length      '
+
+forall(i in SFOC) SNMF+= {NAMF(i)}
+forall(i in SFOX) SNMX+= {NAMX(i)}
+forall(i in SSYS) SNMS+= {NAMS(i)}
+forall(i in SHID) SNMH+= {NAMH(i)}
+forall(i in STER) SNMT+= {NAMT(i)}
+forall(i in SRNW) SNMG+= {NAMG(i)}
+forall(i in SINJ) SNMJ+= {NAMJ(i)}
+forall(i in SFUL) SNML+= {NAML(i)}
+forall(i in SBAT) SNMA+= {NAMA(i)}
+forall(i in SGNO) SNMN+= {NAMN(i)}
+forall(i in SUNI) SNM0+= {NAM0(i)}
+forall(i in SRSG) SNM1+= {NAM1(i)}
+forall(i in SRTG) SNM2+= {NAM2(i)}
+forall(i in STRM) SNM5+= {NAMM(i)}
+forall(i in SCTG) SNM6+= {NAM6(i)}
+forall(i in SDEM) SNM7+= {NAM7(i)}
+forall(i in SBAL) SNM8+= {NAM8(i)}
+
+forall(i in SINT) do
+	if (SDDP2 = 1) then
+		SNMI+= {NAMI(i)}
+	else
+		SNMI+= {substr(NAMI(i),1,my_xprtrim(NAMI(i))) + '->'}
+		SNMI+= {substr(NAMI(i),1,my_xprtrim(NAMI(i))) + '<-'}
+	end-if
+end-do
+
+forall(l in SGLP) do
+	SNMP+= {NAMP(l)}
+	SNM3+= {substr(NAMP(l),1,my_xprtrim(NAMP(l))) + '->'}
+	SNM4+= {substr(NAMP(l),1,my_xprtrim(NAMP(l))) + '<-'}
+end-do
+
+if (NETW > 0) then
+
+	forall(i in SBUS) SNMB+= {NAMB(i)}
+
+	forall(i in SLNK) do
+		SNMK+= {NAMD(i)}
+		if (SDDP2 = 0) then
+			SNMD+= {substr(NAMD(i),1,my_xprtrim(NAMD(i))) + '->'}
+			SNMD+= {substr(NAMD(i),1,my_xprtrim(NAMD(i))) + '<-'}
+		end-if
+	end-do
+
+	forall(i in SLIN) SNMC+= {NAMC(i)}
+
+end-if
+
+forall(i in SDAM) SNMR+= {NAMH(VRES(i))}
+
+! Mapping Data
+
+forall(t in 1..NSTG) MAPH(t):= PSRTimeController_getBlockFromStageHour(timectrl, IPEM, t)
+
+! MIP Representation by Stage
+
+if (MIP_PROBLEM = 1 and RMIP = 1) then
+	forall(t in 1..NSTG) MIPH(t):= 1
+else
+	forall(t in 1..NSTG) MIPH(t):= 0
+end-if
+
+! Run of River Additional Data
+
+forall(i in SHID) do
+
+	if (EXSH(i) <= 0) then
+		VROR:= 2*(1 - REGF(i))
+	else
+		VROR:= 0.0
+	end-if
+
+	if (EXSH(i) <= 0) then
+		RORN(i):= maxlist(0,VMNO(i) - VROR)
+		RORX(i):= maxlist(VROR,VMNO(i))
+	else
+		RORN(i):= maxlist(VROR,VMNO(i))
+		RORX(i):= maxlist(VROR,VMNO(i))
+	end-if
+
+end-do
+
+NROR:= 0
+
+setparam('IOCTRL',true)
+
+fopen(PATH + 'ror_operative_storage.dat',F_SILENT)
+
+if (getparam('IOSTATUS') = 0) then
+
+	while(not iseof) do
+    	readln
+     	NROR+= 1
+  	end-do
+
+  	fclose(F_INPUT)
+
+	diskdata(ETC_IN,PATH + 'ror_operative_storage.dat',RORT)
+
+	forall(i in 1..NROR) do
+		forall(k in SHID) do
+			if (integer(RORT(i,1)) = CODH(k)) then
+				RORN(k):= RORT(i,2)
+				RORX(k):= RORT(i,3)
+				RORR(k):= integer(RORT(i,4))
+			end-if
+		end-do
+	end-do
+
+end-if
+
+setparam('IOCTRL',false)
+
+forall(i in SHID) do
+
+	if (EXSH(i) <= 0) then
+		if (RESV(i) > 0) then
+			VMNX(i):= VMIN(i)
+			VMXX(i):= VMAX(i)
+		else
+			VMNX(i):= RORN(i)
+			VMXX(i):= RORX(i)
+		end-if
+	else
+		if (RESV(i) > 0) then
+			VMNX(i):= VMNO(i)
+			VMXX(i):= VMNO(i)
+		else
+			VMNX(i):= RORN(i)
+			VMXX(i):= RORX(i)
+		end-if
+	end-if
+
+end-do
+
+! Hydro Commitment (alternative input)
+
+NCMH:= 0
+
+setparam('IOCTRL',true)
+
+fopen(PATH + 'hydro_commitment.dat',F_SILENT)
+
+if (getparam('IOSTATUS') = 0) then
+
+	while(not iseof) do
+    	readln
+     	NCMH+= 1
+  	end-do
+
+  	fclose(F_INPUT)
+
+	diskdata(ETC_IN,PATH + 'hydro_commitment.dat',CMMH)
+
+	forall(i in 1..NCMH) do
+		forall(k in SHID) do
+			if (integer(CMMH(i,1)) = CODH(k)) then
+				COMH(k):= integer(CMMH(i,2))
+				CSHP(k):= CMMH(i,3)
+				MXSH(k):= integer(CMMH(i,4))
+			end-if
+		end-do
+	end-do
+
+end-if
+
+setparam('IOCTRL',false)
+
+! Multi-Fuel Thermal Plant
+
+if (SDDP2 = 1) then
+
+	forall(j in STER|EXST(j) <= 0) TFIC(j):= 0
+
+	forall(j in STER,k in STER|EXST(j) <= 0 and EXST(k) <= 0 and k > j) do
+		if ((FCTP(k) = FCTP(j)) and TFIC(k) = 0) then
+			TFIC(k):= j
+		end-if
+	end-do
+
+end-if
+
+forall(j in STER|EXST(j) <= 0 and TFIC(j) = 0) do
+	NTFC(j):= 0
+	forall(k in STER|TFIC(k) = j) NTFC(j)+= 1
+end-do
+
+forall(j in STER,k in STER|TFIC(j) = 0 and TFIC(k) = j and k <> j) EXST(k):= EXST(j)
+
+! Fuel -> Thermal Plant
+
+forall(m in SFUL) do
+	NTFL(m):= 0
+	forall(j in STER|EXST(j) <= 0 and FULT(j) = m) NTFL(m)+= 1
+end-do
+
+! Block Duration
+
+forall(k in SBLK) DURB(k):= PSRStudy_getStageDuration(study, IPEM, k)
+
+! Specific Consumption
+
+forall(k in SSEG) do
+
+	PSRTimeController_setDimension(timectrl, 'segment', k)
+
+    if (SDDP2 = 1) then
+    	PSRMapData_pullToMemory(map_fuel_consumption)
+    else
+    	PSRMapData_pullToMemory(map_thermal_block)
+    end-if
+
+	forall (j in STER|EXST(j) <= 0) GESP(j,k):= GESX(j) / NCEM
+
+end-do
+
+forall(j in STER|EXST(j) <= 0) do
+	CONT:= 0
+	forall(k in SSEG|GESP(j,k) <> 0.0) do
+		CONT+= 1
+		NSEG(j):= CONT
+	end-do
+end-do
+
+! Spillage Cost
+
+forall(i in SHID|EXSH(i) <= 0 and SPLT(i) = 0) SPLC(i):= SPLG
+
+! Minimum Outflow Cost
+
+forall(i in SHID|EXSH(i) <= 0 and TOMN(i) = 0.0 and TOMG(i) > 0.0) do
+	TOMN(i):= TOMG(i)
+	PDMN(i):= SMNG / NMIL
+end-do
+
+! DC Link Limits (1: To / 2: From)
+
+if (NETW > 0 and getsize(SLNK) > 0) then
+
+	PSRMapData_pullToMemory(map_dclink)
+
+	forall(i in SLNK,m in SFLW) do
+		if (m = 1) then
+			DCLM(i,m):= DNFX(i)
+			DCLL(i,m):= DLFX(i)
+		else
+			DCLM(i,m):= DNTX(i)
+			DCLL(i,m):= DLTX(i)
+		end-if
+	end-do
+
+end-if
+
+! Gas Network Limits (1: To / 2: From)
+
+if (getsize(SGLP) > 0) then
+
+	PSRMapData_pullToMemory(map_gas_pipeline)
+
+	forall(i in SGLP,m in SFLW) do
+		if (m = 1) then
+			GNLM(i,m):= GNFX(i)
+			GNLL(i,m):= GLFX(i)
+		else
+			GNLM(i,m):= GNTX(i)
+			GNLL(i,m):= GLTX(i)
+		end-if
+	end-do
+
+end-if
+
+! Hydro Tables
+
+forall(k in 1..NUM5) do
+
+	PSRTimeController_setDimension(timectrl, 'point', k)
+
+	PSRMapData_pullToMemory(map_hydro_point)
+
+	forall(i in SHID) do
+		SXHS(i,k):= SHSX(i)
+		SXHH(i,k):= SHHX(i)
+	end-do
+
+end-do
+
+! Elastic Load Segments Order
+
+if (getsize(SLVE) > 0) then
+
+	forall(m in SDEM) do
+		CONT:= 0
+		forall(l in SLVE|LOAE(l) = m) do
+			CONT+= 1
+			TLVE(l):= CONT
+		end-do
+	end-do
+
+end-if
+
+! Bus Demand Participation
+
+if (NETW > 0) then
+
+	forall(m in SDEM) do
+
+		forall(IBLK in SBLK) do
+
+			PLOT:= 0.0
+
+			PSRTimeController_setDimension(timectrl, 'block', IBLK)
+
+			PSRMapData_pullToMemory(map_bus_demand)
+
+			forall(k in SLOA|LOAS(k) = m) do
+				PLOA(m,k,IBLK):= PLOA(m,k,IBLK) + PLOD(k)
+				PLOT:= PLOT + PLOD(k)
+			end-do
+
+			forall(k in SLOA|PLOT > 0.0) PLOA(m,k,IBLK):= PLOA(m,k,IBLK) / PLOT
+
+		end-do
+
+	end-do
+
+end-if
+
+! Secondary Reserve Pointers
+
+forall(k in SHID) do
+
+	IAUX:= JPHF(k)
+	while (IAUX > 0) do
+  		TRSH(k,JPHP(IAUX)):= 1
+  		forall(t in 1..NSTG) SECH(k,t):= -1
+  		IAUX:= JPHN(IAUX)
+	end-do
+
+end-do	
+
+forall(k in STER) do
+
+	IAUX:= JPTF(k)
+	while (IAUX > 0) do
+  		TRST(k,JPTP(IAUX)):= 1
+  		forall(t in 1..NSTG) SECT(k,t):= -1
+  		IAUX:= JPTN(IAUX)
+	end-do
+
+end-do
+
+! Generation Constraint Pointers
+
+forall(k in SHID) do
+
+	IAUX:= IPHF(k)
+	while (IAUX > 0) do
+  		TRTH(k,IPHP(IAUX)):= 1
+  		IAUX:= IPHN(IAUX)
+	end-do
+
+end-do
+
+forall(k in STER) do
+
+	IAUX:= IPTF(k)
+	while (IAUX > 0) do
+  		TRTT(k,IPTP(IAUX)):= 1
+  		IAUX:= IPTN(IAUX)
+	end-do
+
+end-do
+
+! Balancing Area Pointers
+
+forall(k in SHID) do
+
+	IAUX:= KPHF(k)
+	while (IAUX > 0) do
+  		BALH(k,KPHP(IAUX)):= 1
+  		IAUX:= KPHN(IAUX)
+  		HBAL(k):= 1
+	end-do
+
+end-do
+
+forall(k in STER) do
+
+	IAUX:= KPTF(k)
+	while (IAUX > 0) do
+  		BALT(k,KPTP(IAUX)):= 1
+  		IAUX:= KPTN(IAUX)
+  		TBAL(k):= 1
+	end-do
+
+end-do
+
+forall(k in SRNW) do
+
+	IAUX:= KPRF(k)
+	while (IAUX > 0) do
+  		BALR(k,KPRP(IAUX)):= 1
+  		IAUX:= KPRN(IAUX)
+	end-do
+
+end-do
+
+forall(k in SDEM) do
+
+	IAUX:= KPDF(k)
+	while (IAUX > 0) do
+  		BALD(k,KPDP(IAUX)):= 1
+  		IAUX:= KPDN(IAUX)
+	end-do
+
+end-do
+
+! Sum of Interconnections
+
+forall(k in SSMI|NETW = 0) do
+	constr_interc:= PSRCollectionElement_element(list_sum_int, k - 1)
+	forall(i in SINT) do
+		interc:= PSRCollectionElement_element(list_interc, i - 1)
+		CSUI(k,i):= PSRConstraintSumData_getCoefficient2(constr_interc, interc)
+	end-do
+end-do
+
+! Sum of DC Links
+
+forall(k in SSUM|NETW > 0) do
+
+	constraint:= PSRCollectionElement_element(list_sum_cir, k - 1)
+
+	NSUK(k):= PSRConstraintSumData_maxElement(constraint)
+
+	forall(i in 1..NSUK(k)) do
+    	element:= PSRConstraintSumData_element(constraint, i - 1)
+        is_dc_link:= PSRElement_isClassType(element, CLASS_PSRLinkDC)
+        if (is_dc_link = 0) then
+        	LSUK(k,i):= 0
+        else
+        	LSUK(k,i):= 1
+        end-if
+	end-do
+
+	CONT:= 0
+	forall(i in 1..NSUK(k)) CONT+= LSUK(k,i)
+
+	if (CONT > 0) then
+		if (CONT = NSUK(k)) then
+			TSUK(k):= 1
+		else
+			TSUK(k):= 2
+		end-if
+	else
+		TSUK(k):= 0
+	end-if
+
+	forall(i in SLNK|TSUK(k) > 0) do
+		dclink:= PSRCollectionElement_element(list_dclink, i - 1)
+		CSUK(k,i):= PSRConstraintSumData_getCoefficient2(constraint, dclink)
+	end-do
+
+end-do
+
+! Get Renewable Scenario
+
+ISND:= 1
+
+if (getsize(SRNW) > 0) then
+	if (ictrlgnd <> 0) then
+		ISND:= getHostInt('ISCNGND')
+  	end-if
+end-if
+
+! Load Demand Sensitivity
+
+sensib_demand:= PSRStudy_getSensitivity2(study, 'Load')
+NSBD:= PSRCollectionElement_maxElements(sensib_demand)
+
+if (NSBD > 0) then
+    forall(k in 0..NSBD - 1) do
+		sensib:= PSRCollectionElement_element(sensib_demand, k)
+		s_isys:= PSRStudy_getSensitivitySystemCode(study, sensib)
+		if (s_isys <> -1) then
+			forall(s in SSYS|CODS(s) = s_isys) SENS(s):= PSRStudy_getSensitivityFactor(study, sensib)
+		else
+			forall(s in SSYS) SENS(s):= PSRStudy_getSensitivityFactor(study, sensib)
+		end-if
+    end-do
+else
+	forall(k in SSYS) SENS(k):= NUM1
+end-if
+
+! Load Circuit Loss Data
+
+forall(s in SSYS,k in SBLK) FLOS(s,k):= NUM1
+
+if (NETW > 0 and getsize(SLIN) > 0 and SDDP2 = 0 and LOSS > 0) then
+	getHostArray2D('LOSS_FACTOR',FLOS,NSYS,NBLK)
+end-if
+
+! Load System Demand Uncertainty 
+
+forall(s in SSYS,k in SBLK) DUNC(s,k):= NUM1
+
+DEMV:= getHostInt2('DEMV',0)
+
+if (DEMV > 0) then
+	getHostArray2D('DEM_UNC',DUNC,NSYS,NBLK)
+end-if
+
+! PSR Classes Adjustment Vectors Time
+
+if ((DEBUG or PROFILER) and PARL = 0) then
+	if (PROFILER) then
+		fselect(my_out)
+	end-if
+	TADJ:= currenttime / 1000. + currentdate * 3600 * 24
+	writeln('PSR Classes Adjustment Vectors Time: ', (TADJ - TMAP), ' sec')
+end-if
+
+! Mapping Block to Hourly Data
+
+forall(IBLK in SBLK) do
+
+	! Updating Variables - Not Hourly Dependent
+
+	PSRTimeController_setDimension(timectrl, 'block', IBLK)
+
+	PSRMapData_pullToMemory(map_ine_dem_seg)
+	PSRMapData_pullToMemory(map_thermal_block)
+	PSRMapData_pullToMemory(map_hydro_block)
+
+	if (SDDP2 = 1) then
+		PSRMapData_pullToMemory(map_fuel_consumption)
+	end-if
+
+	if (getsize(SINT) > 0) then
+		PSRMapData_pullToMemory(map_interc)
+		PSRMapData_pullToMemory(map_interc_block)
+	end-if
+
+	if (NETW = 0 and getsize(SSMI) > 0) then
+		PSRMapData_pullToMemory(map_sum_int)
+    end-if
+
+    if (getsize(SRTG) > 0) then
+    	PSRMapData_pullToMemory(map_gen_ctr)
+    end-if
+
+    if (getsize(SRSG) > 0 and ictrlres = 0) then
+    	PSRMapData_pullToMemory(map_sec_res)
+    end-if
+
+    if (NETW > 0) then
+
+    	if (getsize(SARE) > 0) then
+    		PSRMapData_pullToMemory(map_ele_are)
+    	end-if
+
+    	if (getsize(SSUM) > 0) then
+			PSRMapData_pullToMemory(map_sum_cir)
+    	end-if
+
+    end-if
+
+    ! Get Thermal Specific Consumptions
+
+   	forall(k in SSEG) do
+
+   		PSRTimeController_setDimension(timectrl, 'segment', k)
+
+   		if (SDDP2 = 1) then
+   			PSRMapData_pullToMemory(map_fuel_consumption)
+   		else
+   			PSRMapData_pullToMemory(map_thermal_block)
+   		end-if
+
+   		forall(j in STER|EXST(j) <= 0) CESS(j,k):= CESX(j)
+
+    end-do
+
+    forall(t in 1..NSTG|MAPH(t) = IBLK) do
+
+        block := PSRTimeController_getBlockFromStageHour(timectrl, IPEM, t)
+
+    	PSRTimeController_gotoStageHour(timectrl, IPEM, t)
+
+    	if (ictrload <> 0) then
+
+    		if (NGAM > 0) then
+    			PSRIOElementHourlyScenarios_gotoStageHour(ictrload, IPEM, t, ISND)
+    		else
+    			PSRIOElementHourlyScenarios_gotoStageHour(ictrload, IPEM, t, ISIM)
+    		end-if
+
+    	end-if
+
+    	! System Inelastic Demand
+
+     	PSRMapData_pullToMemory(map_dem_hour)
+
+    	if (DEMH = 0 or DEMH = 3) then
+
+    		forall(s in SSYS) DEMS(s,t):= sum(k in SLVL|SEGS(k) = s) DMSG(k) * NMIL * SENS(s) * FLOS(s,IBLK) * DUNC(s,IBLK) / DURB(IBLK)
+
+    	else
+
+    		forall(s in SSYS) DEMS(s,t):= sum(k in SLVL|SEGS(k) = s) DHSG(k) * SENS(s) * FLOS(s,IBLK) * DUNC(s,IBLK)
+
+    	end-if
+
+    	! System Elastic Demand
+
+    	if (getsize(SLVE) > 0) then
+
+    		PSRMapData_pullToMemory(map_ela_dem_seg)
+
+    		if (CLOD = 0) then
+
+    			forall(l in SLVE) PMEL(l,t):= PMSE(l)
+
+    		else
+
+    			forall(l in SLVE) PMEL(l,t):= PHSE(l)
+
+    		end-if
+
+    		if (DEMH = 0 or DEMH = 3) then
+
+    			forall(l in SLVE) do
+
+    				if (TLVE(l) = 1) then
+
+    					DMEL(l,t):= maxlist(0.0,(DMSE(l) - sum(k in SLVL|LOAD(k) = LOAE(l)) DMSG(k)) * NMIL * SENS(SEGE(l)) * FLOS(SEGE(l),IBLK) * DUNC(SEGE(l),IBLK) / DURB(IBLK))
+
+    				else
+
+    					DMEL(l,t):= maxlist(0.0,(DMSE(l) - DMSE(l - 1)) * NMIL * SENS(SEGE(l)) * FLOS(SEGE(l),IBLK) * DUNC(SEGE(l),IBLK) / DURB(IBLK))
+
+    				end-if
+
+    			end-do
+
+    		else
+
+    			forall(l in SLVE) do
+
+    				if (TLVE(l) = 1) then
+
+    					DMEL(l,t):= maxlist(0.0,(DHSE(l) - sum(k in SLVL|LOAD(k) = LOAE(l)) DHSG(k)) * SENS(SEGE(l)) * FLOS(SEGE(l),IBLK) * DUNC(SEGE(l),IBLK))
+
+    				else
+
+    					DMEL(l,t):= maxlist(0.0,(DHSE(l) - DHSE(l - 1))* SENS(SEGE(l)) * FLOS(SEGE(l),IBLK) * DUNC(SEGE(l),IBLK))
+
+    				end-if
+
+    			end-do
+
+    		end-if
+
+    	end-if
+
+    	! Balancing Area Reserve
+
+     	if (getsize(SBAL) > 0) then
+
+     		PSRMapData_pullToMemory(map_balancing_area)
+
+     		forall(b in SBAL) do
+     			VHUR(b,t):= BHUR(b)
+     			VHDR(b,t):= BHDR(b)
+     		end-do
+
+     	end-if
+
+    	if (NETW > 0) then
+
+    		! Bus Inelastic Demand
+
+    		if (ictrload <> 0 and DEMAND_SCENARIO = 0) then
+
+    			PSRMapData_pullToMemory(map_bus_demand)
+
+    			forall(i in SBUS) DEMB(i,t):= DEMX(i)
+
+    			forall(s in SSYS) DEMS(s,t):= sum(b in SBUS|DEMB(b,t) > 0.0 and SYSB(b) = s) DEMB(b,t)
+
+    		else
+
+	    		forall(l in SLVL) do
+
+	    			forall(k in SLOA|LOAS(k) = LOAD(l)) do
+
+	    				IBUS:= BUSL(k)
+
+	    				if (DEMH = 0 or DEMH = 3) then
+
+	    					DEMB(IBUS,t):= DEMB(IBUS,t) + sum(m in SDEM) DMSG(l) * PLOA(m,k,IBLK) * NMIL * SENS(SYSB(IBUS)) * FLOS(SYSB(IBUS),IBLK) * DUNC(SYSB(IBUS),IBLK) / DURB(IBLK)
+
+	    				else
+
+	    					DEMB(IBUS,t):= DEMB(IBUS,t) + sum(m in SDEM) DHSG(l) * PLOA(m,k,IBLK) * SENS(SYSB(IBUS)) * FLOS(SYSB(IBUS),IBLK) * DUNC(SYSB(IBUS),IBLK)
+
+	    				end-if
+
+	    			end-do
+
+	    		end-do
+
+    		end-if
+
+    		forall(i in SBUS) DEBX(i,t):= DEMB(i,t) / FLOS(SYSB(i),IBLK)
+
+    		! Bus Elastic Demand
+
+    		if (getsize(SLVE) > 0) then
+
+    			forall(l in SLVE) do
+
+    				forall(k in SLOA|LOAS(k) = LOAE(l)) do
+
+    					IBUS:= BUSL(k)
+
+    					if (DEMH = 0 or DEMH = 3) then
+
+							if (TLVE(l) = 1) then
+
+								DBEL(IBUS,l,t):= maxlist(0.0,((sum(m in SDEM|LOAE(l) = m) (DMSE(l) - sum(i in SLVL|LOAD(i) = LOAE(l)) DMSG(i)) * PLOA(m,k,IBLK) * NMIL * SENS(SYSB(IBUS)) * FLOS(SYSB(IBUS),IBLK) * DUNC(SYSB(IBUS),IBLK)) / DURB(IBLK)))
+
+							else
+
+								DBEL(IBUS,l,t):= maxlist(0.0,((sum(m in SDEM|LOAE(l) = m) (DMSE(l) - DMSE(l - 1)) * PLOA(m,k,IBLK) * NMIL * SENS(SYSB(IBUS)) * FLOS(SYSB(IBUS),IBLK) * DUNC(SYSB(IBUS),IBLK)) / DURB(IBLK)))
+
+							end-if
+
+						else
+
+							if (TLVE(l) = 1) then
+
+								DBEL(IBUS,l,t):= maxlist(0.0,(sum(m in SDEM|LOAE(l) = m) (DHSE(l) - sum(i in SLVL|LOAD(i) = LOAE(l)) DHSG(i)) * PLOA(m,k,IBLK) * SENS(SYSB(IBUS)) * FLOS(SYSB(IBUS),IBLK) * DUNC(SYSB(IBUS),IBLK)))
+
+							else
+
+								DBEL(IBUS,l,t):= maxlist(0.0,(sum(m in SDEM|LOAE(l) = m) (DHSE(l) - DHSE(l - 1)) * PLOA(m,k,IBLK) * SENS(SYSB(IBUS)) * FLOS(SYSB(IBUS),IBLK) * DUNC(SYSB(IBUS),IBLK)))
+
+							end-if
+
+    					end-if
+
+    				end-do
+
+    			end-do
+
+    		end-if
+
+    	end-if
+
+    	! Renewable Generation
+
+    	if (getsize(SRNW) > 0) then
+
+    		if (ictrlgnd <> 0) then
+
+    			if (GENESYS = 1) then
+
+    				forall(i in SRNW|EXSR(i) <= 0) do
+    					GRND(i,t):= 0.0
+    					GRNH(i,t):= 0.0
+    				end-do
+
+    				ret:= PSRIOGrafResultBase_seekStage2(iow_daily,  IPEM, ISND, t)
+    				ret:= PSRIOGrafResultBase_seekStage2(iow_hourly, IPEM, ISND, t)
+
+    				forall(s in SSND) do
+
+    					PSRIOElementHourlyScenarios_gotoStageHour(ictrlgnd, IPEM, t, s)
+
+    					PSRMapData_pullToMemory(map_renewable_block)
+
+    					WDAY(s):= PSRIOGrafResultBase_getData(iow_daily,  s - 1)
+    					WHOR(s):= PSRIOGrafResultBase_getData(iow_hourly, s - 1)
+
+    					forall(i in SRNW|EXSR(i) <= 0) GRND(i,t):= GRND(i,t) + WDAY(s)*GRNX(i)*POTR(i)*FOPR(i)*DURT(t)
+    					forall(i in SRNW|EXSR(i) <= 0) GRNH(i,t):= GRNH(i,t) + WHOR(s)*GRNX(i)*POTR(i)*FOPR(i)*DURT(t)
+
+    				end-do
+
+    			else
+
+    				PSRIOElementHourlyScenarios_gotoStageHour(ictrlgnd, IPEM, t, ISND)
+
+    				PSRMapData_pullToMemory(map_renewable_block)
+
+    				forall(i in SRNW|EXSR(i) <= 0) GRNW(i,t):= GRNX(i)*POTR(i)*FOPR(i)*DURT(t)
+
+    			end-if
+
+    		end-if
+
+    	end-if
+
+    	! Injection
+
+    	if (getsize(SINJ) > 0) then
+
+    		if (ictrlinj <> 0) then
+
+    			if (NGAM > 0) then
+    				PSRIOElementHourlyScenarios_gotoStageHour(ictrlinj, IPEM, t, ISND)
+    			else
+    				PSRIOElementHourlyScenarios_gotoStageHour(ictrlinj, IPEM, t, ISIM)
+    			end-if
+
+    			if (ictrlpri <> 0) then
+
+    				if (NGAM > 0) then
+    					PSRIOElementHourlyScenarios_gotoStageHour(ictrlpri, IPEM, t, ISND)
+    				else
+						PSRIOElementHourlyScenarios_gotoStageHour(ictrlpri, IPEM, t, ISIM)
+    				end-if
+
+    			end-if
+
+    			PSRMapData_pullToMemory(map_injection)
+
+    			forall(i in SINJ) INJW(i,t):= INJX(i)*DURT(t)
+
+    		end-if
+
+    		if (ictrlpri <> 0) then
+
+    			forall(i in SINJ) PRIW(i,t):= PRIX(i)
+
+    		else
+
+				forall(i in SINJ) PRIW(i,t):= 0.0
+
+    		end-if
+
+    	end-if
+
+    	! Thermal Minimum Generation
+
+    	NAUX:= 0
+    	forall(j in STER|EXST(j) <= 0 and DMNX(j) <> -1) NAUX+= 1
+
+    	if (NAUX > 0) then
+
+    		forall(j in STER|EXST(j) <= 0 and DMNX(j) <> -1) GMIN(j,t):= GMNX(j)
+
+    	end-if
+
+    	! Thermal Primary Reserve
+
+    	NAUX:= 0
+    	forall(j in STER|EXST(j) <= 0 and DRTX(j) <> -1 and PRTX(j) > 0.0) NAUX+= 1
+
+    	if (NAUX > 0) then
+
+    		forall(j in STER|EXST(j) <= 0 and DRTX(j) <> -1 and PRTX(j) > 0.0) PRMT(j,t):= PRTX(j)
+
+    		forall(j in STER,k in STER|PRMT(j,t) <> 0.0 and TFIC(j) = 0 and TFIC(k) = j and k <> j) PRMT(k,t):= PRMT(j,t)
+
+    	end-if
+
+    	! Hydro Primary Reserve
+
+    	NAUX:= 0
+    	forall(i in SHID|EXSH(i) <= 0 and DRHX(i) <> -1 and PRHX(i) > 0.0) NAUX+= 1
+
+    	if (NAUX > 0) then
+
+    		forall(i in SHID|EXSH(i) <= 0 and DRHX(i) <> -1 and PRHX(i) > 0.0) PRMH(i,t):= PRHX(i)
+
+    	end-if
+
+    	! Thermal Secondary Reserve Limit
+
+    	NAUX:= 0
+    	forall(j in STER|EXST(j) <= 0 and DMTX(j) <> -1) NAUX+= 1
+
+    	if (NAUX > 0) then
+
+    		forall(j in STER|EXST(j) <= 0 and DMTX(j) <> -1) RMXT(j,t):= RMTX(j)
+
+    	end-if
+
+    	! Thermal Secondary Reserve Bid
+
+    	NAUX:= 0
+    	forall(j in STER|EXST(j) <= 0 and DPTX(j) <> -1 and PMTX(j) > 0.0) NAUX+= 1
+
+    	if (NAUX > 0) then
+
+    		forall(j in STER|EXST(j) <= 0 and DPTX(j) <> -1 and PMTX(j) > 0.0) PMXT(j,t):= PMTX(j)
+
+    	end-if
+
+    	! Hydro Secondary Reserve Limit
+
+    	NAUX:= 0
+    	forall(i in SHID|EXSH(i) <= 0 and DMHX(i) <> -1) NAUX+= 1
+
+    	if (NAUX > 0) then
+
+    		forall(i in SHID|EXSH(i) <= 0 and DMHX(i) <> -1) RMXH(i,t):= RMHX(i)
+
+    	end-if
+
+    	! Hydro Secondary Reserve Bid
+
+    	NAUX:= 0
+    	forall(i in SHID|EXSH(i) <= 0 and DPHX(i) <> -1 and PMHX(i) > 0.0) NAUX+= 1
+
+    	if (NAUX > 0) then
+
+    		forall(i in SHID|EXSH(i) <= 0 and DPHX(i) <> -1 and PMHX(i) > 0.0) PMXH(i,t):= PMHX(i)
+
+    	end-if
+
+    	! Interconnection Limits (1: To / 2: From)
+
+    	if (getsize(SINT) > 0) then
+
+    		forall(i in SINT,m in SFLW) do
+    			if (m = 1) then
+    				INTM(i,m,t):= INFX(i)
+    				INTL(i,m,t):= ILFX(i)
+    				INTC(i,m,t):= ICFX(i)
+    			else
+    				INTM(i,m,t):= INTX(i)
+    				INTL(i,m,t):= ILTX(i)
+    				INTC(i,m,t):= ICTX(i)
+    			end-if
+    		end-do
+
+    	end-if
+
+    	! Generation Constraint
+
+    	if (getsize(SRTG) > 0) then
+
+    		forall(k in SRTG) VRTG(k,t):= VRTX(k)
+
+    	end-if
+
+    	! Secondary Reserve
+
+    	if (getsize(SRSG) > 0) then
+
+    		if (ictrlres <> 0) then
+
+    			PSRIOElementHourlyScenarios_gotoStageHour(ictrlres, IPEM, t, ISIM)
+
+    			PSRMapData_pullToMemory(map_sec_res)
+
+    			forall(k in SRSG) VRSG(k,t):= VRSX(k)*DURT(t)
+
+    		else
+
+    			forall(k in SRSG) VRSG(k,t):= VRSX(k)
+
+    		end-if
+
+    	end-if
+
+    	! Electrical Area
+
+    	if (NETW > 0 and getsize(SARE) > 0) then
+
+    		forall(k in SARE) do
+    			EXPA(k,t):= EXPX(k)
+    			IMPA(k,t):= IMPX(k)
+    		end-do
+
+    	end-if
+
+    	! Sum of Circuit Flow Constraint
+
+    	if (NETW > 0 and getsize(SSUM) > 0) then
+
+    		forall(k in SSUM|DSCX(k) <> -1) do
+    			VSLC(k,t):= VSLX(k)
+    			VSUC(k,t):= VSUX(k)
+    		end-do
+
+    	end-if
+
+    	! Sum of Interconnection
+
+    	if (NETW = 0 and getsize(SSMI) > 0) then
+
+    		forall(k in SSMI|DSCY(k) <> -1) do
+    			VSLI(k,t):= VSLY(k)
+    			VSUI(k,t):= VSUY(k)
+    		end-do
+
+    	end-if
+
+    	! Specific Consumption
+
+    	forall(k in SSEG) do
+
+    		forall(j in STER|EXST(j) <= 0) CESP(j,t,k):= CESS(j,k)
+
+    	end-do
+
+    end-do
+
+end-do
+
+! PSR Classes Hourly Mapping Time
+
+if ((DEBUG or PROFILER) and PARL = 0) then
+	if (PROFILER) then
+		fselect(my_out)
+	end-if
+	THOU:= currenttime / 1000. + currentdate * 3600 * 24
+	writeln('PSR Classes Hourly Mapping Time: ', (THOU - TADJ), ' sec')
+end-if
+
+! Total PSR Classes Time
+
+if ((DEBUG or PROFILER) and PARL = 0) then
+	if (PROFILER) then
+		fselect(my_out)
+	end-if
+	TCLS:= currenttime / 1000. + currentdate * 3600 * 24
+	writeln('PSR Classes Total Time: ', (TCLS - TINC), ' sec')
+end-if
+
+! Thermal Combined Cycle
+
+forall(j in STER|EXST(j) <= 0 and CCOM(j) > 0) do
+	MUST(j):= 0
+	COMT(j):= 1
+end-do
+
+! Thermal Must Run
+
+forall(j in STER|EXST(j) <= 0 and MUST(j) = 1) COMT(j):= 0
+
+! Thermal Commitment
+
+ICMX:= 0
+forall(j in STER|COMT(j) > 0) do
+	ICMX+= 1
+	TCOM(ICMX):= j
+	SCMM+= {ICMX}
+	SNMM+= {NAMM(j)}
+end-do
+
+finalize(SCMM)
+
+! Thermal Commitment Profile
+
+forall(j in STER|EXST(j) <= 0 and COMT(j) > 0) do
+	if (COMMIT_PROFILE) then
+		NCPT(j):= NBLK
+		forall(t in 1..NSTG) CPRT(j,t):= MAPH(t)
+	else
+		NCPT(j):= NSTG
+		forall(t in 1..NSTG) CPRT(j,t):= t
+	end-if
+end-do
+
+! Hydro Commitment Profile
+
+forall(i in SHID|EXSH(i) <= 0 and COMH(i) > 0) do
+	if (COMMIT_PROFILE) then
+		NCPH(i):= NBLK
+		forall(t in 1..NSTG) CPRH(i,t):= MAPH(t)
+	else
+		NCPH(i):= NSTG
+		forall(t in 1..NSTG) CPRH(i,t):= t
+	end-if
+end-do
+
+! Secondary Reserve
+
+if (getsize(SRSG) > 0) then
+
+	forall(r in SRSG,t in 1..NSTG) do
+		forall(i in SHID|EXSH(i) <= 0 and SECH(i,t) = -1 and TRSH(i,r) = 1 and VRSG(r,t) > 0.0) SECH(i,t):= 1
+		forall(j in STER|EXST(j) <= 0 and SECT(j,t) = -1 and TRST(j,r) = 1 and VRSG(r,t) > 0.0) SECT(j,t):= 1
+		forall(j in STER,k in STER|SECT(j,t) = 1 and TFIC(j) = 0 and TFIC(k) = j and k <> j) SECT(k,t):= SECT(j,t)
+	end-do
+
+end-if
+
+! Thermal Commitment Precedence
+
+if (getsize(SCMM) > 0) then
+	forall(j in STER|EXST(j) <= 0 and COMT(j) > 0 and GMAX(j) > 0 and NPRE(j) = 0 and IPRE(j) = 0) do
+		NPRE(j):= 0
+		forall(k in STER|k > j and EXST(k) <= 0 and COMT(k) > 0 and GMAX(k) > 0) do
+			if ((GMAX(j) = GMAX(k)) and
+				(SYST(j) = SYST(k)) and
+				(CESP(j,1,1) = CESP(k,1,1)) and
+				(CESP(j,1,2) = CESP(k,1,2)) and
+				(CESP(j,1,3) = CESP(k,1,3)) and
+				(BUSG(GENT(j)) = BUSG(GENT(k))) and
+				(FCOS(FULT(j)) + CTRS(j)) = (FCOS(FULT(k)) + CTRS(k))) then
+				NPRE(j)+= 1
+				JPRE(NPRE(j)):= k
+				if (NPRE(j) = 1) then
+					IPRE(k):= j
+				else
+					IPRE(k):= JPRE(NPRE(j) - 1)
+				end-if
+			end-if
+		end-do
+	end-do
+end-if
+
+! Incremental Inflows per Hydro Plant
+
+! Inflow Definition
+
+if (getsize(SHID) > 0 and SDDP2 = 1) then
+	forall(i in SHID) INFL(i):= INHS(HSTA(i))
+end-if
+
+! Slice Adjustment
+
+if (TERF = 4 and SLCE = 1) then
+	SLCE:= 0
+end-if
+
+! Beta Matrix Pointer
+
+if (NETW > 0) then
+
+	forall(m in SBUS)												BUSI(m):= 0
+
+	forall(i in SHID|EXSH(i) <= 0 and GENH(i) > 0) 					BUSI(BUSG(GENH(i)))+= 1
+	forall(j in STER|EXST(j) <= 0)									BUSI(BUSG(GENT(j)))+= 1
+	forall(r in SRNW|EXSR(r) <= 0) 									BUSI(BUSG(GENR(r)))+= 1
+	forall(b in SBAT|EXSA(b) <= 0)									BUSI(GENB(b))+= 1
+	forall(i in SINJ) 												BUSI(GENJ(i))+= 1
+	forall(l in SLNK|EXSD(l) <= 0) 									BUSI(DCTO(l))+= 1
+	forall(l in SLNK|EXSD(l) <= 0) 									BUSI(DCFR(l))+= 1
+	forall(m in SBUS|sum(l in SLVE,t in 1..NSTG) DBEL(m,l,t) > 0.0)	BUSI(m)+= 1
+
+	if (getsize(SLIN) = 0) then
+		forall(m in SBUS|sum(t in 1..NSTG) DEMB(m,t) > 0.0)			BUSI(m)+= 1
+	end-if
+
+end-if

@@ -1,0 +1,439 @@
+//---------------------------------------------------------------------
+//---------------------------------------------------------------------
+DEFINE_MASK ROWDATA SDDP_v10.3_cloads
+
+DEFINE_HEADER
+ NUM ...Nombre... Segto Elast
+END_HEADER
+
+DEFINE_DATA
+Num		INTEGER		1,4
+Nome		STRING		6,17
+Segto		INTEGER		19,23
+Elast		INTEGER		25,29
+END_DATA
+END_MASK
+//---------------------------------------------------------------------
+//---------------------------------------------------------------------
+DEFINE_MASK ROWDATA SDDP_v10.3_dbus
+
+DEFINE_HEADER
+ NUM. Tp ...NombreB.. Id  # tg Plnt Nome Gerador Area                                                                                                                         Icca
+END_HEADER
+
+DEFINE_DATA
+Bus		INTEGER		1,5
+Tipo		INTEGER		7,8
+Nome		STRING		10,21
+IdSistema       STRING		23,24
+NdxBarra	INTEGER		25,27
+TpUsina		INTEGER		29,30
+CodUsina	INTEGER		32,35
+NomeUsina	STRING		37,48
+CodArea		INTEGER		50,53
+Icca		INTEGER		175,178
+END_DATA
+END_MASK
+//---------------------------------------------------------------------
+//---------------------------------------------------------------------
+DEFINE_MASK ROWDATA SDDP_v10.3_dbfm
+
+DEFINE_HEADER
+!BCod ..Bus.Name.. LCod dd/mm/yyyy Llev ..Load..
+END_HEADER
+
+DEFINE_DATA
+Bus		INTEGER		1,5
+NomeBus		STRING		7,18
+CodCarga	INTEGER		20,23   		
+DataMod		DATE		25,34   DD/MM/YYYY	
+Llev		INTEGER		36,39   		
+Load		REAL		41,48	
+END_DATA
+END_MASK
+//---------------------------------------------------------------------
+//---------------------------------------------------------------------
+DEFINE_MASK ROWDATA SDDP_v10.3_Dbus
+DEFINE_HEADER
+ NUM. Tp ...NombreB.. Id  # tg Plnt Nombre Gener.Area
+END_HEADER
+DEFINE_DATA
+Bus		INTEGER		1,5
+Tipo		INTEGER		7,8
+Nome		STRING		10,21
+IdSistema       STRING		23,24
+NdxBarra	INTEGER		27,27
+TpUsina		INTEGER		29,30
+CodUsina	INTEGER		32,35
+NomeUsina	STRING		37,48
+CodArea		INTEGER		50,53
+END_DATA
+END_MASK
+//---------------------------------------------------------------------
+//---------------------------------------------------------------------
+DEFINE_MASK MIXROWDATA SDDP_v10.3_Deme05
+
+TOTAL_BLOCK	3
+
+//-------------------------------------------------------------
+//-- PRIMEIRO BLOCO -> Duracao dos Patamares                ---
+//-------------------------------------------------------------
+DEFINE_BLOCK
+BLOCK_IDENT	BLOCK
+BLOCK_LENGTH 2
+NEXT_BLOCK 2
+
+
+DEFINE_HEADER
+BLOCK        1     2     3     4     5
+END_HEADER
+DEFINE_MACRO
+VAR	Bl	1,5
+END_MACRO
+DEFINE_DATA
+IdentBloco	STRING		1,8	DURAT(%)
+Duracao$(Bl)	REAL		9+6*($(Bl)-1),14+6*($(Bl)-1)
+END_DATA
+
+END_BLOCK
+
+//-------------------------------------------------------------
+//-- SEGUNDO BLOCO -> Dados de Identificacao                ---
+//-------------------------------------------------------------
+DEFINE_BLOCK	
+BLOCK_IDENT	**** Load :
+BLOCK_LENGTH 1
+NEXT_BLOCK 3
+DEFINE_DATA
+IdentBloco	STRING		1,12	****_Load__:
+Codigo		INTEGER		14,17
+Nome		STRING          19,30
+TextoSegmto	STRING		32,37	Sgmnt:
+Segmento	INTEGER		39,42
+END_DATA
+
+END_BLOCK
+
+
+//-------------------------------------------------------------
+//-- TERCEIRO BLOCO -> Dados de Demanda                     ---
+//-------------------------------------------------------------
+DEFINE_BLOCK	
+BLOCK_IDENT	YEAR
+
+DEFINE_HEADER
+YEAR BLK     1     2     3     4     5     6     7     8     9    10    11    12
+END_HEADER
+
+DEFINE_MACRO
+VAR	N	1,12
+END_MACRO
+
+DEFINE_DATA
+Ano		INTEGER		1,4
+Bloco		INTEGER		6,8
+Demanda$(N)	REAL		9+6*($(N)-1),14+6*($(N)-1)
+END_DATA
+
+END_BLOCK
+
+END_MASK
+
+DEFINE_MASK MIXROWDATA SDDP_v10.3_Cdeme05
+
+TOTAL_BLOCK	2
+
+//-------------------------------------------------------------
+//-- PRIMEIRO BLOCO -> Dados de Identificacao               ---
+//-------------------------------------------------------------
+DEFINE_BLOCK	
+BLOCK_IDENT	**** Load :
+BLOCK_LENGTH 1
+NEXT_BLOCK 2
+DEFINE_DATA
+IdentBloco	STRING		1,12	****_Load__:
+Codigo		INTEGER		14,17
+Nome		STRING          19,30
+TextoSegmto	STRING		32,37	Sgmnt:
+Segmento	INTEGER		39,42
+END_DATA
+
+END_BLOCK
+
+//-------------------------------------------------------------
+//-- SEGUNDO BLOCO -> Dados de Demanda                      ---
+//-------------------------------------------------------------
+DEFINE_BLOCK	
+BLOCK_IDENT	YEAR
+
+DEFINE_HEADER
+YEAR BLK     1     2     3     4     5     6     7     8     9    10    11    12
+END_HEADER
+
+DEFINE_MACRO
+VAR	N	1,12
+END_MACRO
+
+DEFINE_DATA
+Ano		INTEGER		1,4
+Bloco		INTEGER		6,8
+Custo$(N)	REAL		9+6*($(N)-1),14+6*($(N)-1)
+END_DATA
+
+END_BLOCK
+
+END_MASK
+//---------------------------------------------------------------------
+//---------------------------------------------------------------------
+DEFINE_MASK MIXROWDATA SDDP_v10.3_Dese05
+
+TOTAL_BLOCK	3
+
+//-------------------------------------------------------------
+//-- PRIMEIRO BLOCO -> Duracao dos Patamares                ---
+//-------------------------------------------------------------
+DEFINE_BLOCK
+BLOCK_IDENT	BLOCK
+BLOCK_LENGTH 2
+NEXT_BLOCK 2
+
+
+DEFINE_HEADER
+BLOCK        1     2     3     4     5
+END_HEADER
+
+DEFINE_DATA
+IdentBloco	STRING		1,8	DURAT(%)
+Duracao1	REAL		 9,14
+Duracao2	REAL		15,20
+Duracao3	REAL		21,26
+Duracao4	REAL		27,32
+Duracao5	REAL		33,38
+END_DATA
+
+END_BLOCK
+
+//-------------------------------------------------------------
+//-- SEGUNDO BLOCO -> Dados de Identificacao                ---
+//-------------------------------------------------------------
+DEFINE_BLOCK	
+BLOCK_IDENT	**** Load :
+BLOCK_LENGTH 1
+NEXT_BLOCK 3
+DEFINE_DATA
+IdentBloco	STRING		1,12	****_Load__:
+Codigo		INTEGER		14,17
+Nome		STRING          19,30
+TextoSegmto	STRING		32,37	Sgmnt:
+Segmento	INTEGER		39,42
+END_DATA
+
+END_BLOCK
+
+
+//-------------------------------------------------------------
+//-- TERCEIRO BLOCO -> Dados de Demanda                     ---
+//-------------------------------------------------------------
+DEFINE_BLOCK	
+BLOCK_IDENT	YEAR
+
+DEFINE_HEADER
+YEAR BLK     1     2     3     4     5     6     7     8     9    10    11    12    13    14    15    16    17    18    19    20    21    22    23    24    25    26    27    28    29    30    31    32    33    34    35    36    37    38    39    40    41    42    43    44    45    46    47    48    49    50    51    52
+END_HEADER
+
+DEFINE_MACRO
+VAR	N	1,52
+END_MACRO
+
+DEFINE_DATA
+Ano		INTEGER		1,4
+Bloco		INTEGER		6,8
+Demanda$(N)	REAL		9+6*($(N)-1),14+6*($(N)-1)
+END_DATA
+
+END_BLOCK
+
+END_MASK
+
+DEFINE_MASK MIXROWDATA SDDP_v10.3_Cdese05
+
+TOTAL_BLOCK	2
+
+//-------------------------------------------------------------
+//-- PRIMEIRO BLOCO -> Dados de Identificacao               ---
+//-------------------------------------------------------------
+DEFINE_BLOCK	
+BLOCK_IDENT	**** Load :
+BLOCK_LENGTH 1
+NEXT_BLOCK 2
+DEFINE_DATA
+IdentBloco	STRING		1,12	****_Load__:
+Codigo		INTEGER		14,17
+Nome		STRING          19,30
+TextoSegmto	STRING		32,37	Sgmnt:
+Segmento	INTEGER		39,42
+END_DATA
+
+END_BLOCK
+
+//-------------------------------------------------------------
+//-- SEGUNDO BLOCO -> Dados de Demanda                      ---
+//-------------------------------------------------------------
+DEFINE_BLOCK	
+BLOCK_IDENT	YEAR
+
+DEFINE_HEADER
+YEAR BLK     1     2     3     4     5     6     7     8     9    10    11    12    13    14    15    16    17    18    19    20    21    22    23    24    25    26    27    28    29    30    31    32    33    34    35    36    37    38    39    40    41    42    43    44    45    46    47    48    49    50    51    52
+END_HEADER
+
+DEFINE_MACRO
+VAR	N	1,52
+END_MACRO
+
+DEFINE_DATA
+Ano		INTEGER		1,4
+Bloco		INTEGER		6,8
+Custo$(N)	REAL		9+6*($(N)-1),14+6*($(N)-1)
+END_DATA
+
+END_BLOCK
+
+END_MASK
+//---------------------------------------------------------------------
+//---------------------------------------------------------------------
+DEFINE_MASK MIXROWDATA SDDP_v10.3_Deme21
+
+TOTAL_BLOCK	3
+
+//-------------------------------------------------------------
+//-- PRIMEIRO BLOCO -> Duracao dos Patamares                ---
+//-------------------------------------------------------------
+DEFINE_BLOCK
+BLOCK_IDENT	BLOCK
+BLOCK_LENGTH 2
+NEXT_BLOCK 2
+
+
+DEFINE_HEADER
+BLOCK        1     2     3     4     5     6     7     8     9    10    11    12    13    14    15    16    17    18    19    20    21
+END_HEADER
+DEFINE_MACRO
+VAR	Bl	1,21
+END_MACRO
+DEFINE_DATA
+IdentBloco	STRING		1,8	DURAT(%)
+Duracao$(Bl)	REAL		9+6*($(Bl)-1),14+6*($(Bl)-1)
+END_DATA
+
+END_BLOCK
+
+//-------------------------------------------------------------
+//-- SEGUNDO BLOCO -> Dados de Identificacao                ---
+//-------------------------------------------------------------
+DEFINE_BLOCK	
+BLOCK_IDENT	**** Load :
+BLOCK_LENGTH 1
+NEXT_BLOCK 3
+DEFINE_DATA
+IdentBloco	STRING		1,12	****_Load__:
+Codigo		INTEGER		14,17
+Nome		STRING          19,30
+TextoSegmto	STRING		32,37	Sgmnt:
+Segmento	INTEGER		39,42
+END_DATA
+
+END_BLOCK
+
+
+//-------------------------------------------------------------
+//-- TERCEIRO BLOCO -> Dados de Demanda                     ---
+//-------------------------------------------------------------
+DEFINE_BLOCK	
+BLOCK_IDENT	YEAR
+
+DEFINE_HEADER
+YEAR BLK     1     2     3     4     5     6     7     8     9    10    11    12
+END_HEADER
+
+DEFINE_MACRO
+VAR	N	1,12
+END_MACRO
+
+DEFINE_DATA
+Ano		INTEGER		1,4
+Bloco		INTEGER		6,8
+Demanda$(N)	REAL		9+6*($(N)-1),14+6*($(N)-1)
+END_DATA
+
+END_BLOCK
+
+END_MASK
+//---------------------------------------------------------------------
+//---------------------------------------------------------------------
+DEFINE_MASK MIXROWDATA SDDP_v10.3_Dese21
+
+TOTAL_BLOCK	3
+
+//-------------------------------------------------------------
+//-- PRIMEIRO BLOCO -> Duracao dos Patamares                ---
+//-------------------------------------------------------------
+DEFINE_BLOCK
+BLOCK_IDENT	BLOCK
+BLOCK_LENGTH 2
+NEXT_BLOCK 2
+
+
+DEFINE_HEADER
+BLOCK        1     2     3     4     5     6     7     8     9    10    11    12    13    14    15    16    17    18    19    20    21
+END_HEADER
+DEFINE_MACRO
+VAR	Bl	1,21
+END_MACRO
+DEFINE_DATA
+IdentBloco	STRING		1,8	DURAT(%)
+Duracao$(Bl)	REAL		9+6*($(Bl)-1),14+6*($(Bl)-1)
+END_DATA
+
+END_BLOCK
+
+//-------------------------------------------------------------
+//-- SEGUNDO BLOCO -> Dados de Identificacao                ---
+//-------------------------------------------------------------
+DEFINE_BLOCK	
+BLOCK_IDENT	**** Load :
+BLOCK_LENGTH 1
+NEXT_BLOCK 3
+DEFINE_DATA
+IdentBloco	STRING		1,12	****_Load__:
+Codigo		INTEGER		14,17
+Nome		STRING          19,30
+TextoSegmto	STRING		32,37	Sgmnt:
+Segmento	INTEGER		39,42
+END_DATA
+
+END_BLOCK
+
+
+//-------------------------------------------------------------
+//-- TERCEIRO BLOCO -> Dados de Demanda                     ---
+//-------------------------------------------------------------
+DEFINE_BLOCK	
+BLOCK_IDENT	YEAR
+
+DEFINE_HEADER
+YEAR BLK     1     2     3     4     5     6     7     8     9    10    11    12    13    14    15    16    17    18    19    20    21    22    23    24    25    26    27    28    29    30    31    32    33    34    35    36    37    38    39    40    41    42    43    44    45    46    47    48    49    50    51    52
+END_HEADER
+
+DEFINE_MACRO
+VAR	N	1,52
+END_MACRO
+
+DEFINE_DATA
+Ano		INTEGER		1,4
+Bloco		INTEGER		6,8
+Demanda$(N)	REAL		9+6*($(N)-1),14+6*($(N)-1)
+END_DATA
+
+END_BLOCK
+
+END_MASK

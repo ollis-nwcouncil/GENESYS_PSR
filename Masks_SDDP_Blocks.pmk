@@ -1,0 +1,216 @@
+//--------------------------------------------------------------------------------------------------
+// Area
+//--------------------------------------------------------------------------------------------------
+DEFINE_MASK ROWDATA SDDP_V14_area
+
+DEFINE_HEADER
+$version=1
+! Num ....Nome.)
+END_HEADER
+DEFINE_DATA
+Num		INTEGER		1,5
+Nome		STRING		7,16
+END_DATA
+
+END_MASK
+
+//--------------------------------------------------------------------------------------------------
+// Interconnection
+//--------------------------------------------------------------------------------------------------
+DEFINE_MASK ROWDATA SDDP_V14_interc
+
+DEFINE_HEADER
+$version=1
+!.Num ....Name.... FROM........ TO.......... Type Currency    CapacFT     LossFT    CapacTF     LossTF
+!                                                                  MW         pu         MW         pu
+END_HEADER
+DEFINE_DATA
+Num		INTEGER		1,5
+Nome		STRING		7,16
+SisFrom		STRING		20,31
+SisTo		STRING		33,44
+Existing        INTEGER		49,49	AUTOSET
+Currency        STRING    	56,58	AUTOSET(model.parm("Currency"))
+CapacFT		REAL		60,69	AUTOSET(model.vector("Capacity->"),DIM(*))
+LossFT		REAL		71,80	AUTOSET(model.vector("LossFactor->"))
+CapacTF		REAL		82,91	AUTOSET(model.vector("Capacity<-"),DIM(*))
+LossTF		REAL		93,102	AUTOSET(model.vector("LossFactor<-"))		
+END_DATA
+
+END_MASK
+//---------------------------------------------------------------------
+//---------------------------------------------------------------------
+DEFINE_MASK ROWDATA SDDP_v14_ctermi
+
+DEFINE_HEADER
+$version=1
+!Num ...Nombre... #Uni Tipo .PotIns .GerMin .GerMax ..Teif. ..Ih... .CVaria .MR. Comb ...G1.. .CEsp.1 ...G2.. .CEsp.2 ...G3.. .CEsp.3 NAdF ...1 ...2 ...3 ComT CTransp StartUp sfal NGas NuCC ..NombreCC.. CoefE.
+END_HEADER
+
+DEFINE_DATA
+Num		INTEGER	1	4
+Nome		STRING	6	17
+Unidades	INTEGER	19	22	AUTOSET
+Existing	INTEGER 24	27	AUTOSET
+PotInst         REAL	29	35	AUTOSET	
+GerMin		REAL	37	43	AUTOSET
+GerMax		REAL	45	51	AUTOSET
+ICP		REAL	53	59	AUTOSET
+IH		REAL	61	67	AUTOSET
+O&MCost		REAL	69	75	AUTOSET
+MR              INTEGER 77	80
+Comb		INTEGER	82	85	
+G(1)		REAL	87	93	AUTOSET
+G(2)		REAL	103	109	AUTOSET
+G(3)		REAL	119	125	AUTOSET
+CEsp(1,1)	REAL	95	101	AUTOSET
+CEsp(2,1)	REAL	111	117	AUTOSET
+CEsp(3,1)	REAL	127	133	AUTOSET
+NAdF		INTEGER	135	138	AUTOSET
+NAF(1)		INTEGER	140	143	AUTOSET
+NAF(2)		INTEGER	145	148	AUTOSET
+NAF(3)		INTEGER	150	153	AUTOSET
+ComT		INTEGER 155	158	AUTOSET
+CTransp		REAL	160	166	AUTOSET
+StartUp		REAL	168	174	AUTOSET
+sfal		INTEGER	176	179	AUTOSET
+NGas		INTEGER	181	184	AUTOSET	
+NuCC 		INTEGER	186	189		
+NameCC		STRING	191	202		
+CoefE		REAL	204	209	AUTOSET
+END_DATA
+
+END_MASK
+//---------------------------------------------------------------------
+//---------------------------------------------------------------------
+DEFINE_MASK MIXROWDATA SDDP_v14_mtermi
+
+TOTAL_BLOCK	3
+
+//-------------------------------------------------------------
+//-- PRIMEIRO BLOCO -> Versao ---
+//-------------------------------------------------------------
+DEFINE_BLOCK	
+BLOCK_IDENT	$version=1
+BLOCK_LENGTH 1
+NEXT_BLOCK 2
+
+DEFINE_DATA
+IdentBloco	STRING		1,10	$version=1
+END_DATA
+
+END_BLOCK
+
+//-------------------------------------------------------------
+//-- SEGUNDO BLOCO -> Identificacao da Data de Modificacao ---
+//-------------------------------------------------------------
+DEFINE_BLOCK	
+BLOCK_IDENT	MOD
+BLOCK_LENGTH 1
+NEXT_BLOCK 3
+
+DEFINE_DATA
+IdentBloco	STRING		1,5	MOD:_
+Data		DATE		6,15	DD/MM/YYYY
+END_DATA
+
+END_BLOCK
+
+//-------------------------------------------------------------
+//-- SEGUNDO BLOCO -> Dados de Termica                      ---
+//-------------------------------------------------------------
+DEFINE_BLOCK	
+BLOCK_IDENT	!Num
+
+
+DEFINE_HEADER
+!Num ...Nombre... #Uni Tipo .PotIns .GerMin .GerMax ..Teif. ..Ih... .CVaria .MR. Comb ...G1.. .CEsp.1 ...G2.. .CEsp.2 ...G3.. .CEsp.3 NAdF ...1 ...2 ...3 ComT CTransp StartUp sfal NGas NuCC ..NombreCC.. CoefE.
+END_HEADER
+
+DEFINE_DATA
+Num		INTEGER	1	4
+Nome		STRING	6	17
+Unidades	INTEGER	19	22	AUTOSET
+Existing	INTEGER 24	27	AUTOSET
+GerMin		REAL	37	43	AUTOSET
+GerMax		REAL	45	51	AUTOSET
+ICP		REAL	53	59	AUTOSET
+IH		REAL	61	67	AUTOSET
+O&MCost		REAL	69	75	AUTOSET
+G(1)		REAL	87	93	AUTOSET
+G(2)		REAL	103	109	AUTOSET
+G(3)		REAL	119	125	AUTOSET
+CTransp		REAL	160	166	AUTOSET
+CoefE		REAL	204	209	AUTOSET
+END_DATA
+
+END_BLOCK
+
+END_MASK
+//---------------------------------------------------------------------
+//---------------------------------------------------------------------
+DEFINE_MASK ROWDATA SDDP_v14_csumcirc
+
+DEFINE_HEADER
+$version=1
+! Res (...Nome...) ........LB ........UB ..coef ............ ..coef ............ ..coef ............
+END_HEADER
+
+DEFINE_MACRO
+VAR	N	1,25
+END_MACRO
+
+
+DEFINE_DATA
+Num		INTEGER		1,5
+Nome		STRING		7,18
+LB		REAL		20,29	AUTOSET(model.vector("LB"),DIM(*)) 
+UB		REAL		31,40	AUTOSET(model.vector("UB"),DIM(*)) 
+Coef$(N)	REAL	        22+20*$(N),27+20*$(N)
+Name$(N)	STRING	        29+20*$(N),40+20*$(N)
+END_DATA
+
+END_MASK
+//---------------------------------------------------------------------
+//---------------------------------------------------------------------
+DEFINE_MASK ROWDATA SDDP_csumcirc_v2.0
+
+DEFINE_HEADER
+$version=2
+! Res (...Nome...) ........LB ........UB ..coef Tp Name........ ..coef Tp Name........ ..coef Tp Name........
+END_HEADER
+DEFINE_MACRO
+VAR	N	1,25
+END_MACRO
+
+DEFINE_DATA
+Num		INTEGER		1,5
+Nome		STRING		7,18
+LB		REAL		20,29	AUTOSET(model.vector("LB"),DIM(*)) 
+UB		REAL		31,40	AUTOSET(model.vector("UB"),DIM(*)) 
+Coef$(N)	REAL	        18+23*$(N),24+23*$(N)
+Tp$(N)          STRING          26+23*$(N),27+23*$(N)
+Name$(N)	STRING	        29+23*$(N),40+23*$(N)
+END_DATA
+
+END_MASK
+
+//--------------------------------------------------------------------------------------------------
+// Modificacao Generica com blocos
+//--------------------------------------------------------------------------------------------------
+DEFINE_MASK ROWDATA SDDP_V14_modifblocks
+
+DEFINE_HEADER
+$version=1
+!D/MM/YYYY  .Num ....Name.... KeyWord     Blck .....Value
+END_HEADER
+DEFINE_DATA
+Data		DATE		1,10	DD/MM/YYYY
+Num		INTEGER		12,16
+Nome		STRING		18,29
+KeyWord         STRING          31,40
+Blck		STRING		42,46
+Value		REAL		48,57
+Existing	INTEGER		59,62
+END_DATA
+END_MASK

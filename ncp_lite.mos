@@ -1,0 +1,3558 @@
+model Ncp_Lite
+
+uses 'mmetc'
+uses 'mmjobs'
+uses 'mmxprs'
+uses 'mmsystem'
+uses 'PSRClasses'
+uses 'PSRNetwork'
+uses 'PSRIntegration'
+
+! ****************
+! Model Parameters
+! ****************
+
+parameters
+	PATH 			= '.\'
+	PATH_TRUE_UP	= '.\'
+	PATH_PSRCLASSES	= '.\'
+	AWS				= ''
+	PSRINTEGRATION 	= ' '
+	IPER_HOST		= 0
+	ISIM_HOST		= 0
+	EXPORT    		= false
+	DEBUG 	  		= false
+	VERBOSE   		= false
+	COMMIT_PROFILE	= false
+	PROFILER		= false
+	GENESYS_LOG		= false
+end-parameters
+
+! *******************
+! SDDP Dumping Memory
+! *******************
+
+startIntegration(PSRINTEGRATION)
+
+! *********
+! Load Host
+! *********
+
+LOAD_HOST:= false
+
+if (IPER_HOST > 0 and ISIM_HOST > 0) then
+	LOAD_HOST:= true
+end-if
+
+if (LOAD_HOST) then
+	loadHostData(IPER_HOST,ISIM_HOST)
+end-if
+
+! ********************
+! Execution Parameters
+! ********************
+
+FIRST_RUN:= 		getHostInt2('FIRST_RUN',1)
+LAST_RUN:= 			getHostInt2('LAST_RUN',0)
+DEFICIT:= 			getHostInt2('DEFICIT',0)
+SEND_RESULTS:=		getHostInt2('SEND_RESULTS',0)
+OUTPUT:=			getHostInt2('OUTPUT',1)
+MIP_PROBLEM:=		getHostInt2('MIP_PROBLEM',1)
+SDDP2:= 			getHostInt2('SDDP2',0)
+CORE:=				getHostInt2('CORE',0)
+AVID:=				getHostInt2('AVID',0)
+GENESYS:=			getHostInt2('GENESYS',0)
+PARALLEL_WRITE:=	getHostInt2('PARALLEL_WRITE',0)
+PARALLEL_REOPEN:=	getHostInt2('PARALLEL_WRITE_REOPEN',0)
+LOAD_MASKS:=		getHostInt2('LOAD_MASKS',1)
+TRUE_UP:=			getHostInt2('TRUE_UP',0)
+CASSANDRA_WRITE:=	getHostInt2('CASSANDRA_WRITE',0)
+INTRA_DAILY:=		getHostInt2('INTRA_DAILY',1)
+HISTORIC_SCENARIO:= getHostInt2('HISTORIC_SCENARIO',0)
+DEMAND_SCENARIO:=	getHostInt2('DEMAND_SCENARIO',0)
+
+! **********************
+! Functions / Procedures
+! **********************
+
+forward function  adju_value(A: real):real
+forward function  my_xprtrim(A: string):integer
+forward function  my_fmtisim(A: integer):string
+forward function  interp_val(A: integer, B: integer, C: array(range,range) of real, D: array(range,range) of real, E: real):real
+
+forward procedure exec_times
+forward procedure fix_global
+forward procedure graph_data
+forward procedure check_stat(A: integer)
+forward procedure total_cost(C: integer)
+forward procedure check_cmgs(C: integer)
+forward procedure upt_condit(G: integer)
+forward procedure ctr_hidden(A: integer, B: integer)
+forward procedure add_genctr(A: integer, B: integer)
+forward procedure hid_genctr(A: integer, B: integer)
+forward procedure get_cmgbus(A: integer, B: integer)
+forward procedure get_cirflw(A: integer, B: integer)
+forward procedure ini_condit(A: integer, B: integer, C: integer)
+forward procedure fix_condit(A: integer, B: integer, C: integer)
+forward procedure check_defc(A: integer, B: integer, C: integer)
+forward procedure out_result(A: integer, B: integer, C: integer)
+forward procedure solve_modl(A: integer, B: integer, D: integer)
+forward procedure chk_infdef(A: integer, B: integer, D: integer)
+forward procedure model_exec(A: integer, B: integer, C: integer, E: integer)
+forward procedure inter_modl(B: integer, C: integer, G: integer, H: integer)
+forward procedure index_file(A: string,  B: string,  C: string, D: string)
+forward procedure clean_data(A: integer, B: integer, C: set of integer, D: array(range,range) of real)
+forward procedure set_graphs(A: integer, B: integer, C: set of integer, D: string, E: string, G: set of string, H: array(range,range) of real, I: integer, J: integer, K: integer, L: integer, M: string, N: string, O: integer, P: integer)
+
+! ***********
+! PSR Classes
+! ***********
+
+include 'data_reading.mos'
+
+! ****************
+! SDDP Integration
+! ****************
+
+include 'sddp_integration.mos'
+
+! *************
+! Genesys Model
+! *************
+
+include 'genesys.mos'
+
+! ******************
+! Decision Variables
+! ******************
+
+declarations
+
+! Constants
+
+	OMTF: mpvar											! Thermal O&M Cost
+	CDSF: mpvar											! System Deficit Cost
+	CDBF: mpvar											! Bus Deficit Cost
+	TCOF: mpvar											! Fuel Cost
+	STPF: mpvar											! Thermal Start-Up Cost
+	SHDF: mpvar											! Thermal Shutdown Cost
+	SVAF: mpvar											! Alert Storage Penalty
+	SVMF: mpvar											! Minimum Operative Storage Penalty
+	SDNF: mpvar											! Minimum Total Outflow Penalty
+	SDMF: mpvar											! Maximum Total Outflow Penalty
+	SPLF: mpvar											! Spillage Cost
+	SMTF: mpvar											! Minimum Turbining Penalty
+	SIRF: mpvar											! Irrigation Penalty
+	ALFA: mpvar											! Future Cost Function
+	SRSF: mpvar											! Secondary Reserve Penalty
+	SRTF: mpvar											! Generation Constraint Penalty
+	SMNF: mpvar											! Minimum Spillage Penalty
+	SELF: mpvar											! Elastic Demand Benefit
+	SINF: mpvar											! Interconnection Cost
+	OMHF: mpvar											! Hydro O&M Cost
+	SMXF: mpvar											! Maximum Spillage Penalty
+	OMRF: mpvar											! Renewable O&M Cost
+	CURF: mpvar											! Renewable Curtailment Cost
+	TGSF: mpvar											! Target Storage Penalty
+	INJF: mpvar											! Injection Price
+	SVXF: mpvar											! Maximum Operative Storage Penalty
+	RESF: mpvar											! Secondary Reserve Bid
+	CUTF: mpvar											! Water Travel Time
+	TMNF: mpvar											! Thermal Minimum Fuel Consumption
+	CCCF: mpvar											! Emission Cost
+	GNPF: mpvar											! Gas Node Production Cost
+	GPTF: mpvar											! Gas Pipeline Transportation Cost
+	BURF: mpvar											! Balancing Area Up Reserve Penalty
+	BDRF: mpvar											! Balancing Area Down Reserve Penalty
+	CTRF: mpvar											! Contingency Reserve Penalty
+	STHF: mpvar											! Hydro Start-Up Cost
+
+! Dimension #1
+
+	ALFS: dynamic array(range) of mpvar					! Future Cost Function
+	SVAL: dynamic array(range) of mpvar					! Alert Storage Slack [Hm3]
+	SVMN: dynamic array(range) of mpvar					! Minimum Operative Storage Slack [Hm3]
+	SVMX: dynamic array(range) of mpvar					! Maximum Operative Storage Slack [Hm3]
+	STGS: dynamic array(range) of mpvar					! Target Storage Slack [Hm3]
+	SCMN: dynamic array(range) of mpvar					! Thermal Minimum Consumption Slack [Fuel Unit]
+
+! Dimension #2
+
+	CNSM: dynamic array(range,range) of mpvar			! Thermal Fuel Consumption [Fuel Unit]
+	XTER: dynamic array(range,range) of mpvar			! Thermal Commitment Status [0/1]
+	YTER: dynamic array(range,range) of mpvar			! Thermal Commitment Start-Up [0/1]
+	RSCT: dynamic array(range,range) of mpvar			! Thermal Secondary Reserve [MWh]
+	DTER: dynamic array(range,range) of mpvar			! Thermal Commitment Shutdown [0/1]
+	XFIC: dynamic array(range,range) of mpvar			! Thermal Multi-Fuel Commitment Status [0/1]
+	XCOM: dynamic array(range,range) of mpvar			! Thermal Combined Cycle Status [0/1]
+	EMIC: dynamic array(range,range) of mpvar			! Thermal CO2 Emission [tCO2]
+
+	TURB: dynamic array(range,range) of mpvar			! Hydro Turbining [m3/s]
+	SPIL: dynamic array(range,range) of mpvar			! Hydro Spillage [m3/s]
+	GHID: dynamic array(range,range) of mpvar			! Hydro Generation [MWh]
+	VOLM: dynamic array(range,range) of mpvar			! Hydro Storage [Hm3]
+	STRB: dynamic array(range,range) of mpvar			! Minimum Turbining Slack [m3/s]
+	SMNT: dynamic array(range,range) of mpvar			! Minimum Total Outflow Slack [m3/s]
+	SMXT: dynamic array(range,range) of mpvar			! Maximum Total Outflow Slack [m3/s]
+	SMNS: dynamic array(range,range) of mpvar			! Minimum Spillage Slack [m3/s]
+	RSCH: dynamic array(range,range) of mpvar			! Hydro Secondary Reserve [MWh]
+	XVNC: dynamic array(range,range) of mpvar			! Hydro Spillage Controllable [0/1]
+	SIRR: dynamic array(range,range) of mpvar			! Irrigation Slack [m3/s]
+	SLKR: dynamic array(range,range) of mpvar			! Evaporation / Infiltration Slack [Hm3]
+	XHID: dynamic array(range,range) of mpvar			! Hydro Commitment Status [0/1]
+	ELEV: dynamic array(range,range) of mpvar			! Hydro Elevation [m.a.s.l.]
+	TAIL: dynamic array(range,range) of mpvar			! Hydro Tailwater [m.a.s.l.]
+	SMXS: dynamic array(range,range) of mpvar			! Maximum Spillage Slack [m3/s]
+	YHID: dynamic array(range,range) of mpvar			! Hydro Commitment Start-Up [0/1]
+	DHID: dynamic array(range,range) of mpvar			! Hydro Commitment Shutdown [0/1]
+
+	DRNW: dynamic array(range,range) of mpvar			! Renewable Generation Slack [MWh]
+
+	DNJW: dynamic array(range,range) of mpvar			! Injection Generation Slack [MWh]
+
+	DRTG: dynamic array(range,range) of mpvar			! Generation Constraint Slack [MWh]
+
+	DRSG: dynamic array(range,range) of mpvar			! Secondary Reserve Slack [MWh]
+
+	GBAT: dynamic array(range,range) of mpvar			! Battery Injection [MWh]
+	LBAT: dynamic array(range,range) of mpvar			! Battery Loading [MWh]
+	CBAT: dynamic array(range,range) of mpvar			! Battery Charge [p.u]
+	DBAT: dynamic array(range,range) of mpvar			! Battery Discharge [p.u]
+	VBAT: dynamic array(range,range) of mpvar			! Battery Storage [MWh]
+	XBAT: dynamic array(range,range) of mpvar			! Battery Charge [0/1]
+	YBAT: dynamic array(range,range) of mpvar			! Battery Discharge [0/1]
+
+	GBUS: dynamic array(range,range) of mpvar			! Bus Generation [MWh]
+
+	GNOD: dynamic array(range,range) of mpvar			! Gas Node Production [MUV/h]
+
+	DHUR: dynamic array(range,range) of mpvar			! Balancing Area Up Reserve Slack [MWh]
+	DHDR: dynamic array(range,range) of mpvar			! Balancing Area Down Reserve Slack [MWh]
+
+	DCTR: dynamic array(range,range) of mpvar			! Contingency Reserve Slack [MWh]
+
+	DEME: dynamic array(range,range) of mpvar			! System Elastic Demand [MWh]
+
+! Dimension #3
+
+	GTER: dynamic array(range,range,range) of mpvar		! Thermal Generation [MWh]
+	XCON: dynamic array(range,range,range) of mpvar		! Thermal Concave Function [0/1]
+
+	INTF: dynamic array(range,range,range) of mpvar		! Interconnection Flow [MWh]
+
+	DEFB: dynamic array(range,range,range) of mpvar		! Bus Deficit [MWh]
+	DBME: dynamic array(range,range,range) of mpvar		! Bus Elastic Demand [MWh]
+
+	DEFS: dynamic array(range,range,range) of mpvar		! System Deficit [MWh]
+
+	DCLF: dynamic array(range,range,range) of mpvar		! DC Link Flow [MWh]
+
+	GNLP: dynamic array(range,range,range) of mpvar		! Gas Pipeline Flow [MUV/h]
+
+	RBUH: dynamic array(range,range,range) of mpvar		! Hydro Balancing Up Reserve [MWh]
+	RBDH: dynamic array(range,range,range) of mpvar		! Hydro Balancing Down Reserve [MWh]
+
+	RBUT: dynamic array(range,range,range) of mpvar		! Thermal Balancing Up Reserve [MWh]
+	RBDT: dynamic array(range,range,range) of mpvar		! Thermal Balancing Down Reserve [MWh]
+
+	RCUH: dynamic array(range,range,range) of mpvar		! Hydro Contingency Up Reserve [MWh]
+	RCUT: dynamic array(range,range,range) of mpvar		! Thermal Contingency Up Reserve [MWh]
+
+! ***********
+! Constraints
+! ***********
+
+! Dimension #0
+
+	FOBJ: 							linctr
+	Obj_Function_Omtf: 				linctr
+	Obj_Function_Cdsf: 				linctr
+	Obj_Function_Cdbf: 				linctr
+	Obj_Function_Tcof: 				linctr
+	Obj_Function_Stpf: 				linctr
+	Obj_Function_Shdf:				linctr
+	Obj_Function_Valf:				linctr
+	Obj_Function_Vmnf:				linctr
+	Obj_Function_Dmnf:				linctr
+	Obj_Function_Dmxf:				linctr
+	Obj_Function_Splf:				linctr
+	Obj_Function_Mntf:				linctr
+	Obj_Function_Irrf:				linctr
+	Obj_Function_Secf:				linctr
+	Obj_Function_Genf:				linctr
+	Obj_Function_Smnf:				linctr
+	Obj_Function_Self:				linctr
+	Obj_Function_Sinf:				linctr
+	Obj_Function_Omhf: 				linctr
+	Obj_Function_Smxf:				linctr
+	Obj_Function_Omrf: 				linctr
+	Obj_Function_Curf: 				linctr
+	Obj_Function_Tgsf:				linctr
+	Obj_Function_Injf: 				linctr
+	Obj_Function_Vmxf:				linctr
+	Obj_Function_Resf: 				linctr
+	Obj_Function_Cutf: 				linctr
+	Obj_Function_Tmnf:				linctr
+	Obj_Function_Cccf:				linctr
+	Obj_Function_Gnpf:				linctr
+	Obj_Function_Gptf:				linctr
+	Obj_Function_Burf:				linctr
+	Obj_Function_Bdrf:				linctr
+	Obj_Function_Ctrf:				linctr
+	Obj_Function_Sthf: 				linctr
+
+	Future_Cost_Function_1:			linctr
+	Future_Cost_Function_Free_1:	linctr
+	Future_Cost_Function_Minm_1:	linctr
+
+! Dimension #1
+
+	Hydro_Initial_Storage:			array(range) of linctr
+	Hydro_Min_Operative_Storage:	array(range) of linctr
+	Hydro_Max_Operative_Storage:	array(range) of linctr
+	Hydro_Alert_Storage:			array(range) of linctr
+	Hydro_Flood_Control_Storage:	array(range) of linctr
+	Hydro_Target_Storage:			array(range) of linctr
+	Hydro_Target_Storage_Min:		array(range) of linctr
+	Hydro_Target_Storage_Max:		array(range) of linctr
+	Hydro_Initial_Elevation:		array(range) of linctr
+	Hydro_Target_Generation:		array(range) of linctr
+	Hydro_Target_Storage_Slack:		array(range) of linctr
+	Hydro_Maximum_Start_Up:			array(range) of linctr
+
+	Battery_Initial_Storage:		array(range) of linctr
+	Battery_Initial_Charge:			array(range) of linctr
+	Battery_Initial_Discharge:		array(range) of linctr
+
+	Thermal_Initial_Generation:		array(range) of linctr
+	Thermal_Maximum_Start_Up:		array(range) of linctr
+	Thermal_Maximum_Shutdown:		array(range) of linctr
+	Thermal_Min_Consumption:		array(range) of linctr
+	Thermal_Max_Consumption:		array(range) of linctr
+
+	Fuel_Availability:				array(range) of linctr
+	Fuel_Min_Consumption:			array(range) of linctr
+
+	Future_Cost_Function_Free_2:	array(range) of linctr
+	Future_Cost_Function_Minm_2:	array(range) of linctr
+
+! Dimension #2
+
+	Thermal_Min_Gen: 				array(range,range) of linctr
+	Thermal_Max_Gen: 				array(range,range) of linctr
+	Thermal_Commitment:				array(range,range) of linctr
+	Thermal_Ramp_Up:				array(range,range) of linctr
+	Thermal_Ramp_Down:				array(range,range) of linctr
+	Thermal_Max_Reserve:			array(range,range) of linctr
+	Thermal_Consumption:			array(range,range) of linctr
+	Thermal_Start_Up_1:				array(range,range) of linctr
+	Thermal_Start_Up_2:				array(range,range) of linctr
+	Thermal_Multi_Fuel:				array(range,range) of linctr
+	Thermal_Shutdown:				array(range,range) of linctr
+	Thermal_Ostrowsky:				array(range,range) of linctr
+	Thermal_Multi_Fuel_Commit_1:	array(range,range) of linctr
+	Thermal_Multi_Fuel_Commit_2:	array(range,range) of linctr
+	Thermal_Combined_Cycle_1:		array(range,range) of linctr
+	Thermal_Combined_Cycle_2:		array(range,range) of linctr
+	Thermal_Combined_Cycle_3:		array(range,range) of linctr
+	Thermal_CO2_Emission:			array(range,range) of linctr
+	Thermal_Initial_Commitment:		array(range,range) of linctr
+	Thermal_Precedence:				array(range,range) of linctr
+
+	System_Demand:					array(range,range) of linctr
+	System_Gen_Constraint_Grt:		array(range,range) of linctr
+	System_Gen_Constraint_Low:		array(range,range) of linctr
+	System_Secondary_Reserve:		array(range,range) of linctr
+	System_Elastic_Demand:			array(range,range) of linctr
+
+	Hydro_Balance:					array(range,range) of linctr
+	Hydro_Min_Storage:				array(range,range) of linctr
+	Hydro_Min_Gen: 					array(range,range) of linctr
+	Hydro_Max_Gen: 					array(range,range) of linctr
+	Hydro_Max_Storage:				array(range,range) of linctr
+	Hydro_Min_Turbining:			array(range,range) of linctr
+	Hydro_Max_Turbining:			array(range,range) of linctr
+	Hydro_Min_Total_Outflow:		array(range,range) of linctr
+	Hydro_Max_Total_Outflow:		array(range,range) of linctr
+	Hydro_Min_Spillage:				array(range,range) of linctr
+	Hydro_Production:				array(range,range) of linctr
+	Hydro_Pumping:					array(range,range) of linctr
+	Hydro_Max_Reserve_1:			array(range,range) of linctr
+	Hydro_Max_Reserve_2:			array(range,range) of linctr
+	Hydro_Spillage_Controllable_1:	array(range,range) of linctr
+	Hydro_Spillage_Controllable_2:	array(range,range) of linctr
+	Hydro_Spillage_Controllable_3:	array(range,range) of linctr
+	Hydro_Irrigation:				array(range,range) of linctr
+	Hydro_Reservoir_Slack:			array(range,range) of linctr
+	Hydro_Commitment:				array(range,range) of linctr
+	Hydro_Forebay_Drawdown:			array(range,range) of linctr
+	Hydro_Forebay_Fillup:			array(range,range) of linctr
+	Hydro_Max_Spillage:				array(range,range) of linctr
+	Hydro_Discharge_Up:				array(range,range) of linctr
+	Hydro_Discharge_Down:			array(range,range) of linctr
+	Hydro_Min_Spillage_Factor:		array(range,range) of linctr
+	Hydro_Initial_Turbining:		array(range,range) of linctr
+	Hydro_Initial_Spilling:			array(range,range) of linctr
+	Hydro_Ostrowsky:				array(range,range) of linctr
+	Hydro_Start_Up_1:				array(range,range) of linctr
+	Hydro_Start_Up_2:				array(range,range) of linctr
+	Hydro_Initial_Commitment:		array(range,range) of linctr
+	Hydro_Shutdown:					array(range,range) of linctr
+
+	Run_Of_River_Min_Storage:		array(range,range) of linctr
+	Run_Of_River_Max_Storage:		array(range,range) of linctr
+	Run_Of_River_Regulation:		array(range,range) of linctr
+
+	Renewable_Curtailment_1:		array(range,range) of linctr
+	Renewable_Curtailment_2:		array(range,range) of linctr
+	Renewable_Curtailment_3:		array(range,range) of linctr
+
+	Injection_Surplus_1:			array(range,range) of linctr
+	Injection_Surplus_2:			array(range,range) of linctr
+	Injection_Surplus_3:			array(range,range) of linctr
+
+	Battery_Discharge:				array(range,range) of linctr
+	Battery_Charge:					array(range,range) of linctr
+	Battery_Max_Discharge_1:		array(range,range) of linctr
+	Battery_Max_Discharge_2:		array(range,range) of linctr
+	Battery_Max_Charge_1:			array(range,range) of linctr
+	Battery_Max_Charge_2:			array(range,range) of linctr
+	Battery_Operation:				array(range,range) of linctr
+	Battery_Min_Storage:			array(range,range) of linctr
+	Battery_Max_Storage:			array(range,range) of linctr
+	Battery_Balance:				array(range,range) of linctr
+	Battery_Final_Storage:			array(range,range) of linctr
+	Battery_Charge_Ramp:			array(range,range) of linctr
+	Battery_Discharge_Ramp:			array(range,range) of linctr
+
+	Fuel_Rate:						array(range,range) of linctr
+
+	Bus_Demand:						array(range,range) of linctr
+	Bus_Generation:					array(range,range) of linctr
+	Bus_Generation_Free:			array(range,range) of linctr
+
+	Electrical_Area_Export:			array(range,range) of linctr
+	Electrical_Area_Import:			array(range,range) of linctr
+
+	Island_Balance:					array(range,range) of linctr
+
+	Circuit_Violation_1:			array(range,range) of linctr
+	Circuit_Violation_2:			array(range,range) of linctr
+	Circuit_Min_SumFlow:			array(range,range) of linctr
+	Circuit_Max_SumFlow:			array(range,range) of linctr
+
+	Interconnection_Sum_Minimum:	array(range,range) of linctr
+	Interconnection_Sum_Maximum:	array(range,range) of linctr
+
+	Gas_Node_Minimum_Production:	array(range,range) of linctr
+	Gas_Node_Maximum_Production:	array(range,range) of linctr
+
+	Gas_Network:					array(range,range) of linctr
+
+	Balancing_Area_Up_Reserve:		array(range,range) of linctr
+	Balancing_Area_Down_Reserve:	array(range,range) of linctr
+
+	Contingency_Reserve:			array(range,range) of linctr
+
+	Future_Cost_Function_2:			array(range,range) of linctr
+
+! Dimension #3
+
+	Thermal_Max_Seg_Gen: 			array(range,range,range) of linctr
+	Thermal_Max_Seg_Gen_Concave:	array(range,range,range) of linctr
+	Thermal_Concave_1:				array(range,range,range) of linctr
+	Thermal_Concave_2:				array(range,range,range) of linctr
+	Thermal_Min_Uptime:				array(range,range,range) of linctr
+	Thermal_Min_Downtime:			array(range,range,range) of linctr
+
+	Hydro_Elevation:				array(range,range,range) of linctr
+	Hydro_Tailwater:				array(range,range,range) of linctr
+	Hydro_Net_Head:					array(range,range,range) of linctr
+
+	System_Deficit_Segments:		array(range,range,range) of linctr
+
+	Bus_Deficit_Segments:			array(range,range,range) of linctr
+	Bus_Elastic_Demand:				array(range,range,range) of linctr
+
+	Interconnection_Maximum:		array(range,range,range) of linctr
+
+	DC_Link_Maximum:				array(range,range,range) of linctr
+
+	Gas_Pipeline_Maximum:			array(range,range,range) of linctr
+
+end-declarations
+
+! **************
+! Dynamic Arrays
+! **************
+
+! Dimension #1
+
+forall(i in SFCF|TERF <= 0) create(ALFS(i))
+
+forall(i in SHID|EXSH(i) <= 0 and TVAL(i) > 0.0 and DVAL(i) <> -1) create(SVAL(i))
+forall(i in SHID|EXSH(i) <= 0 and TVMN(i) > 0.0 and DVMN(i) <> -1) create(SVMN(i))
+forall(i in SHID|EXSH(i) <= 0 and TVMX(i) > 0.0 and DVMX(i) <> -1) create(SVMX(i))
+forall(i in SHID|EXSH(i) <= 0 and RESV(i) > 0 and TGTS(i) >= VMIN(i) and TGTS(i) <= VMAX(i) and (TERF = 0 or TERF = 1 or TERF = 3)) create(STGS(i))
+
+forall(j in STER|EXST(j) <= 0 and (MNCN(j) > 0.0 or GENESYS = 1)) create(SCMN(j))
+
+! Dimension #2
+
+forall(j in STER,t in 1..NSTG|EXST(j) <= 0) create(CNSM(j,t))
+forall(j in STER,t in 1..NSTG|EXST(j) <= 0 and SECT(j,t) > 0) create(RSCT(j,t))
+forall(j in STER,t in 1..NSTG|EXST(j) <= 0 and TCO2(j) > 0.0 and ECO2(FULT(j)) > 0.0) create(EMIC(j,t))
+
+forall(j in STER,m in 0..NCPT(j)|EXST(j) <= 0 and COMT(j) > 0) create(XTER(j,m))
+forall(j in STER,m in 0..NCPT(j)|EXST(j) <= 0 and COMT(j) > 0) create(DTER(j,m))
+forall(j in STER,m in 0..NCPT(j)|EXST(j) <= 0 and COMT(j) > 0) create(YTER(j,m))
+
+forall(j in STER,t in 1..NSTG|EXST(j) <= 0 and COMT(j) > 0 and TFIC(j) = 0 and NTFC(j) > 0) create(XFIC(j,t))
+
+forall(j in SCOM,t in 1..NSTG) create(XCOM(j,t))
+
+forall(i in SHID,t in 1..NSTG) create(SPIL(i,t))
+forall(i in SHID,t in 0..NSTG|RESV(i) <> 0) create(VOLM(i,t))
+forall(i in SHID,t in 1..NSTG|TIRR(i)  > 0 and DIRR(i) <> - 1) create(SIRR(i,t))
+forall(i in SHID,t in 1..NSTG|MXSR(i,t) > 0.0) create(SLKR(i,t))
+forall(i in SHID,t in 1..NSTG|EXSH(i) <= 0) create(TURB(i,t))
+forall(i in SHID,t in 1..NSTG|EXSH(i) <= 0 and FPRM(i) <> 0.0) create(GHID(i,t))
+forall(i in SHID,t in 1..NSTG|EXSH(i) <= 0 and SECH(i,t) > 0 and FPRM(i) > 0.0) create(RSCH(i,t))
+forall(i in SHID,t in 1..NSTG|EXSH(i) <= 0 and TMIN(i) > 0) create(STRB(i,t))
+forall(i in SHID,t in 1..NSTG|EXSH(i) <= 0 and TOMN(i) > 0 and DOMN(i) <> - 1) create(SMNT(i,t))
+forall(i in SHID,t in 1..NSTG|EXSH(i) <= 0 and DOMX(i) <> - 1) create(SMXT(i,t))
+forall(i in SHID,t in 1..NSTG|EXSH(i) <= 0 and TMNS(i) > 0 and DMNS(i) <> - 1) create(SMNS(i,t))
+forall(i in SHID,t in 1..NSTG|EXSH(i) <= 0 and RESV(i) > 0 and VNOC(i) > 0 and NCSP > 0) create(XVNC(i,t))
+
+forall(i in SHID,t in 0..NCPH(i)|EXSH(i) <= 0 and COMH(i) > 0) create(XHID(i,t))
+forall(i in SHID,t in 0..NCPH(i)|EXSH(i) <= 0 and COMH(i) > 0) create(DHID(i,t))
+forall(i in SHID,t in 0..NCPH(i)|EXSH(i) <= 0 and COMH(i) > 0) create(YHID(i,t))
+
+forall(b in SBAT,t in 1..NSTG|EXSA(b) <= 0) create(GBAT(b,t))
+forall(b in SBAT,t in 1..NSTG|EXSA(b) <= 0) create(LBAT(b,t))
+forall(b in SBAT,t in 0..NSTG|EXSA(b) <= 0) create(CBAT(b,t))
+forall(b in SBAT,t in 0..NSTG|EXSA(b) <= 0) create(DBAT(b,t))
+forall(b in SBAT,t in 1..NSTG|EXSA(b) <= 0) create(XBAT(b,t))
+forall(b in SBAT,t in 1..NSTG|EXSA(b) <= 0) create(YBAT(b,t))
+forall(b in SBAT,t in 0..NSTG|EXSA(b) <= 0) create(VBAT(b,t))
+
+forall(m in SBUS,t in 1..NSTG|NETW > 0 and getsize(SLIN) > 0 and (BUSI(m) > 0 or IBDF(m) = 1)) create(GBUS(m,t))
+
+if (GENESYS = 0) then
+	forall(r in SRNW,t in 1..NSTG|EXSR(r) <= 0 and GRNW(r,t) <> 0) create(DRNW(r,t))
+else
+	forall(r in SRNW,t in 1..NSTG|EXSR(r) <= 0 and (GRND(r,t) + GRNH(r,t)) <> 0) create(DRNW(r,t))
+end-if
+
+forall(i in SINJ,t in 1..NSTG|INJW(i,t) <> 0) create(DNJW(i,t))
+
+forall(r in SRSG,t in 1..NSTG|VRSG(r,t) > 0) create(DRSG(r,t))
+
+forall(r in SRTG,t in 1..NSTG) create(DRTG(r,t))
+
+forall(n in SGNO,t in 1..NSTG|EXSN(n) <= 0) create(GNOD(n,t))
+
+forall(l in SLVE,t in 1..NSTG|DMEL(l,t) > 0.0) create(DEME(l,t))
+
+if (GENESYS = 1) then
+
+	forall(i in SHID,t in 0..NSTG|EXSH(i) <= 0 and RESV(i) > 0) create(ELEV(i,t))
+	forall(i in SHID,t in 1..NSTG|EXSH(i) <= 0 and RESV(i) > 0) create(TAIL(i,t))
+
+	forall(i in SHID,t in 1..NSTG|EXSH(i) <= 0 and TMXS(i) > 0.0 and DMXS(i) <> -1) create(SMXS(i,t))
+
+	forall(b in SBAL,t in 1..NSTG|BREG(b) = 1 and VHUR(b,t) > 0) create(DHUR(b,t))
+	forall(b in SBAL,t in 1..NSTG|BREG(b) = 1 and VHDR(b,t) > 0) create(DHDR(b,t))
+
+	forall(c in SCTG,t in 1..NSTG|CRAF(c) = 1) create(DCTR(c,t))
+
+end-if
+
+! Dimension #3
+
+forall(j in STER,t in 0..NSTG,k in 1..NSEG(j)|EXST(j) <= 0) create(GTER(j,t,k))
+forall(j in STER,t in 1..NSTG,k in 2..NSEG(j)|EXST(j) <= 0 and CONC(j) = 1) create(XCON(j,t,k))
+
+forall(m in SBUS,k in SDEF,t in 1..NSTG|DEMB(m,t) > 0.0) create(DEFB(m,k,t))
+forall(m in SBUS,l in SLVE,t in 1..NSTG|DBEL(m,l,t) > 0.0) create(DBME(m,l,t))
+
+forall(i in SSYS,k in SDEF,t in 1..NSTG|DEMS(i,t) > 0.0) create(DEFS(i,k,t))
+
+forall(i in SINT,m in SFLW,t in 1..NSTG|EXSI(i) <= 0) create(INTF(i,m,t))
+
+forall(i in SLNK,m in SFLW,t in 1..NSTG|NETW > 0 and EXSD(i) <= 0) create(DCLF(i,m,t))
+
+forall(l in SGLP,m in SFLW,t in 1..NSTG|EXSP(l) <= 0) create(GNLP(l,m,t))
+
+if (GENESYS = 1) then
+
+	forall(i in SHID,b in SBAL,t in 1..NSTG|EXSH(i) <= 0 and BREG(b) = 1 and BALH(i,b) = 1 and (VHUR(b,t) > 0.0 or VHDR(b,t) >= 0) and FPRM(i) > 0.0) do
+		create(RBUH(i,b,t))
+		create(RBDH(i,b,t))
+	end-do
+
+	forall(j in STER,b in SBAL,t in 1..NSTG|EXST(j) <= 0 and BREG(b) = 1 and BALT(j,b) = 1 and (VHUR(b,t) > 0.0 or VHDR(b,t) >= 0)) do
+		create(RBUT(j,b,t))
+		create(RBDT(j,b,t))
+	end-do
+
+	forall(c in SCTG,t in 1..NSTG|CRAF(c) = 1) do
+		forall(i in SHID|EXSH(i) <= 0 and BALH(i,CRBF(c)) = 1) create(RCUH(i,CRBF(c),t))
+		forall(j in STER|EXST(j) <= 0 and BALT(j,CRBF(c)) = 1) create(RCUT(j,CRBF(c),t))
+	end-do
+
+end-if
+
+! **************
+! Output Results
+! **************
+
+include 'data_writing.mos'
+
+! *******************
+! Renewable Scenarios
+! *******************
+
+if (GENESYS = 1) then
+	forall(r in SRNW,t in 1..NSTG|EXSR(r) <= 0) GRNW(r,t):= GRND(r,t)
+end-if
+
+! ***************
+! Model Execution
+! ***************
+
+if (SLCE = 0) then
+	DSLC:= NSTG
+else
+	if (DSLC = -1) then
+		DSLC:= 168
+	end-if
+end-if
+
+if (SDDP2 = 1 and GENESYS = 1) then
+	DSLC:= 24
+	IGEN:= 1
+else
+	IGEN:= 0
+end-if
+
+NSLC:= floor(NSTG / DSLC)
+
+TXPR:= 0.0
+
+INIC:= 1
+IEMP:= 0
+
+forall(k in 1..NSLC) do
+
+	! ****************
+	! Slice Definition
+	! ****************
+
+	IREP:= 0
+	IRUN:= 0
+	CHIF:= 0
+	ISLC:= k
+
+	A:= (ISLC - 1)*DSLC + 1
+
+	if (ISLC = NSLC) then
+		B:= maxlist(NSTG,(ISLC)*DSLC)
+	else
+		B:= minlist(NSTG,(ISLC)*DSLC)
+	end-if
+
+	C:= ISLC
+	D:= IRUN
+	E+= (B - A) + 1
+
+	! ***************
+	! Model Execution
+	! ***************
+
+	TINE:= currenttime / 1000. + currentdate * 3600 * 24
+
+	model_exec(A,B,C,E)
+
+	! *******************
+	! Genesys Constraints
+	! *******************
+
+	if (GENESYS = 1) then
+		add_genctr(A,B)
+	end-if
+
+	! ***********
+	! Solve Model
+	! ***********
+
+	TMNT:= currenttime / 1000. + currentdate * 3600 * 24
+
+	if ((DEBUG or PROFILER) and PARL = 0) then
+		if (PROFILER) then
+			fselect(my_out)
+		end-if
+		writeln('Xpress Problem Mounting Time: ', (TMNT - TINE), ' sec')
+	end-if
+
+	if (GENESYS_LOG) then
+		writeln('Solving  daily problem - Stage ', IPEM, ' - Scenario ', ISIM, ' - Day ', k)
+	end-if
+
+	solve_modl(A,B,D)
+
+	! *************************
+	! Check Transmission Losses
+	! *************************
+
+	if (getsize(SLIN) > 0 and NETW > 0 and RLOS = 1) then
+
+		get_cirflw(A,B)
+
+		model_exec(A,B,C,E)
+
+		if (GENESYS = 1) then
+			add_genctr(A,B)
+		end-if
+
+		solve_modl(A,B,D)
+
+	end-if
+
+	! *************
+	! Check Deficit
+	! *************
+
+	if (CKDF = 1 and DEFICIT = 0 and RGAP > MIPR) then
+		check_defc(A,B,C)
+	end-if
+
+	! ***********
+	! Intra-Daily
+	! ***********
+
+	if (GENESYS = 1 and INTRA_DAILY = 1) then
+
+		! Total Costs
+
+		if (OUTPUT = 1) then
+			total_cost(C)
+		end-if
+
+		! Enable Intra-Daily Execution Mode
+
+		IGEN:= 2
+
+		! Fix Thermal Commitment Decision / Retrieve Gas Supply Limits
+
+		fix_condit(A,B,0)
+
+		! Hidden Constraints
+
+		ctr_hidden(A,B)
+
+		hid_genctr(A,B)
+
+		! Renewable Scenarios
+
+		forall(r in SRNW,t in A..B|EXSR(r) <= 0) GRNW(r,t):= GRNH(r,t)
+
+		! Execute Intra-Daily Cases
+
+		forall(IGIS in A..B) inter_modl(B,C,IGIS,3)
+
+		! Clean Gas Suplly Limits
+
+		fix_condit(A,B,1)
+
+		! Enable Daily Execution Mode
+
+		IGEN:= 1
+
+	end-if
+
+	TEXE:= currenttime / 1000. + currentdate * 3600 * 24
+
+	TXPR+= (TEXE - TINE)
+
+	if ((DEBUG or PROFILER) and PARL = 0) then
+		if (PROFILER) then
+			fselect(my_out)
+		end-if
+		writeln('Xpress Execution Time: ', (TEXE - TMNT), ' sec')
+	end-if
+
+	! **************
+	! Output Results
+	! **************
+
+	if ((DEBUG or PROFILER) and PARL = 0) then
+		TOU1:= currenttime / 1000. + currentdate * 3600 * 24
+	end-if
+
+	if (OUTPUT = 1 and (GENESYS = 0 or INTRA_DAILY = 0)) then
+
+		if (NETW > 0 and getsize(SBUS) > 0) then
+			get_cmgbus(A,B)
+		end-if
+
+		out_result(A,B,C)
+
+	end-if
+
+	! ***********
+	! Total Costs
+	! ***********
+
+	if (OUTPUT = 1 and (GENESYS = 0 or INTRA_DAILY = 0)) then
+		total_cost(C)
+	end-if
+
+	if ((DEBUG or PROFILER) and PARL = 0) then
+		if (PROFILER) then
+			fselect(my_out)
+		end-if
+		TOU2:= currenttime / 1000. + currentdate * 3600 * 24
+		writeln('Output Time: ', (TOU2 - TOU1), ' sec')
+	end-if
+
+	if (DEBUG or DEBG >= 2) then
+		writeln('Graphs Created: ',IPER,'-',ISIM,'-',ISLC)
+	end-if
+
+	! *********************
+	! Get Initial Condition
+	! *********************
+
+	if ((GENESYS = 0 or INTRA_DAILY = 0) and C < NSLC) then
+		ini_condit(A,B,C)
+	end-if
+
+	! ******************
+	! Hidden Constraints
+	! ******************
+
+	if (C < NSLC) then
+		ctr_hidden(A,B)
+		if (GENESYS = 1) then
+			hid_genctr(A,B)
+		end-if
+	end-if
+
+	! ************
+	! Send Results
+	! ************
+
+	if ((GENESYS = 0 or INTRA_DAILY = 0) and SEND_RESULTS = 1 and C = NSLC) then
+		if (getsize(SDAM) > 0) then
+			forall(i in SHID) VAUX(i):= adju_value(getsol(VOLM(i,NSTG)))
+			putHostArray('NCPL_VFIM',VAUX)
+		end-if
+	end-if
+
+	if (NETW > 0 and C = NSLC) then
+		putHostInt('NBCG',NBCG)
+		putHostArray('IBCG',IBCG)
+	end-if
+
+end-do
+
+! *********************
+! Xpress Execution Time
+! *********************
+
+putHostReal('TXPR',TXPR)
+
+! ***************
+! Execution Times
+! ***************
+
+if (OUTPUT = 1 and CASSANDRA_WRITE = 0) then
+	exec_times
+	if (FIRST_RUN = 1 and ISIN = 1 and SDDP2 = 0) then
+		graph_data
+	end-if
+end-if
+
+if (DEBUG or DEBG >= 2) then
+	writeln('Case Finished: ',IPER,'-',ISIM)
+end-if
+
+if (LAST_RUN = 1 or LOAD_HOST) then
+
+	if (AWSF = 0) then
+
+		forall(IGRF in 1..NGRF + 2|OUTO(IGRF) = 1) do
+			iograf(IGRF):= getPSRType('PTR_GRAPH' + strfmt(IGRF,-3))
+			if (BINF = 0 or CASSANDRA_WRITE = 1) then
+				ret:= PSRIOGrafResult_closeSave(iograf(IGRF))
+			else
+				ret:= PSRIOGrafResultBinary_closeSave(iograf(IGRF))
+			end-if
+		end-do
+
+	end-if
+
+	if (GENESYS = 1) then
+		ret:= PSRIOGrafResultBase_closeLoad(iow_daily)
+		ret:= PSRIOGrafResultBase_closeLoad(iow_hourly)
+	end-if
+
+	if (ictrlgnd <> 0) then
+		PSRIOElementHourlyScenarios_close(ictrlgnd)
+	end-if
+
+	if (ictrlinj <> 0) then
+		PSRIOElementHourlyScenarios_close(ictrlinj)
+	end-if
+
+	if (ictrlpri <> 0) then
+		PSRIOElementHourlyScenarios_close(ictrlpri)
+	end-if
+
+	if (ictrlres <> 0) then
+		PSRIOElementHourlyScenarios_close(ictrlres)
+	end-if
+
+	if (ictrload <> 0) then
+		PSRIOElementHourlyScenarios_close(ictrload)
+	end-if
+
+end-if
+
+unloadprob
+
+if (DEBUG or DEBG >= 2) then
+	writeln('Xpress Memory Released: ',IPER,'-',ISIM)
+end-if
+
+clearBuffers(study)
+
+if (DEBUG or DEBG >= 2) then
+	writeln('PSR Classes Memory Released: ',IPER,'-',ISIM)
+end-if
+
+!***********************************************************************************************************************
+
+! **********
+! Procedures
+! **********
+
+procedure model_exec(A: integer, B: integer, C: integer, E: integer)
+
+! ******************
+! Objective Function
+! ******************
+
+FOBJ:= ALFA + SVAF + SVMF + SDNF + SDMF + SPLF + SIRF + SMNF + STPF + SHDF + SRSF + SRTF + SMXF + TGSF + SVXF + RESF + BURF + BDRF + CTRF + STHF - CUTF + (OMTF + OMHF + CDSF + CDBF + TCOF + SMTF + SINF + OMRF + CURF + INJF + TMNF + CCCF + GNPF + GPTF - SELF) / NMIL
+
+! *****************
+! Costs / Penalties
+! *****************
+
+! 01) Thermal O&M Cost
+
+Obj_Function_Omtf:= OMTF = sum(j in STER,t in A..B|EXST(j) <= 0 and OMCT(j) <> 0.0) OMCT(j)*sum(k in 1..NSEG(j)) GTER(j,t,k)
+
+! 02) Deficit Cost
+
+if (NETW = 0) then
+	Obj_Function_Cdsf:= CDSF = sum(m in SSYS,k in SDEF,t in A..B|DEMS(m,t) > 0.0) DEFC(k)*DEFS(m,k,t)
+	Obj_Function_Cdbf:= CDBF = 0.0
+else
+	Obj_Function_Cdsf:= CDSF = 0.0
+	Obj_Function_Cdbf:= CDBF = sum(m in SBUS,k in SDEF,t in A..B|DEMB(m,t) > 0.0 and IBDF(m) = 1) DEFC(k)*DEFB(m,k,t)
+end-if
+
+! 03) Fuel Cost
+
+Obj_Function_Tcof:= TCOF = sum(j in STER,t in A..B|EXST(j) <= 0 and ((RGAS <= 1) or (RGAS = 2 and GNOT(j) = 0))) (FCOS(FULT(j)) + CTRS(j))*CNSM(j,t)
+
+! 04) Thermal Start-Up Cost
+
+Obj_Function_Stpf:= STPF = sum(j in STER,t in A..B|EXST(j) <= 0 and COMT(j) > 0 and CSTP(j) > 0) CSTP(j)*YTER(j,CPRT(j,t))
+
+! 05) Alert Storage
+
+Obj_Function_Valf:= SVAF = sum(i in SHID|EXSH(i) <= 0 and TVAL(i) > 0.0 and DVAL(i) <> -1) PVAL(i)*SVAL(i)
+
+! 06) Minimum Operative Storage
+
+Obj_Function_Vmnf:= SVMF = sum(i in SHID|EXSH(i) <= 0 and TVMN(i) > 0.0 and DVMN(i) <> -1) PVMN(i)*SVMN(i)
+
+! 07) Minimum Total Outflow
+
+Obj_Function_Dmnf:= SDNF = sum(i in SHID,t in A..B|EXSH(i) <= 0 and TOMN(i) > 0.0 and DOMN(i) <> - 1) PDMN(i)*SMNT(i,t)*CNV1(t)
+
+! 08) Maximum Total Outflow
+
+Obj_Function_Dmxf:= SDMF = sum(i in SHID,t in A..B|EXSH(i) <= 0 and DOMX(i) <> - 1) PDMX(i)*SMXT(i,t)*CNV1(t)
+
+! 09) Spillage Cost
+
+Obj_Function_Splf:= SPLF = sum(i in SHID,t in A..B|EXSH(i) <= 0 and SPLC(i) > 0.0 and NSPL(i) = 0 and TMAX(i) > 0) SPLC(i)*SPIL(i,t)*CNV1(t)
+
+! 10) Minimum Turbining
+
+Obj_Function_Mntf:= SMTF = sum(i in SHID,t in A..B|EXSH(i) <= 0 and TMIN(i) > 0.0) SMNG*STRB(i,t)*CNV1(t)
+
+! 11) Irrigation
+
+Obj_Function_Irrf:= SIRF = sum(i in SHID,t in A..B|TIRR(i) > 0.0 and DIRR(i) <> - 1) PIRR(i)*SIRR(i,t)
+
+! 12) Secondary Reserve
+
+Obj_Function_Secf:= SRSF = sum(r in SRSG,t in A..B|PRSG(r) > 0.0 and VRSG(r,t) > 0.0) PRSG(r)*DRSG(r,t)
+
+! 13) Generation Constraint
+
+Obj_Function_Genf:= SRTF = sum(r in SRTG,t in A..B|PRTG(r) > 0.0 and DRGT(r) <> -1) PRTG(r)*DRTG(r,t)
+
+! 14) Minimum Spillage
+
+Obj_Function_Smnf:= SMNF = sum(i in SHID,t in A..B|EXSH(i) <= 0 and PMNS(i) > 0.0 and DMNS(i) <> -1) PMNS(i)*SMNS(i,t)*CNV1(t)
+
+! 15) Thermal Shutdown Cost
+
+Obj_Function_Shdf:= SHDF = sum(j in STER,t in A..B|EXST(j) <= 0 and COMT(j) > 0 and CSTD(j) > 0) CSTD(j)*DTER(j,CPRT(j,t))
+
+! 16) Elastic Demand Benefit
+
+if (NETW = 0) then
+	Obj_Function_Self:= SELF = sum(l in SLVE,t in A..B|DMEL(l,t) > 0.0 and PMEL(l,t) <> 0.0) DEME(l,t)*PMEL(l,t)
+else
+	Obj_Function_Self:= SELF = sum(m in SBUS,l in SLVE,t in A..B|DBEL(m,l,t) > 0.0 and PMEL(l,t) <> 0.0) DBME(m,l,t)*PMEL(l,t)
+end-if
+
+! 17) Interconnection Cost
+
+if (NETW = 0) then
+	Obj_Function_Sinf:= SINF = sum(l in SINT,k in SFLW,t in A..B|EXSI(l) <= 0 and INTC(l,k,t) > 0.0) INTC(l,k,t)*INTF(l,k,t)
+end-if
+
+! 18) Hydro O&M Cost
+
+Obj_Function_Omhf:= OMHF = sum(i in SHID,t in A..B|EXSH(i) <= 0 and OMCH(i) <> 0.0) OMCH(i)*GHID(i,t)*SIGH(i)
+
+! 19) Maximum Spillage
+
+Obj_Function_Smxf:= SMXF = sum(i in SHID,t in A..B|EXSH(i) <= 0 and PMXS(i) > 0.0 and DMXS(i) <> -1) PMXS(i)*SMXS(i,t)*CNV1(t)
+
+! 20) Renewable O&M Cost
+
+Obj_Function_Omrf:= OMRF = sum(r in SRNW,t in A..B|EXSR(r) <= 0 and GRNW(r,t) <> 0.0 and OMCR(r) <> 0.0) OMCR(r)*(GRNW(r,t) - DRNW(r,t))
+
+! 21) Renewable Curtailment Cost
+
+Obj_Function_Curf:= CURF = sum(r in SRNW,t in A..B|EXSR(r) <= 0 and GRNW(r,t) <> 0.0 and CUCR(r) <> 0.0) CUCR(r)*DRNW(r,t)
+
+! 22) Target Storage
+
+if (TERF = 3) then
+
+	forall(i in SHID|GENESYS = 1) WAVL(i):= WVLX(i + NHID * (C - 1))
+
+	forall(i in SHID|EXSH(i) <= 0 and RESV(i) > 0 and TGTS(i) >= VMIN(i) and TGTS(i) <= VMAX(i)) PGTS(i):= maxlist(0.0,WAVL(i))
+
+end-if
+
+if (TERF = 0 or TERF = 1 or TERF = 3) then
+	Obj_Function_Tgsf:= TGSF = sum(i in SHID|EXSH(i) <= 0 and RESV(i) > 0 and TGTS(i) >= VMIN(i) and TGTS(i) <= VMAX(i) and INIC = 1) PGTS(i)*STGS(i)
+end-if
+
+! 23) Injection Price
+
+Obj_Function_Injf:= INJF = sum(i in SINJ,t in A..B|INJW(i,t) > 0.0) (INJW(i,t) - DNJW(i,t))*PRIW(i,t)
+
+! 24) Maximum Operative Storage
+
+Obj_Function_Vmxf:= SVXF = sum(i in SHID|EXSH(i) <= 0 and TVMX(i) > 0.0 and DVMX(i) <> -1) PVMX(i)*SVMX(i)
+
+! 25) Secondary Reserve Bid
+
+Obj_Function_Resf:= RESF = sum(i in SHID,t in A..B|EXSH(i) <= 0 and SECH(i,t) > 0 and PMXH(i,t) > 0.0 and FPRM(i) > 0.0) PMXH(i,t)*RSCH(i,t) +
+						   sum(j in STER,t in A..B|EXST(j) <= 0 and SECT(j,t) > 0 and PMXT(j,t) > 0.0) 					 PMXT(j,t)*RSCT(j,t)
+
+! 26) Water Travel Time
+
+if (TERF <= 0 and NCUT > 0) then
+	Obj_Function_Cutf:= CUTF = sum(i in SHID,t in maxlist(B - TVTT(i) + 1,1)..B|EXSH(i) <= 0 and JUST(i) <> 0 and TVTT(i) > 0) CNV1(t)*TURB(i,t)*FTMX(JUST(i))
+else
+	Obj_Function_Cutf:= CUTF = 0.0
+end-if
+
+! 27) Thermal Minimum Fuel Consumption
+
+Obj_Function_Tmnf:= TMNF = sum(j in STER|EXST(j) <= 0 and MNCN(j) > 0.0) (FCOS(FULT(j)) + CTRS(j)) * SCMN(j) * 1.1
+
+! 28) Emission Cost
+
+Obj_Function_Cccf:= CCCF = sum(j in STER,t in A..B|EXST(j) <= 0 and TCO2(j) > 0.0 and ECO2(FULT(j)) > 0.0) EMIC(j,t) * CCCT(SYST(j))
+
+! 29) Gas Node Production Cost
+
+Obj_Function_Gnpf:= GNPF = sum(n in SGNO,t in A..B|EXSN(n) <= 0 and RGAS = 2 and DNNX(n) <> -1 and GNCT(n) > 0.0) GNOD(n,t) * GNCT(n) * NMLL
+
+! 30) Gas Pipeline Transportation Cost
+
+Obj_Function_Gptf:= GPTF = sum(l in SGLP,m in SFLW,t in A..B|EXSP(l) <= 0 and RGAS = 2 and GNFP(l) > 0.0) GNLP(l,m,t) * GNFP(l) * NMLL
+
+! 31) Balancing Area Up Reserve
+
+Obj_Function_Burf:= BURF = sum(b in SBAL,t in A..B|BREG(b) = 1 and VHUR(b,t) > 0.0) PBAR(b)*DHUR(b,t)
+
+! 32) Balancing Area Down Reserve
+
+Obj_Function_Bdrf:= BDRF = sum(b in SBAL,t in A..B|BREG(b) = 1 and VHDR(b,t) > 0.0) PBAR(b)*DHDR(b,t)
+
+! 33) Contingency Reserve
+
+Obj_Function_Ctrf:= CTRF = sum(c in SCTG,t in A..B|CRAF(c) = 1) PCTR(c)*DCTR(c,t)
+
+! 34) Hydro Start-Up Cost
+
+Obj_Function_Sthf:= STHF = sum(i in SHID,t in A..B|EXSH(i) <= 0 and COMH(i) > 0 and CSHP(i) > 0) CSHP(i)*YHID(i,CPRH(i,t))
+
+! ***********
+! Constraints
+! ***********
+
+! 01) Thermal Minimum Generation
+
+forall(j in STER,t in A..B|EXST(j) <= 0 and COMT(j) = 0 and TFIC(j) = 0 and NTFC(j) = 0 and maxlist(GMNF(j),GMIN(j,t)) > 0 and maxlist(GMNF(j),GMIN(j,t)) <= GMAX(j)) Thermal_Min_Gen(j,t):= sum(k in 1..NSEG(j)) GTER(j,t,k) >= maxlist(GMNF(j),GMIN(j,t))*DURT(t)
+forall(j in STER,t in A..B|EXST(j) <= 0 and COMT(j) > 0 and TFIC(j) = 0 and NTFC(j) = 0 and maxlist(GMNF(j),GMIN(j,t)) > 0) Thermal_Min_Gen(j,t):= sum(k in 1..NSEG(j)) GTER(j,t,k) >= maxlist(GMNF(j),GMIN(j,t))*DURT(t)*XTER(j,CPRT(j,t))
+
+forall(j in STER,t in A..B|EXST(j) <= 0 and COMT(j) = 0 and TFIC(j) = 0 and NTFC(j) = 0 and MUST(j) = 1 and DMNX(j) =  -1) Thermal_Min_Gen(j,t):= sum(k in 1..NSEG(j)) GTER(j,t,k) = maxlist(0,(GMAX(j) - PRMT(j,t)))*DURT(t)
+forall(j in STER,t in A..B|EXST(j) <= 0 and COMT(j) = 0 and TFIC(j) = 0 and NTFC(j) = 0 and MUST(j) = 1 and DMNX(j) <> -1) Thermal_Min_Gen(j,t):= sum(k in 1..NSEG(j)) GTER(j,t,k) = maxlist(0,minlist(GMAX(j) - PRMT(j,t),GMIN(j,t)))*DURT(t)
+
+! 02) Thermal Maximum Generation
+
+forall(j in STER,t in A..B,k in 1..NSEG(j)|EXST(j) <= 0 and COMT(j) = 0 and NSEG(j) > 1) Thermal_Max_Seg_Gen(j,t,k):= GTER(j,t,k) <= GESP(j,k)*GMAX(j)*DURT(t)
+forall(j in STER,t in A..B,k in 1..NSEG(j)|EXST(j) <= 0 and COMT(j) > 0 and NSEG(j) > 1) Thermal_Max_Seg_Gen(j,t,k):= GTER(j,t,k) <= GESP(j,k)*GMAX(j)*DURT(t)*XTER(j,CPRT(j,t))
+
+forall(j in STER,t in A..B|EXST(j) <= 0 and COMT(j) = 0) Thermal_Max_Gen(j,t):= sum(k in 1..NSEG(j)) GTER(j,t,k) <= maxlist(0,(GMAX(j) - PRMT(j,t)))*DURT(t)
+forall(j in STER,t in A..B|EXST(j) <= 0 and COMT(j) > 0) Thermal_Max_Gen(j,t):= sum(k in 1..NSEG(j)) GTER(j,t,k) <= maxlist(0,(GMAX(j) - PRMT(j,t)))*DURT(t)*XTER(j,CPRT(j,t))
+
+! 03) Thermal Commitment
+
+forall(j in STER,t in A..B|EXST(j) <= 0 and COMT(j) > 0 and TCMT(j) = -1) do
+	if (MIP_PROBLEM = 1 and RMIP = 1 and MIPH(t) = 1) then
+		Thermal_Commitment(j,CPRT(j,t)):= XTER(j,CPRT(j,t)) is_binary
+	else
+		Thermal_Commitment(j,CPRT(j,t)):= XTER(j,CPRT(j,t)) <= NUM1
+	end-if
+end-do
+
+! 04) Hydro Balance
+
+forall(i in SHID,t in A..B) Hydro_Balance(i,t):= VOLM(i,t) = VOLM(i,t - 1) + 
+												 (INFL(i) - TURB(i,t) - SPIL(i,t))*CNV1(t) -
+												 (TIRR(i) - SIRR(i,t))*CNV1(t) - 
+												 (EVAP(i) + FILT(i))*CNV3(t) + SLKR(i,t) +
+												 (sum(m in SHID|                 JUSV(m) = i and t > TVTS(m)) SPIL(m,t - TVTS(m)))*CNV1(t) +
+												 (sum(m in SHID|EXSH(m) <= 0 and JUST(m) = i and t > TVTT(m)) TURB(m,t - TVTT(m)))*CNV1(t) +
+												 (sum(m in SHID|EXSH(m) <= 0 and JUSF(m) = i) FILT(m))*CNV3(t)
+
+forall(i in SHID,t in A..B|MXSR(i,t) > 0.0) Hydro_Reservoir_Slack(i,t):= SLKR(i,t) <= MXSR(i,t)
+
+if (A > 1) then
+
+	forall(i in SHID,t in maxlist(A - TVTT(i),1)..A - 1|EXSH(i) <= 0 and TVTT(i) > 0) Hydro_Initial_Turbining(i,t):= TURB(i,t) = TINI(i,t)
+	forall(i in SHID,t in maxlist(A - TVTS(i),1)..A - 1|                 TVTS(i) > 0) Hydro_Initial_Spilling(i,t):=  SPIL(i,t) = SINI(i,t)
+
+end-if
+
+! 05) System Demand
+
+forall(m in SSYS,t in A..B|NETW = 0) System_Demand(m,t):= sum(i in SHID|EXSH(i) <= 0 and SYSH(i) = m) GHID(i,t) +
+														  sum(j in STER,k in 1..NSEG(j)|EXST(j) <= 0 and SYST(j) = m) GTER(j,t,k) +
+									  					  sum(r in SRNW|EXSR(r) <= 0 and SYSR(r) = m and GRNW(r,t) <> 0.0) (GRNW(r,t) - DRNW(r,t)) +
+									  					  sum(b in SBAT|EXSA(b) <= 0 and SYSA(b) = m) (GBAT(b,t) - LBAT(b,t)) +
+									  					  sum(i in SINJ|SYSJ(i) = m and INJW(i,t) <> 0.0) (INJW(i,t) - DNJW(i,t)) +
+									  					  sum(l in SINT|EXSI(l) <= 0 and INTO(l) = m) INTF(l,1,t)*(1 - INTL(l,2,t)) -
+									  					  sum(l in SINT|EXSI(l) <= 0 and INTO(l) = m) INTF(l,2,t) -
+									  					  sum(l in SINT|EXSI(l) <= 0 and INFR(l) = m) INTF(l,1,t) +
+									  					  sum(l in SINT|EXSI(l) <= 0 and INFR(l) = m) INTF(l,2,t)*(1 - INTL(l,1,t)) +
+									  					  sum(k in SDEF|DEMS(m,t) > 0.0) DEFS(m,k,t) = DEMS(m,t)*DURT(t) +
+									  					  sum(l in SLVE|SEGE(l) = m and DMEL(l,t) > 0.0) DEME(l,t)
+
+! 06) Thermal Ramp-Up
+
+forall(j in STER,t in A..B|EXST(j) <= 0 and RMPU(j) > 0.0 and RMPU(j)*NMIN >= maxlist(GMNF(j),GMIN(j,t)) and RMPU(j)*NMIN <= GMAX(j)) Thermal_Ramp_Up(j,t):= sum(k in 1..NSEG(j)) (GTER(j,t,k) - GTER(j,t - 1,k)) <= RMPU(j)*NMIN*DURT(t)
+
+! 07) Thermal Ramp-Down
+
+forall(j in STER,t in A..B|EXST(j) <= 0 and RMPD(j) > 0.0 and RMPD(j)*NMIN >= maxlist(GMNF(j),GMIN(j,t)) and RMPD(j)*NMIN <= GMAX(j)) Thermal_Ramp_Down(j,t):= sum(k in 1..NSEG(j)) (GTER(j,t,k) - GTER(j,t - 1,k)) >= -RMPD(j)*NMIN*DURT(t)
+
+! 08) Generation Constraint
+
+forall(r in SRTG,t in A..B|DRGT(r) <> -1 and substr(TRTG(r),2,2) = '>') System_Gen_Constraint_Grt(r,t):= sum(i in SHID|EXSH(i) <= 0 and TRTH(i,r) = 1) GHID(i,t) +
+																		     		   					 sum(j in STER,k in 1..NSEG(j)|EXST(j) <= 0 and TRTT(j,r) = 1) GTER(j,t,k) +
+																		     		   					 DRTG(r,t) >= VRTG(r,t)*DURT(t)
+
+forall(r in SRTG,t in A..B|DRGT(r) <> -1 and substr(TRTG(r),2,2) = '<') System_Gen_Constraint_Low(r,t):= sum(i in SHID|EXSH(i) <= 0 and TRTH(i,r) = 1) GHID(i,t) +
+																		     		   					 sum(j in STER,k in 1..NSEG(j)|EXST(j) <= 0 and TRTT(j,r) = 1) GTER(j,t,k) -
+																		     		   					 DRTG(r,t) <= VRTG(r,t)*DURT(t)
+
+! 09) Minimum Storage
+
+forall(i in SHID,t in A..B|EXSH(i) <= 0 and RESV(i) > 0 and VMIN(i) > 0) Hydro_Min_Storage(i,t):= VOLM(i,t) >= VMIN(i)
+forall(i in SHID,t in A..B|EXSH(i)  > 0 and RESV(i) > 0 and VMNO(i) > 0) Hydro_Min_Storage(i,t):= VOLM(i,t) >= VMNO(i)
+
+forall(i in SHID|EXSH(i) <= 0 and RESV(i) > 0 and TVMN(i) > 0 and DVMN(i) <> -1) Hydro_Min_Operative_Storage(i):= VOLM(i,B) + SVMN(i) >= TVMN(i)
+
+! 10) Maximum Storage
+
+forall(i in SHID,t in A..B|EXSH(i) <= 0 and RESV(i) > 0) Hydro_Max_Storage(i,t):= VOLM(i,t) <= VMAX(i)
+forall(i in SHID,t in A..B|EXSH(i)  > 0 and RESV(i) > 0) Hydro_Max_Storage(i,t):= VOLM(i,t) <= VMNO(i)
+
+forall(i in SHID|EXSH(i) <= 0 and RESV(i) > 0 and TVMX(i) > 0 and DVMX(i) <> -1) Hydro_Max_Operative_Storage(i):= VOLM(i,B) - SVMX(i) >= TVMX(i)
+
+! 11) Minimum Turbining
+
+forall(i in SHID,t in A..B|EXSH(i) <= 0 and TMIN(i) > 0.0) 				   Hydro_Min_Turbining(i,t):= TURB(i,t) + STRB(i,t) >= TMIN(i)
+
+forall(i in SHID,t in A..B|EXSH(i) <= 0 and TMIN(i) > 0.0 and COMH(i) > 0) Hydro_Min_Turbining(i,t):= TURB(i,t) >= TMIN(i)*XHID(i,CPRH(i,t))
+
+! 12) Maximum Turbining
+
+forall(i in SHID,t in A..B|EXSH(i) <= 0) 				 Hydro_Max_Turbining(i,t):= TURB(i,t) <= TMAX(i)
+
+forall(i in SHID,t in A..B|EXSH(i) <= 0 and COMH(i) > 0) Hydro_Max_Turbining(i,t):= TURB(i,t) <= TMAX(i)*XHID(i,CPRH(i,t))
+
+! 13) Minimum Total Outflow
+
+forall(i in SHID,t in A..B|EXSH(i) <= 0 and TOMN(i) > 0.0 and DOMN(i) <> - 1) Hydro_Min_Total_Outflow(i,t):= TURB(i,t) + SPIL(i,t) + SMNT(i,t) >= TOMN(i)
+
+! 14) Maximum Total Outflow
+
+forall(i in SHID,t in A..B|EXSH(i) <= 0 and DOMX(i) <> - 1) Hydro_Max_Total_Outflow(i,t):= TURB(i,t) + SPIL(i,t) - SMXT(i,t) <= TOMX(i)
+
+! 15) Alert Storage
+
+forall(i in SHID|EXSH(i) <= 0 and RESV(i) > 0 and TVAL(i) > 0.0 and DVAL(i) <> -1) Hydro_Alert_Storage(i):= VOLM(i,B) + SVAL(i) >= TVAL(i)
+
+! 16) Flood Control Storage
+
+forall(i in SHID|EXSH(i) <= 0 and RESV(i) > 0 and DFCL(i) <> -1) Hydro_Flood_Control_Storage(i):= VOLM(i,B) <= TFCL(i)
+
+! 17) Minimum Spillage
+
+forall(i in SHID,t in A..B|EXSH(i) <= 0 and TMNS(i) > 0.0 and DMNS(i) <> - 1 and FMNU = 0) Hydro_Min_Spillage(i,t):= SPIL(i,t) + SMNS(i,t) >= TMNS(i)
+
+! 18) Hydro Production / Pumping
+
+forall(i in SHID,t in A..B|EXSH(i) <= 0 and FPRM(i) <> 0.0) Hydro_Production(i,t):= GHID(i,t) = FPRM(i)*TURB(i,t)*DURT(t)
+
+! 19) Pumped Storage
+
+forall(i in SHID,t in A..B|EXSH(i) <= 0 and FPRM(i) < 0.0) Hydro_Pumping(i,t):= GHID(i,t) is_free
+
+! 20) System Interconnection
+
+forall(l in SINT,k in SFLW,t in A..B|EXSI(l) <= 0 and NETW = 0) Interconnection_Maximum(l,k,t):= INTF(l,k,t) <= INTM(l,k,t)*DURT(t)
+
+! 21) Initial Storage
+
+forall(i in SHID|EXSH(i) <= 0 and RESV(i) > 0 and A = 1) Hydro_Initial_Storage(i):= VOLM(i,A - 1) = VINI(i)
+forall(i in SHID|EXSH(i) <= 0 and RESV(i) < 0 and A = 1) Hydro_Initial_Storage(i):= VOLM(i,A - 1) = RORN(i)
+
+forall(i in SHID|EXSH(i)  > 0 and RESV(i) > 0 and A = 1) Hydro_Initial_Storage(i):= VOLM(i,A - 1) = VMNO(i)
+forall(i in SHID|EXSH(i)  > 0 and RESV(i) < 0 and A = 1) Hydro_Initial_Storage(i):= VOLM(i,A - 1) = RORN(i)
+
+forall(i in SHID|RESV(i) <> 0 and A > 1 and INIC = 1) 	 Hydro_Initial_Storage(i):= VOLM(i,A - 1) = maxlist(0.0,VFIM(i))
+
+! 22) Renewable Generation / Curtailment
+
+forall(r in SRNW,t in A..B|EXSR(r) <= 0 and GRNW(r,t) > 0.0) Renewable_Curtailment_1(r,t):= DRNW(r,t) <= GRNW(r,t)
+forall(r in SRNW,t in A..B|EXSR(r) <= 0 and GRNW(r,t) < 0.0) Renewable_Curtailment_1(r,t):= DRNW(r,t) >= GRNW(r,t)
+forall(r in SRNW,t in A..B|EXSR(r) <= 0 and GRNW(r,t) < 0.0) Renewable_Curtailment_2(r,t):= DRNW(r,t) <= 0.0
+forall(r in SRNW,t in A..B|EXSR(r) <= 0 and GRNW(r,t) < 0.0) Renewable_Curtailment_3(r,t):= DRNW(r,t) is_free
+
+! 23) Battery
+
+forall(b in SBAT|EXSA(b) <= 0 and A = 1) 			  Battery_Initial_Storage(b):= VBAT(b,A - 1) = BINI(b)*(MXBT(b) - MNBT(b)) + MNBT(b)
+forall(b in SBAT|EXSA(b) <= 0 and A > 1 and INIC = 1) Battery_Initial_Storage(b):= VBAT(b,A - 1) = BFIM(b)
+
+forall(b in SBAT|EXSA(b) <= 0) do
+
+	if (RBAT(b) = 0 or RBAT(b) > DSLC) then
+		RBAT(b):= DSLC
+	end-if
+
+	NCYB(b):= ceil((B - A + 1) / RBAT(b))
+
+	forall(k in 1..NCYB(b)) do
+
+		BCYC:= A + (k - 1)*RBAT(b) - 1
+		ECYC:= minlist(B, BCYC + RBAT(b))
+
+		Battery_Final_Storage(b,k):= VBAT(b,ECYC) = VBAT(b,BCYC)
+
+	end-do
+
+end-do
+
+forall(b in SBAT,t in A..B|EXSA(b) <= 0) do
+	if (FBAT(b) >= 0.0) then
+		Battery_Charge(b,t):= LBAT(b,t) = CBAT(b,t)*PBAT(b)*DURT(t) / FBAT(b)
+	else
+		Battery_Charge(b,t):= LBAT(b,t) = 0.0
+	end-if
+end-do
+
+forall(b in SBAT,t in A..B|EXSA(b) <= 0) do
+
+	Battery_Discharge(b,t):= GBAT(b,t) = DBAT(b,t)*PBAT(b)*DURT(t)*EBAT(b)
+
+	Battery_Max_Storage(b,t):= VBAT(b,t) <= MXBT(b)
+
+	Battery_Balance(b,t):= VBAT(b,t) = VBAT(b,t - 1) + (CBAT(b,t) - DBAT(b,t))*PBAT(b)*DURT(t)
+
+	Battery_Max_Charge_1(b,t):=    CBAT(b,t) <= XBAT(b,t)
+	Battery_Max_Discharge_1(b,t):= DBAT(b,t) <= YBAT(b,t)
+
+	if (MIP_PROBLEM = 1 and RMIP = 1 and MIPH(t) = 1) then
+		Battery_Max_Charge_2(b,t):=    XBAT(b,t) is_binary
+		Battery_Max_Discharge_2(b,t):= YBAT(b,t) is_binary
+	else
+		Battery_Max_Charge_2(b,t):=    XBAT(b,t) <= NUM1
+		Battery_Max_Discharge_2(b,t):= YBAT(b,t) <= NUM1
+	end-if
+
+	Battery_Operation(b,t):= XBAT(b,t) + YBAT(b,t) <= NUM1
+
+end-do
+
+forall(b in SBAT,t in A..B|EXSA(b) <= 0 and MNBT(b) > 0) Battery_Min_Storage(b,t):= VBAT(b,t) >= MNBT(b)
+
+forall(b in SBAT,t in A..B|EXSA(b) <= 0 and BMPU(b) > 0.0 and BMPU(b)*NMIN <= PBAT(b)) Battery_Charge_Ramp(b,t):= 		(CBAT(b,t) - CBAT(b,t - 1))*PBAT(b) <= BMPU(b)*NMIN*DURT(t)
+forall(b in SBAT,t in A..B|EXSA(b) <= 0 and BMPD(b) > 0.0 and BMPD(b)*NMIN <= PBAT(b)) Battery_Discharge_Ramp(b,t):=	(DBAT(b,t) - DBAT(b,t - 1))*PBAT(b) <= BMPD(b)*NMIN*DURT(t)
+
+forall(b in SBAT|EXSA(b) <= 0 and (BMPU(b) > 0.0 or BMPD(b) > 0.0)) do
+	if (A = 1) then 
+		Battery_Initial_Charge(b):= 	CBAT(b,A - 1) = 0
+		Battery_Initial_Discharge(b):= 	DBAT(b,A - 1) = 0
+	else
+		if (INIC = 1) then
+			Battery_Initial_Charge(b):= 	CBAT(b,A - 1) = BCIN(b)
+			Battery_Initial_Discharge(b):= 	DBAT(b,A - 1) = BDIN(b)
+		end-if
+	end-if
+end-do
+
+! 24) Minimum Uptime
+
+forall(j in STER,t in A..B,k in t + 1..t + integer(MUPT(j)/DURT(t)) - 1|EXST(j) <= 0 and NCPT(j) = NSTG and COMT(j) > 0 and MUPT(j) > DURT(t) and MIP_PROBLEM = 1 and RMIP = 1 and MIPH(t) = 1 and IGEN < 2 and TCMT(j) = -1) Thermal_Min_Uptime(j,t,k):=   XTER(j,CPRT(j,t - 1)) - XTER(j,CPRT(j,t)) + XTER(j,CPRT(j,k)) >= 0
+
+forall(j in STER,t in B + 1..B + integer(MUPT(j)) - 1|EXST(j) <= 0 and COMT(j) > 0 and MUPT(j) > 0 and B < NSTG and TCMT(j) = -1) do
+	if (MIP_PROBLEM = 1 and RMIP = 1 and MIPH(t) = 1) then
+		Thermal_Commitment(j,CPRT(j,t)):= XTER(j,CPRT(j,t)) is_binary
+	else
+		Thermal_Commitment(j,CPRT(j,t)):= XTER(j,CPRT(j,t)) <= NUM1
+	end-if
+end-do
+
+! 25) Minimum Downtime
+
+forall(j in STER,t in A..B,k in t + 1..t + integer(MDWT(j)/DURT(t)) - 1|EXST(j) <= 0 and NCPT(j) = NSTG and COMT(j) > 0 and MDWT(j) > DURT(t) and MIP_PROBLEM = 1 and RMIP = 1 and MIPH(t) = 1 and IGEN < 2 and TCMT(j) = -1) Thermal_Min_Downtime(j,t,k):= XTER(j,CPRT(j,t - 1)) - XTER(j,CPRT(j,t)) + XTER(j,CPRT(j,k)) <= 1
+
+forall(j in STER,t in B + 1..B + integer(MDWT(j)) - 1|EXST(j) <= 0 and COMT(j) > 0 and MDWT(j) > 0 and B < NSTG and TCMT(j) = -1) do
+	if (MIP_PROBLEM = 1 and RMIP = 1 and MIPH(t) = 1) then
+		Thermal_Commitment(j,CPRT(j,t)):= XTER(j,CPRT(j,t)) is_binary
+	else
+		Thermal_Commitment(j,CPRT(j,t)):= XTER(j,CPRT(j,t)) <= NUM1
+	end-if
+end-do
+
+! 26) Hydro Maximum Generation
+
+forall(i in SHID,t in A..B|EXSH(i) <= 0 and FPRM(i) > 0.0) 				   Hydro_Max_Gen(i,t):= GHID(i,t) <= maxlist(0,(POTH(i) - PRMH(i,t)))*DURT(t)
+forall(i in SHID,t in A..B|EXSH(i) <= 0 and FPRM(i) < 0.0) 				   Hydro_Max_Gen(i,t):= GHID(i,t) >= -POTH(i)*DURT(t)
+
+forall(i in SHID,t in A..B|EXSH(i) <= 0 and FPRM(i) > 0.0 and COMH(i) > 0) Hydro_Max_Gen(i,t):= GHID(i,t) <= maxlist(0,(POTH(i) - PRMH(i,t)))*DURT(t)*XHID(i,CPRH(i,t))
+forall(i in SHID,t in A..B|EXSH(i) <= 0 and FPRM(i) < 0.0 and COMH(i) > 0) Hydro_Max_Gen(i,t):= GHID(i,t) >= -POTH(i)*DURT(t)*XHID(i,CPRH(i,t))
+
+! 27) Thermal Secondary Reserve
+
+forall(j in STER,t in A..B|EXST(j) <= 0 and SCRS <> 1 and COMT(j) = 0 and TFIC(j) = 0 and NTFC(j) = 0 and (SECT(j,t) > 0 or TBAL(j) = 1) and maxlist(GMNF(j),GMIN(j,t)) > 0.0 and maxlist(GMNF(j),GMIN(j,t)) > 0 and MUST(j) = 0 and maxlist(GMNF(j),GMIN(j,t)) <= GMAX(j)) Thermal_Min_Gen(j,t):= sum(k in 1..NSEG(j)) GTER(j,t,k) - RSCT(j,t) - sum(b in SBAL) RBDT(j,b,t) >= maxlist(GMNF(j),GMIN(j,t))*DURT(t)
+forall(j in STER,t in A..B|EXST(j) <= 0 and SCRS <> 1 and COMT(j) > 0 and TFIC(j) = 0 and NTFC(j) = 0 and (SECT(j,t) > 0 or TBAL(j) = 1) and maxlist(GMNF(j),GMIN(j,t)) > 0.0 and maxlist(GMNF(j),GMIN(j,t)) > 0) 														   	Thermal_Min_Gen(j,t):= sum(k in 1..NSEG(j)) GTER(j,t,k) - RSCT(j,t) - sum(b in SBAL) RBDT(j,b,t) >= maxlist(GMNF(j),GMIN(j,t))*DURT(t)*XTER(j,CPRT(j,t))
+
+forall(j in STER,t in A..B|EXST(j) <= 0 and SCRS <> 2 and COMT(j) = 0 and (SECT(j,t) > 0 or TBAL(j) = 1)) Thermal_Max_Gen(j,t):= sum(k in 1..NSEG(j)) GTER(j,t,k) + RSCT(j,t) + sum(b in SBAL) (RBUT(j,b,t) + RCUT(j,b,t)) <= maxlist(0,(GMAX(j) - PRMT(j,t)))*DURT(t)
+forall(j in STER,t in A..B|EXST(j) <= 0 and SCRS <> 2 and COMT(j) > 0 and (SECT(j,t) > 0 or TBAL(j) = 1)) Thermal_Max_Gen(j,t):= sum(k in 1..NSEG(j)) GTER(j,t,k) + RSCT(j,t) + sum(b in SBAL) (RBUT(j,b,t) + RCUT(j,b,t)) <= maxlist(0,(GMAX(j) - PRMT(j,t)))*DURT(t)*XTER(j,CPRT(j,t))
+
+forall(j in STER,t in A..B|EXST(j) <= 0 and COMT(j) = 0 and SECT(j,t) > 0 and RMXT(j,t) > 0) Thermal_Max_Reserve(j,t):= RSCT(j,t) <= RMXT(j,t)*DURT(t)
+forall(j in STER,t in A..B|EXST(j) <= 0 and COMT(j) > 0 and SECT(j,t) > 0 and RMXT(j,t) > 0) Thermal_Max_Reserve(j,t):= RSCT(j,t) <= RMXT(j,t)*DURT(t)*XTER(j,CPRT(j,t))
+forall(j in STER,t in A..B|EXST(j) <= 0 and COMT(j) = 0 and SECT(j,t) > 0 and RMXT(j,t) = 0) Thermal_Max_Reserve(j,t):= RSCT(j,t) <= maxlist(0,(GMAX(j) - PRMT(j,t)))*DURT(t)
+forall(j in STER,t in A..B|EXST(j) <= 0 and COMT(j) > 0 and SECT(j,t) > 0 and RMXT(j,t) = 0) Thermal_Max_Reserve(j,t):= RSCT(j,t) <= maxlist(0,(GMAX(j) - PRMT(j,t)))*DURT(t)*XTER(j,CPRT(j,t))
+
+! 28) Hydro Secondary Reserve
+
+forall(i in SHID,t in A..B|EXSH(i) <= 0 and SCRS <> 1 and (SECH(i,t) > 0 or HBAL(i) = 1) and FPRM(i) > 0.0 and TMIN(i) > 0.0) 				  Hydro_Min_Turbining(i,t):= TURB(i,t) - RSCH(i,t) / FPRM(i) - sum(b in SBAL) RBDH(i,b,t) / FPRM(i) + STRB(i,t) >= TMIN(i)
+forall(i in SHID,t in A..B|EXSH(i) <= 0 and SCRS <> 1 and (SECH(i,t) > 0 or HBAL(i) = 1) and FPRM(i) > 0.0 and TMIN(i) > 0.0 and COMH(i) > 0) Hydro_Min_Turbining(i,t):= TURB(i,t) - RSCH(i,t) / FPRM(i) - sum(b in SBAL) RBDH(i,b,t) / FPRM(i) >= TMIN(i)*XHID(i,CPRH(i,t))
+
+forall(i in SHID,t in A..B|EXSH(i) <= 0 and SCRS <> 2 and (SECH(i,t) > 0 or HBAL(i) = 1) and FPRM(i) > 0.0)					Hydro_Max_Turbining(i,t):= TURB(i,t) + RSCH(i,t) / FPRM(i) + sum(b in SBAL) (RBUH(i,b,t) + RCUH(i,b,t)) / FPRM(i) <= maxlist(0,(TMAX(i) - (PRMH(i,t) / FPRM(i))))
+forall(i in SHID,t in A..B|EXSH(i) <= 0 and SCRS <> 2 and (SECH(i,t) > 0 or HBAL(i) = 1) and FPRM(i) > 0.0 and COMH(i) > 0)	Hydro_Max_Turbining(i,t):= TURB(i,t) + RSCH(i,t) / FPRM(i) + sum(b in SBAL) (RBUH(i,b,t) + RCUH(i,b,t)) / FPRM(i) <= maxlist(0,(TMAX(i) - (PRMH(i,t) / FPRM(i))))*XHID(i,CPRH(i,t))
+
+forall(i in SHID,t in A..B|EXSH(i) <= 0 and SCRS <> 1 and (SECH(i,t) > 0 or HBAL(i) = 1) and FPRM(i) > 0.0 and COMH(i) > 0 and PMIN(i) > 0.0) Hydro_Min_Gen(i,t):= GHID(i,t) - RSCH(i,t) - sum(b in SBAL) RBDH(i,b,t) >= PMIN(i)*DURT(t)*XHID(i,CPRH(i,t))
+
+forall(i in SHID,t in A..B|EXSH(i) <= 0 and SCRS <> 2 and (SECH(i,t) > 0 or HBAL(i) = 1) and FPRM(i) > 0.0)					Hydro_Max_Gen(i,t):= GHID(i,t) + RSCH(i,t) + sum(b in SBAL) (RBUH(i,b,t) + RCUH(i,b,t)) <= maxlist(0,(POTH(i) - PRMH(i,t)))*DURT(t)
+forall(i in SHID,t in A..B|EXSH(i) <= 0 and SCRS <> 2 and (SECH(i,t) > 0 or HBAL(i) = 1) and FPRM(i) > 0.0 and COMH(i) > 0)	Hydro_Max_Gen(i,t):= GHID(i,t) + RSCH(i,t) + sum(b in SBAL) (RBUH(i,b,t) + RCUH(i,b,t)) <= maxlist(0,(POTH(i) - PRMH(i,t)))*DURT(t)*XHID(i,CPRH(i,t))
+
+forall(i in SHID,t in A..B|EXSH(i) <= 0 and SECH(i,t) > 0 and FPRM(i) > 0.0 and RMXH(i,t) > 0) Hydro_Max_Reserve_1(i,t):= RSCH(i,t) <= RMXH(i,t)*DURT(t)
+forall(i in SHID,t in A..B|EXSH(i) <= 0 and SECH(i,t) > 0 and FPRM(i) > 0.0 and RMXH(i,t) = 0) Hydro_Max_Reserve_1(i,t):= RSCH(i,t) <= maxlist(0,(POTH(i) - PRMH(i,t)))*DURT(t)
+
+forall(i in SHID,t in A..B|EXSH(i) <= 0 and RESV(i) <= 0 and SECH(i,t) > 0 and FPRM(i) > 0.0) Hydro_Max_Reserve_2(i,t):= RSCH(i,t) <= FPRM(i)*SPIL(i,t)*DURT(t)
+forall(i in SHID,t in A..B|EXSH(i) <= 0 and RESV(i) >  0 and SECH(i,t) > 0 and FPRM(i) > 0.0) Hydro_Max_Reserve_2(i,t):= RSCH(i,t) <= FPRM(i)*SPIL(i,t)*DURT(t) + FPRM(i)*(VOLM(i,t) - VMIN(i))*CNV2(t)
+
+! 29) System Secondary Reserve
+
+if (SCRT = 0) then
+
+	forall(r in SRSG,t in A..B|TRSG(r) = 1 and VRSG(r,t) > 0) System_Secondary_Reserve(r,t):= sum(i in SHID|EXSH(i) <= 0 and SECH(i,t) > 0 and FPRM(i) > 0.0 and TRSH(i,r) = 1) RSCH(i,t) + 
+																			    		   	  sum(j in STER|EXST(j) <= 0 and SECT(j,t) > 0 and TRST(j,r) = 1) RSCT(j,t) +
+														  							   	   	  DRSG(r,t) >= VRSG(r,t)*DURT(t)
+
+else
+
+	forall(r in SRSG,t in A..B|TRSG(r) = 1 and VRSG(r,t) > 0) System_Secondary_Reserve(r,t):= sum(i in SHID|EXSH(i) <= 0 and SECH(i,t) > 0 and FPRM(i) > 0.0 and TRSH(i,r) = 1) RSCH(i,t) + 
+																			    		   	  sum(j in STER|EXST(j) <= 0 and SECT(j,t) > 0 and TRST(j,r) = 1) RSCT(j,t) +
+														  							   	   	  DRSG(r,t) = VRSG(r,t)*DURT(t)
+
+end-if
+
+! 30) Thermal Consumption
+
+forall(j in STER,t in A..B|EXST(j) <= 0) Thermal_Consumption(j,t):= CNSM(j,t) = sum(k in 1..NSEG(j)) GTER(j,t,k)*CESP(j,t,k)
+
+! 31) Thermal Start-Up
+
+forall(j in STER,t in A..B|EXST(j) <= 0 and COMT(j) > 0) do
+
+	if (MIP_PROBLEM = 1 and RMIP = 1 and MIPH(t) = 1) then
+		Thermal_Start_Up_1(j,CPRT(j,t)):= YTER(j,CPRT(j,t)) is_binary
+	else
+		Thermal_Start_Up_1(j,CPRT(j,t)):= YTER(j,CPRT(j,t)) <= NUM1
+	end-if
+
+	Thermal_Start_Up_2(j,CPRT(j,t)):= YTER(j,CPRT(j,t)) <= XTER(j,CPRT(j,t))
+
+end-do
+
+! 32) Thermal Initial Condition
+
+forall(j in STER|EXST(j) <= 0 and (RMPU(j) > 0.0 or RMPD(j) > 0.0)) do
+	if (A = 1) then 
+		Thermal_Initial_Generation(j):= sum(k in 1..NSEG(j)) GTER(j,A - 1,k) = 0
+	else
+		if (INIC = 1) then
+			Thermal_Initial_Generation(j):= sum(k in 1..NSEG(j)) GTER(j,A - 1,k) = adju_value(GINI(j))
+		end-if
+	end-if
+end-do
+
+! Initial Stage Condition
+
+forall(j in STER|EXST(j) <= 0 and COMT(j) > 0 and A = 1) Thermal_Initial_Commitment(j,0):= XTER(j,0) >= 0
+
+! Fixed Commitment (SDDP Decision)
+
+forall(j in STER,t in A..B|EXST(j) <= 0 and COMT(j) > 0 and TCMT(j) =  0 and IGEN > 0) Thermal_Initial_Commitment(j,CPRT(j,t)):= XTER(j,CPRT(j,t)) = 0
+forall(j in STER,t in A..B|EXST(j) <= 0 and COMT(j) > 0 and TCMT(j) =  1 and IGEN > 0) Thermal_Initial_Commitment(j,CPRT(j,t)):= XTER(j,CPRT(j,t)) = 1
+
+! Fixed Commitment (Daily Decision)
+
+forall(j in STER,t in A..B|EXST(j) <= 0 and COMT(j) > 0 and TCMT(j) = -1 and IGEN > 0 and IFIX(j) = 1) Thermal_Initial_Commitment(j,CPRT(j,t)):= XTER(j,CPRT(j,t)) = XFIX(j,t)
+
+forall(j in STER,t in A - DSLC..A - 1|EXST(j) <= 0 and COMT(j) > 0 and TCMT(j) = -1 and IGEN > 0 and IFIX(j) = 2) Thermal_Initial_Commitment(j,CPRT(j,t)):= XTER(j,CPRT(j,t)) = XFIX(j,t)
+
+! Initial Slice Condition (Thermal Start-Up or Shutdown constraints)
+
+forall(j in STER|EXST(j) <= 0 and COMT(j) > 0 and A > 1 and INIC = 1 and (CSTD(j) > 0 or MXSD(j) > 0 or CSTP(j) > 0 or MXSP(j) > 0) and MIP_PROBLEM = 1 and RMIP = 1 and MIPH(A - 1) = 1 and IGEN = 0)
+	Thermal_Initial_Commitment(j,CPRT(j,A - 1)):= XTER(j,CPRT(j,A - 1)) = XINI(j,A - 1)
+
+! Initial Slice Condition (Minimum Uptime and/or Minimum Downtime constraints)
+
+forall(j in STER|EXST(j) <= 0 and COMT(j) > 0 and A > 1 and NCPT(j) = NSTG and INIC = 1 and IGEN = 0) do
+	forall(t in A - DSLC..A - 1|(MUPT(j) > DURT(t) or MDWT(j) > DURT(t)) and MIP_PROBLEM = 1 and RMIP = 1 and MIPH(t) = 1) Thermal_Initial_Commitment(j,t):= XTER(j,CPRT(j,t)) = XINI(j,t)
+end-do
+
+forall(j in STER|EXST(j) <= 0 and COMT(j) > 0 and A > 1 and NCPT(j) = NSTG and NINI(j) > 0 and NINI(j) < MUPT(j) and XINI(j,A - 1) = 1 and INIC = 1 and MIP_PROBLEM = 1 and RMIP = 1 and IGEN = 0) do
+	forall(t in A..A + integer(MUPT(j)) - NINI(j) - 1|MIPH(t) = 1) Thermal_Initial_Commitment(j,CPRT(j,t)):= XTER(j,CPRT(j,t)) = 1
+end-do
+
+forall(j in STER|EXST(j) <= 0 and COMT(j) > 0 and A > 1 and NCPT(j) = NSTG and NINI(j) > 0 and NINI(j) < MDWT(j) and XINI(j,A - 1) = 0 and INIC = 1 and MIP_PROBLEM = 1 and RMIP = 1 and IGEN = 0) do
+	forall(t in A..A + integer(MDWT(j)) - NINI(j) - 1|MIPH(t) = 1) Thermal_Initial_Commitment(j,CPRT(j,t)):= XTER(j,CPRT(j,t)) = 0
+end-do
+
+! Remove Initial Commitment constraints due to Marginal Cost revision
+
+forall(j in STER,t in A..B|EXST(j) <= 0 and COMT(j) > 0 and A = 1 and NSLC > 1 and IREP = 1) Thermal_Initial_Commitment(j,CPRT(j,t)):= 0
+
+! 33) Thermal Shutdown
+
+forall(j in STER,t in A..B|EXST(j) <= 0 and COMT(j) > 0) do
+	if (MIP_PROBLEM = 1 and RMIP = 1 and MIPH(t) = 1 and (CSTD(j) > 0 or MXSD(j) > 0)) then
+		Thermal_Shutdown(j,CPRT(j,t)):= DTER(j,CPRT(j,t)) is_binary
+	else
+		Thermal_Shutdown(j,CPRT(j,t)):= DTER(j,CPRT(j,t)) <= NUM1
+	end-if
+end-do
+
+forall(j in STER,t in A..B|EXST(j) <= 0 and COMT(j) > 0 and (CPRT(j,t) <> CPRT(j,t - 1)) and IGEN < 2) Thermal_Ostrowsky(j,CPRT(j,t)):= XTER(j,CPRT(j,t)) - XTER(j,CPRT(j,t - 1)) = YTER(j,CPRT(j,t)) - DTER(j,CPRT(j,t))
+
+! 34) Future Cost Function
+
+if (TERF <= 0) then
+
+	Future_Cost_Function_Free_1:= ALFA is_free
+	Future_Cost_Function_1:= 	  ALFA = sum(j in SFCF) ALFS(j)
+
+	forall(j in SFCF) Future_Cost_Function_Free_2(j):= ALFS(j) is_free
+	forall(j in SFCF) Future_Cost_Function_Minm_2(j):= ALFS(j) >= - maxlist(0.0,MRHX(j)) / DESR
+
+	forall(j in SFCF,k in SCUT|FCFX(k) = j) Future_Cost_Function_2(j,k):= ALFS(j)*DESR - sum(i in SHID|FIND(i) > 0) FVOL(FIND(i),k)*VOLM(i,B) >= FRHS(k)
+
+else
+
+	Future_Cost_Function_Minm_1:= ALFA = 0.0
+
+end-if
+
+! 35) System Deficit
+
+forall(m in SSYS,k in SDEF,t in A..B|NETW = 0 and DEMS(m,t) > 0.0) System_Deficit_Segments(m,k,t):= DEFS(m,k,t) <= DEFG(k)*DEMS(m,t)*DURT(t) / NCEM
+
+! 36) Non-Controllable Spillage
+
+forall(i in SHID,t in A..B|EXSH(i) <= 0 and RESV(i) > 0 and VNOC(i) > 0 and NCSP > 0) do
+
+	VMXX(i):= VMAX(i)
+
+	if (TFCL(i) > 0.0) then
+		VMXX(i):= minlist(TFCL(i),VMAX(i))
+	end-if
+
+	if (VNOC(i) = 2 and VNCV(i) > 0.0) then
+		VMXX(i):= VNCV(i)
+	end-if
+
+	if (MIP_PROBLEM = 1 and RMIP = 1 and MIPH(t) = 1) then
+		Hydro_Spillage_Controllable_1(i,t):= XVNC(i,t) is_binary
+	else
+		Hydro_Spillage_Controllable_1(i,t):= XVNC(i,t) <= NUM1
+	end-if
+
+	Hydro_Spillage_Controllable_2(i,t):= SPIL(i,t) <= XVNC(i,t)*MXSL(i)
+
+	Hydro_Spillage_Controllable_3(i,t):= XVNC(i,t) <= (VOLM(i,t) / VMXX(i))
+
+end-do
+
+! 37) Multi-Fuel Thermal Plants
+
+forall(j in STER,t in A..B|EXST(j) <= 0 and GMAX(j) > 0.0 and TFIC(j) = 0 and NTFC(j) > 0 and SECT(j,t) = 0) 					Thermal_Multi_Fuel(j,t):= sum(k in 1..NSEG(j)) GTER(j,t,k) / GMAX(j) +
+                                                                                                  			                           					  sum(m in STER,k in 1..NSEG(m)|EXST(m) <= 0 and TFIC(m) = j and m <> j and GMAX(m) > 0.0) GTER(m,t,k) / GMAX(m) <= DURT(t)
+
+forall(j in STER,t in A..B|EXST(j) <= 0 and GMAX(j) > 0.0 and TFIC(j) = 0 and NTFC(j) > 0 and (SECT(j,t) > 0 or TBAL(j) = 1)) 	Thermal_Multi_Fuel(j,t):= sum(k in 1..NSEG(j)) (GTER(j,t,k) + RSCT(j,t) + sum(b in SBAL) (RBUT(j,b,t) + RCUT(j,b,t))) / GMAX(j) +
+                                                                                                  					                   					  sum(m in STER,k in 1..NSEG(m)|EXST(m) <= 0 and TFIC(m) = j and m <> j and GMAX(m) > 0.0) (GTER(m,t,k) + RSCT(m,t) + sum(b in SBAL) (RBUT(m,b,t) + RCUT(m,b,t))) / GMAX(m) <= DURT(t)
+
+forall(j in STER,t in A..B|EXST(j) <= 0 and COMT(j) = 0 and TFIC(j) = 0 and NTFC(j) > 0 and maxlist(GMNF(j),GMIN(j,t)) > 0 and maxlist(GMNF(j),GMIN(j,t)) <= GMAX(j)) Thermal_Min_Gen(j,t):= sum(k in 1..NSEG(j)) GTER(j,t,k) + 
+																																				  											 sum(m in STER,k in 1..NSEG(m)|EXST(m) <= 0 and TFIC(m) = j and m <> j and GMAX(m) > 0.0) GTER(m,t,k) >= maxlist(GMNF(j),GMIN(j,t))*DURT(t)
+
+forall(j in STER,t in A..B|EXST(j) <= 0 and COMT(j) > 0 and TFIC(j) = 0 and NTFC(j) > 0 and maxlist(GMNF(j),GMIN(j,t)) > 0) Thermal_Min_Gen(j,t):= sum(k in 1..NSEG(j)) GTER(j,t,k) + 
+																																				   sum(m in STER,k in 1..NSEG(m)|EXST(m) <= 0 and TFIC(m) = j and m <> j and GMAX(m) > 0.0) GTER(m,t,k) >= maxlist(GMNF(j),GMIN(j,t))*DURT(t)*XFIC(j,t)
+
+forall(j in STER,t in A..B|EXST(j) <= 0 and COMT(j) = 0 and TFIC(j) = 0 and NTFC(j) > 0 and MUST(j) = 1 and DMNX(j) = -1 and maxlist(GMNF(j),GMIN(j,t)) > 0 ) Thermal_Min_Gen(j,t):= sum(k in 1..NSEG(j)) GTER(j,t,k) + 
+																																													 sum(m in STER,k in 1..NSEG(m)|EXST(m) <= 0 and TFIC(m) = j and m <> j and GMAX(m) > 0.0) GTER(m,t,k) = maxlist(0,(GMAX(j) - PRMT(j,t)))*DURT(t)
+
+forall(j in STER,t in A..B|EXST(j) <= 0 and COMT(j) = 0 and TFIC(j) = 0 and NTFC(j) > 0 and MUST(j) = 1 and DMNX(j) > -1) Thermal_Min_Gen(j,t):= sum(k in 1..NSEG(j)) GTER(j,t,k) + sum(m in STER,k in 1..NSEG(m)|EXST(m) <= 0 and TFIC(m) = j and m <> j and GMAX(m) > 0.0) GTER(m,t,k) = maxlist(0,minlist(GMAX(j) - PRMT(j,t),GMIN(j,t)))*DURT(t)
+
+forall(j in STER,t in A..B|EXST(j) <= 0 and COMT(j) = 0 and TFIC(j) = 0 and NTFC(j) > 0 and (SECT(j,t) > 0 or TBAL(j) = 1) and MUST(j) = 0 and maxlist(GMNF(j),GMIN(j,t)) <= GMAX(j)) Thermal_Min_Gen(j,t):= sum(k in 1..NSEG(j)) GTER(j,t,k) - RSCT(j,t) - sum(b in SBAL) RBDT(j,b,t) +
+																																			   										  						 sum(m in STER,k in 1..NSEG(m)|EXST(m) <= 0 and TFIC(m) = j and m <> j and GMAX(m) > 0.0) GTER(m,t,k) -
+																																			   										  						 sum(m in STER|EXST(m) <= 0 and TFIC(m) = j and m <> j and GMAX(m) > 0.0) (RSCT(m,t) + sum(b in SBAL) RBDT(m,b,t)) >= maxlist(GMNF(j),GMIN(j,t))*DURT(t)
+
+forall(j in STER,t in A..B|EXST(j) <= 0 and COMT(j) > 0 and TFIC(j) = 0 and NTFC(j) > 0 and (SECT(j,t) > 0 or TBAL(j) = 1)) Thermal_Min_Gen(j,t):= sum(k in 1..NSEG(j)) GTER(j,t,k) - RSCT(j,t) - sum(b in SBAL) RBDT(j,b,t) +
+																															   	  				   sum(m in STER,k in 1..NSEG(m)|EXST(m) <= 0 and TFIC(m) = j and m <> j and GMAX(m) > 0.0) GTER(m,t,k) - 
+																															   	  				   sum(m in STER|EXST(m) <= 0 and TFIC(m) = j and m <> j and GMAX(m) > 0.0) (RSCT(m,t) + sum(b in SBAL) RBDT(m,b,t)) >= maxlist(GMNF(j),GMIN(j,t))*DURT(t)*XFIC(j,t)
+
+forall(j in STER,t in A..B|EXST(j) <= 0 and COMT(j) > 0 and TFIC(j) = 0 and NTFC(j) > 0) do
+
+	if (MIP_PROBLEM = 1 and RMIP = 1 and MIPH(t) = 1) then
+		Thermal_Multi_Fuel_Commit_1(j,t):= XFIC(j,t) is_binary
+	else
+		Thermal_Multi_Fuel_Commit_1(j,t):= XFIC(j,t) <= NUM1
+	end-if
+
+	Thermal_Multi_Fuel_Commit_2(j,t):= XTER(j,CPRT(j,t)) <= XFIC(j,t)
+
+	forall(m in STER|EXST(m) <= 0 and COMT(m) > 0 and TFIC(m) = j and m <> j and GMAX(m) > 0.0) Thermal_Multi_Fuel_Commit_2(m,t):= XTER(m,CPRT(m,t)) <= XFIC(j,t)
+
+end-do
+
+! 38) Fuel Availability
+
+forall(m in SFUL|NTFL(m) > 0) do
+    ret:= PSRVector_size(PSRModel_vector2(PSRElement_model(PSRCollectionElement_element(list_fuel, m - 1)), 'Availability')) 
+	if (ret <> 0) then
+		Fuel_Availability(m):= sum(j in STER,t in A..B|EXST(j) <= 0 and FULT(j) = m) CNSM(j,t) <= FAVL(m) * NMIL * (B - A + 1) / NSTG
+	end-if
+end-do
+
+forall(m in SFUL|NTFL(m) > 0) do
+	ret:= PSRVector_size(PSRModel_vector2(PSRElement_model(PSRCollectionElement_element(list_fuel, m - 1)), 'ConsumptionMax')) 
+	if (ret <> 0) then
+		forall(t in A..B) Fuel_Rate(m,t):= sum(j in STER|EXST(j) <= 0 and FULT(j) = m) CNSM(j,t) <= FRAT(m)*DURT(t)
+	end-if
+end-do
+
+! 39) Irrigation
+
+forall(i in SHID,t in A..B|TIRR(i) > 0.0 and DIRR(i) <> - 1) Hydro_Irrigation(i,t):= SIRR(i,t) <= TIRR(i)
+
+! 40) DC Link Maximum Limit
+
+forall(l in SLNK,k in SFLW,t in A..B|NETW > 0 and EXSD(l) <= 0) DC_Link_Maximum(l,k,t):= DCLF(l,k,t) <= DCLM(l,k)*DURT(t)
+
+! 41) Bus Demand
+
+if (NETW > 0) then
+
+	if (getsize(SLIN) > 0) then
+
+		forall(m in SBUS|BUSI(m) > 0 or IBDF(m) = 1) do
+			forall(t in A..B) Bus_Generation(m,t):= GBUS(m,t) = sum(i in SHID|EXSH(i) <= 0 and GENH(i) > 0 and BUSG(GENH(i)) = m) GHID(i,t) +
+				  					 		  					sum(j in STER,k in 1..NSEG(j)|EXST(j) <= 0 and BUSG(GENT(j)) = m) GTER(j,t,k) +
+									  		  					sum(r in SRNW|EXSR(r) <= 0 and BUSG(GENR(r)) = m and GRNW(r,t) <> 0.0) (GRNW(r,t) - DRNW(r,t)) +
+									  		  					sum(b in SBAT|EXSA(b) <= 0 and GENB(b) = m) (GBAT(b,t) - LBAT(b,t)) +
+									  		  					sum(i in SINJ|GENJ(i) = m and INJW(i,t) <> 0.0) (INJW(i,t) - DNJW(i,t)) +
+									  		  					sum(l in SLNK|EXSD(l) <= 0 and DCTO(l) = m) DCLF(l,1,t)*(1 - DCLL(l,2)) -
+									  		  					sum(l in SLNK|EXSD(l) <= 0 and DCTO(l) = m) DCLF(l,2,t) -
+									  		  					sum(l in SLNK|EXSD(l) <= 0 and DCFR(l) = m) DCLF(l,1,t) +
+									  		  					sum(l in SLNK|EXSD(l) <= 0 and DCFR(l) = m) DCLF(l,2,t)*(1 - DCLL(l,1)) +
+									  		  					sum(k in SDEF|DEMB(m,t) > 0.0 and IBDF(m) = 1) DEFB(m,k,t) -
+									  		  					sum(l in SLVE|DBEL(m,l,t) > 0.0) DBME(m,l,t)
+		end-do
+
+		forall(m in SBUS|BUSI(m) > 0 or IBDF(m) = 1) do
+			forall(t in A..B) Bus_Generation_Free(m,t):= GBUS(m,t) is_free
+		end-do
+
+		forall(k in 1..NISL,t in A..B) Island_Balance(k,t):= sum(m in SBUS|BISL(m) = k and (BUSI(m) > 0 or IBDF(m) = 1)) GBUS(m,t) -
+															 sum(m in SBUS|BISL(m) = k and DEMB(m,t) > 0.0) 			 DEMB(m,t)*DURT(t) = 0.0
+
+		forall(k in 1..NVIO,t in A..B|MAPH(t) = BVIO(k)) do
+			if (TVIO(k) = 0) then
+				Circuit_Violation_1(XVIO(k),t):= sum(m in SBUS|DEMB(m,t) > 0.0)			   BETA(m,FVIO(k))*(DEMB(m,t)*DURT(t)) -
+												 sum(m in SBUS|BUSI(m) > 0 or IBDF(m) = 1) BETA(m,FVIO(k))*(GBUS(m,t)) >= -FMAX(XVIO(k))*DURT(t)
+
+				Circuit_Violation_2(XVIO(k),t):= sum(m in SBUS|DEMB(m,t) > 0.0)			   BETA(m,FVIO(k))*(DEMB(m,t)*DURT(t)) -
+												 sum(m in SBUS|BUSI(m) > 0 or IBDF(m) = 1) BETA(m,FVIO(k))*(GBUS(m,t)) <= +FMAX(XVIO(k))*DURT(t)
+			else
+				Circuit_Min_SumFlow(XVIO(k),t):= sum(m in SBUS|TSUK(XVIO(k)) <> 1 and DEMB(m,t) > 0.0)			  BETA(m,FVIO(k))*(DEMB(m,t)*DURT(t)) -
+												 sum(m in SBUS|TSUK(XVIO(k)) <> 1 and BUSI(m) > 0 or IBDF(m) = 1) BETA(m,FVIO(k))*(GBUS(m,t)) +
+												 sum(l in SLNK|TSUK(XVIO(k))  > 0 and EXSD(l) <= 0) CSUK(XVIO(k),l) * (DCLF(l,1,t) - DCLF(l,2,t)) >= VSLC(XVIO(k),t)*DURT(t)
+
+				Circuit_Max_SumFlow(XVIO(k),t):= sum(m in SBUS|TSUK(XVIO(k)) <> 1 and DEMB(m,t) > 0.0)			  BETA(m,FVIO(k))*(DEMB(m,t)*DURT(t)) -
+												 sum(m in SBUS|TSUK(XVIO(k)) <> 1 and BUSI(m) > 0 or IBDF(m) = 1) BETA(m,FVIO(k))*(GBUS(m,t)) +
+												 sum(l in SLNK|TSUK(XVIO(k))  > 0 and EXSD(l) <= 0) CSUK(XVIO(k),l) * (DCLF(l,1,t) - DCLF(l,2,t)) <= VSUC(XVIO(k),t)*DURT(t)
+			end-if
+		end-do
+
+	else
+
+		forall(m in SBUS|BUSI(m) > 0 or IBDF(m) = 1) do
+			forall(t in A..B) Bus_Demand(m,t):= sum(i in SHID|EXSH(i) <= 0 and GENH(i) > 0 and BUSG(GENH(i)) = m) GHID(i,t) +
+									    	   	sum(j in STER,k in 1..NSEG(j)|EXST(j) <= 0 and BUSG(GENT(j)) = m) GTER(j,t,k) +
+									  			sum(r in SRNW|EXSR(r) <= 0 and BUSG(GENR(r)) = m and GRNW(r,t) <> 0) (GRNW(r,t) - DRNW(r,t)) +
+									  			sum(b in SBAT|EXSA(b) <= 0 and GENB(b) = m) (GBAT(b,t) - LBAT(b,t)) +
+									  			sum(i in SINJ|GENJ(i) = m and INJW(i,t) <> 0.0) (INJW(i,t) - DNJW(i,t)) +
+									  			sum(l in SLNK|EXSD(l) <= 0 and DCTO(l) = m) DCLF(l,1,t)*(1 - DCLL(l,2)) -
+									  			sum(l in SLNK|EXSD(l) <= 0 and DCTO(l) = m) DCLF(l,2,t) -
+									  			sum(l in SLNK|EXSD(l) <= 0 and DCFR(l) = m) DCLF(l,1,t) +
+									  			sum(l in SLNK|EXSD(l) <= 0 and DCFR(l) = m) DCLF(l,2,t)*(1 - DCLL(l,1)) +
+									  			sum(k in SDEF|DEMB(m,t) > 0.0 and IBDF(m) = 1) DEFB(m,k,t) = DEMB(m,t)*DURT(t) +
+									  		  	sum(l in SLVE|DBEL(m,l,t) > 0.0) DBME(m,l,t)
+		end-do
+
+		forall(k in 1..NVIO,t in A..B|MAPH(t) = BVIO(k) and TVIO(k) = 1) do
+			Circuit_Min_SumFlow(XVIO(k),t):= sum(l in SLNK|TSUK(XVIO(k))  > 0 and EXSD(l) <= 0) CSUK(XVIO(k),l) * (DCLF(l,1,t) - DCLF(l,2,t)) >= VSLC(XVIO(k),t)*DURT(t)
+			Circuit_Max_SumFlow(XVIO(k),t):= sum(l in SLNK|TSUK(XVIO(k))  > 0 and EXSD(l) <= 0) CSUK(XVIO(k),l) * (DCLF(l,1,t) - DCLF(l,2,t)) <= VSUC(XVIO(k),t)*DURT(t)
+		end-do
+
+	end-if
+
+end-if
+
+! 42) Bus Deficit
+
+forall(m in SBUS,k in SDEF,t in A..B|NETW > 0 and DEMB(m,t) > 0.0 and IBDF(m) = 1) Bus_Deficit_Segments(m,k,t):= DEFB(m,k,t) <= DEFG(k)*DEMB(m,t)*DURT(t) / NCEM
+
+! 43) Electrical Area
+
+forall(k in SARE,t in A..B|NETW > 0 and DAEE(k) <> - 1) Electrical_Area_Export(k,t):= sum(i in SHID|EXSH(i) <= 0 and GENH(i) > 0 and AREB(BUSG(GENH(i))) = k) GHID(i,t) +
+																					  sum(j in STER,l in 1..NSEG(j)|EXST(j) <= 0 and AREB(BUSG(GENT(j))) = k) GTER(j,t,l) +
+									  				   			   					  sum(r in SRNW|EXSR(r) <= 0 and GRNW(r,t) <> 0.0 and AREB(BUSG(GENR(r))) = k) (GRNW(r,t) - DRNW(r,t)) +
+									  				   			   					  sum(i in SINJ|INJW(i,t) <> 0.0 and AREB(GENJ(i)) = k) (INJW(i,t) - DNJW(i,t)) +
+									  				   			   					  sum(b in SBAT|EXSA(b) <= 0 and AREB(GENB(b)) = k) (GBAT(b,t) - LBAT(b,t)) -
+									  				   			   					  sum(m in SBUS|AREB(m) = k) DEMB(m,t)*DURT(t) +
+									  				   			   					  sum(m in SBUS,l in SDEF|AREB(m) = k and DEMB(m,t) > 0.0 and IBDF(m) = 1) DEFB(m,l,t) <= +EXPA(k,t)*DURT(t)
+
+forall(k in SARE,t in A..B|NETW > 0 and DAEI(k) <> - 1) Electrical_Area_Import(k,t):= sum(i in SHID|EXSH(i) <= 0 and GENH(i) > 0 and AREB(BUSG(GENH(i))) = k) GHID(i,t) +
+																   					  sum(j in STER,l in 1..NSEG(j)|EXST(j) <= 0 and AREB(BUSG(GENT(j))) = k) GTER(j,t,l) +
+									  				   			   					  sum(r in SRNW|EXSR(r) <= 0 and GRNW(r,t) <> 0.0 and AREB(BUSG(GENR(r))) = k) (GRNW(r,t) - DRNW(r,t)) +
+									  				   			   					  sum(i in SINJ|INJW(i,t) <> 0.0 and AREB(GENJ(i)) = k) (INJW(i,t) - DNJW(i,t)) +
+									  				   			   					  sum(b in SBAT|EXSA(b) <= 0 and AREB(GENB(b)) = k) (GBAT(b,t) - LBAT(b,t)) -
+									  				   			   					  sum(m in SBUS|AREB(m) = k) DEMB(m,t)*DURT(t) +
+									  				   			   					  sum(m in SBUS,l in SDEF|AREB(m) = k and DEMB(m,t) > 0.0 and IBDF(m) = 1) DEFB(m,l,t) >= -IMPA(k,t)*DURT(t)
+
+! 44) Run of River Regulation
+
+forall(i in SHID,t in A..B|RESV(i) = -1) do
+	Run_Of_River_Min_Storage(i,t):= VOLM(i,t) >= RORN(i)
+	Run_Of_River_Max_Storage(i,t):= VOLM(i,t) <= RORX(i)
+end-do
+
+forall(i in SHID|RESV(i) = -1) do
+
+	if (RORR(i) <= 0 or RORR(i) > DSLC) then
+		RORR(i):= DSLC
+	end-if
+
+	NCYH(i):= ceil((B - A + 1) / RORR(i))
+
+	forall(k in 1..NCYH(i)) do
+
+		BCYC:= A + (k - 1)*RORR(i) - 1
+		ECYC:= minlist(B, BCYC + RORR(i))
+
+		Run_Of_River_Regulation(i,k):= VOLM(i,ECYC) = VOLM(i,BCYC)
+
+	end-do
+
+end-do
+
+! 45) Thermal Concave Function
+
+forall(j in STER,t in A..B,k in 2..NSEG(j)|EXST(j) <= 0 and CONC(j) = 1 and GMAX(j) > 0.0) do
+
+	Thermal_Max_Seg_Gen_Concave(j,t,k):= GTER(j,t,k) <= GESP(j,k)*GMAX(j)*DURT(t)*XCON(j,t,k) 
+
+	if (GESP(j,k - 1)*GMAX(j)*DURT(t) > 0.0) then
+
+		if (MIP_PROBLEM = 1 and RMIP = 1 and MIPH(t) = 1) then
+			Thermal_Concave_1(j,t,k):= XCON(j,t,k) is_binary
+		else
+			Thermal_Concave_1(j,t,k):= XCON(j,t,k) <= NUM1
+		end-if
+
+		Thermal_Concave_2(j,t,k):= XCON(j,t,k) <= (1.0 / (GESP(j,k - 1)*GMAX(j)*DURT(t)))*GTER(j,t,k - 1)
+
+	end-if
+
+end-do
+
+! 46) Maximum Number of Thermal Start-Ups
+
+forall(j in STER|EXST(j) <= 0 and COMT(j) > 0 and MXSP(j) > 0) Thermal_Maximum_Start_Up(j):= sum(t in A..B) YTER(j,CPRT(j,t)) <= round(MXSP(j) * (B - A + 1) / NSTG)
+
+! 47) Maximum Number of Thermal Shutdowns
+
+forall(j in STER|EXST(j) <= 0 and COMT(j) > 0 and MXSD(j) > 0) Thermal_Maximum_Shutdown(j):= sum(t in A..B) DTER(j,CPRT(j,t)) <= round(MXSD(j) * (B - A + 1) / NSTG)
+
+! 48) Sum of Interconnections
+
+forall(k in SSMI,t in A..B|NETW = 0 and DSCY(k) <> -1) do
+	Interconnection_Sum_Minimum(k,t):= sum(l in SINT|EXSI(l) <= 0) CSUI(k,l) * (INTF(l,1,t) - INTF(l,2,t)) >= VSLI(k,t)*DURT(t)
+	Interconnection_Sum_Maximum(k,t):= sum(l in SINT|EXSI(l) <= 0) CSUI(k,l) * (INTF(l,1,t) - INTF(l,2,t)) <= VSUI(k,t)*DURT(t)
+end-do
+
+! 49) Combined Cycle
+
+forall(i in SCOM,t in A..B) do
+
+	if (CCOS = 0 or (CCOS = 1 and CCOP(i) = 0)) then
+
+		Thermal_Combined_Cycle_1(i,t):= sum(j in STER|EXST(j) <= 0 and CCOM(j) = i) XTER(j,CPRT(j,t)) = XCOM(i,t)
+
+		if (MIP_PROBLEM = 1 and RMIP = 1 and MIPH(t) = 1) then
+			Thermal_Combined_Cycle_2(i,t):= XCOM(i,t) is_binary
+		else
+			Thermal_Combined_Cycle_2(i,t):= XCOM(i,t) <= NUM1
+		end-if
+
+	else
+
+		forall(j in STER|EXST(j) <= 0 and CCOM(j) = i and GMAX(j) > 0) do
+			if (CCOP(i) = CODT(j)) then
+				Thermal_Combined_Cycle_3(j,t):= XTER(j,CPRT(j,t)) = 1
+			else
+				Thermal_Combined_Cycle_3(j,t):= XTER(j,CPRT(j,t)) = 0
+			end-if
+		end-do
+	end-if
+
+end-do
+
+! 50) Injection / Surplus
+
+forall(i in SINJ,t in A..B|INJW(i,t) > 0.0) Injection_Surplus_1(i,t):= DNJW(i,t) <= INJW(i,t)
+forall(i in SINJ,t in A..B|INJW(i,t) < 0.0) Injection_Surplus_1(i,t):= DNJW(i,t) >= INJW(i,t)
+forall(i in SINJ,t in A..B|INJW(i,t) < 0.0) Injection_Surplus_2(i,t):= DNJW(i,t) <= 0.0
+forall(i in SINJ,t in A..B|INJW(i,t) < 0.0) Injection_Surplus_3(i,t):= DNJW(i,t) is_free
+
+! 51) Elastic Demand
+
+if (NETW = 0) then
+	forall(l in SLVE,t in A..B|DMEL(l,t) > 0.0) System_Elastic_Demand(l,t):= DEME(l,t) <= DMEL(l,t)*DURT(t)
+else
+	forall(m in SBUS,l in SLVE,t in A..B|DBEL(m,l,t) > 0.0) Bus_Elastic_Demand(m,l,t):= DBME(m,l,t) <= DBEL(m,l,t)*DURT(t)
+end-if
+
+! 52) Fuel Emission
+
+forall(j in STER,t in A..B|EXST(j) <= 0 and TCO2(j) > 0.0 and ECO2(FULT(j)) > 0.0) Thermal_CO2_Emission(j,t):= EMIC(j,t) = TCO2(j)*ECO2(FULT(j))*CNSM(j,t)
+
+! 53) Thermal Commitment Precedence
+
+forall(j in STER,t in A..B|EXST(j) <= 0 and IPRE(j) > 0 and CCOM(j) = 0 and MIP_PROBLEM = 1 and RMIP = 1 and MIPH(t) = 1 and IGEN < 2) Thermal_Precedence(j,t):= XTER(j,CPRT(j,t)) <= XTER(IPRE(j),CPRT(j,t))
+
+! 54) Hydro Commitment
+
+forall(i in SHID,t in A..B|EXSH(i) <= 0 and COMH(i) > 0) do
+	if (MIP_PROBLEM = 1 and RMIP = 1 and MIPH(t) = 1) then
+		Hydro_Commitment(i,t):= XHID(i,CPRH(i,t)) is_binary
+	else
+		Hydro_Commitment(i,t):= XHID(i,CPRH(i,t)) <= NUM1
+	end-if
+end-do
+
+! 55) Hydro Minimum Generation
+
+forall(i in SHID,t in A..B|EXSH(i) <= 0 and FPRM(i) > 0.0 and COMH(i) > 0 and PMIN(i) > 0) Hydro_Min_Gen(i,t):= GHID(i,t) >=  PMIN(i)*DURT(t)*XHID(i,CPRH(i,t))
+forall(i in SHID,t in A..B|EXSH(i) <= 0 and FPRM(i) < 0.0 and COMH(i) > 0 and PMIN(i) > 0) Hydro_Min_Gen(i,t):= GHID(i,t) <= -PMIN(i)*DURT(t)*XHID(i,CPRH(i,t))
+
+! 61) Hydro Target Storage
+
+if (TERF >= 0 and C >= 1 and INIC = 1) then
+
+	if (GENESYS = 1) then
+
+		if (TERF = 0 or TERF = 1) then
+
+			forall(i in SHID|EXSH(i) <= 0 and RESV(i) > 0 and TGTX(i + NHID * (C - 1)) >= VMIN(i) and TGTX(i + NHID * (C - 1)) <= VMAX(i)) Hydro_Target_Storage_Min(i):= VOLM(i,B) + STGS(i) >= 0.99 * TGTX(i + NHID * (C - 1))
+			forall(i in SHID|EXSH(i) <= 0 and RESV(i) > 0 and TGTX(i + NHID * (C - 1)) >= VMIN(i) and TGTX(i + NHID * (C - 1)) <= VMAX(i)) Hydro_Target_Storage_Max(i):= VOLM(i,B) - STGS(i) <= 1.01 * TGTX(i + NHID * (C - 1))
+
+		end-if
+
+		if (TERF = 2) then
+
+			forall(i in SHID|EXSH(i) <= 0 and RESV(i) > 0 and TGTX(i + NHID * (C - 1)) >= VMIN(i) and TGTX(i + NHID * (C - 1)) <= VMAX(i)) Hydro_Target_Storage(i):= VOLM(i,B) = TGTX(i + NHID * (C - 1))
+
+		end-if
+
+		if (TERF = 3) then
+
+			forall(i in SHID|EXSH(i) <= 0 and RESV(i) > 0 and TGTX(i + NHID * (C - 1)) >= VMIN(i) and TGTX(i + NHID * (C - 1)) <= VMAX(i)) Hydro_Target_Storage_Min(i):= VOLM(i,B) + STGS(i) >= TGTX(i + NHID * (C - 1))
+			forall(i in SHID|EXSH(i) <= 0 and RESV(i) > 0 and TGTX(i + NHID * (C - 1)) >= VMIN(i) and TGTX(i + NHID * (C - 1)) <= VMAX(i)) Hydro_Target_Storage_Max(i):= VOLM(i,B) - STGS(i) <= TGTX(i + NHID * (C - 1))
+
+			forall(i in SHID|EXSH(i) <= 0 and RESV(i) > 0 and TGTS(i) >= VMIN(i) and TGTS(i) <= VMAX(i)) Hydro_Target_Storage_Slack(i):= STGS(i) <= 0.01 * TGTX(i + NHID * (C - 1))
+
+		end-if
+
+	else
+
+		if (TERF = 0 or TERF = 1) then
+
+			if (TSTG = 1) then
+
+				forall(i in SHID|EXSH(i) <= 0 and RESV(i) > 0 and TGTS(i) >= VMIN(i) and TGTS(i) <= VMAX(i)) Hydro_Target_Storage_Min(i):= VOLM(i,B) + STGS(i) >= 0.99 * TGTS(i)
+				forall(i in SHID|EXSH(i) <= 0 and RESV(i) > 0 and TGTS(i) >= VMIN(i) and TGTS(i) <= VMAX(i)) Hydro_Target_Storage_Max(i):= VOLM(i,B) - STGS(i) <= 1.01 * TGTS(i)
+
+			end-if
+
+			if (TSTG = 2) then
+
+				forall(i in SHID|EXSH(i) <= 0 and RESV(i) > 0 and TGTS(i) >= VMIN(i) and TGTS(i) <= VMAX(i)) Hydro_Target_Storage_Min(i):= VOLM(i,B) + STGS(i) >= 0.99 * (VINI(i) + (TGTS(i) - VINI(i)) * E / NSTG)
+				forall(i in SHID|EXSH(i) <= 0 and RESV(i) > 0 and TGTS(i) >= VMIN(i) and TGTS(i) <= VMAX(i)) Hydro_Target_Storage_Max(i):= VOLM(i,B) - STGS(i) <= 1.01 * (VINI(i) + (TGTS(i) - VINI(i)) * E / NSTG)
+
+			end-if
+
+		end-if
+
+		if (TERF = 2) then
+
+			if (TSTG = 1) then
+
+				forall(i in SHID|EXSH(i) <= 0 and RESV(i) > 0 and TGTS(i) >= VMIN(i) and TGTS(i) <= VMAX(i)) Hydro_Target_Storage(i):= VOLM(i,B) = TGTS(i)
+
+			end-if
+
+			if (TSTG = 2) then
+
+				forall(i in SHID|EXSH(i) <= 0 and RESV(i) > 0 and TGTS(i) >= VMIN(i) and TGTS(i) <= VMAX(i)) Hydro_Target_Storage(i):= VOLM(i,B) = (VINI(i) + (TGTS(i) - VINI(i)) * E / NSTG)
+
+			end-if
+
+		end-if
+
+		if (TERF = 3) then
+
+			if (TSTG = 1) then
+
+				forall(i in SHID|EXSH(i) <= 0 and RESV(i) > 0 and TGTS(i) >= VMIN(i) and TGTS(i) <= VMAX(i)) Hydro_Target_Storage_Min(i):= VOLM(i,B) + STGS(i) >= TGTS(i)
+				forall(i in SHID|EXSH(i) <= 0 and RESV(i) > 0 and TGTS(i) >= VMIN(i) and TGTS(i) <= VMAX(i)) Hydro_Target_Storage_Max(i):= VOLM(i,B) - STGS(i) <= TGTS(i)
+
+				forall(i in SHID|EXSH(i) <= 0 and RESV(i) > 0 and TGTS(i) >= VMIN(i) and TGTS(i) <= VMAX(i)) Hydro_Target_Storage_Slack(i):= STGS(i) <= 0.01 * TGTS(i)
+
+			end-if
+
+			if (TSTG = 2) then
+
+				forall(i in SHID|EXSH(i) <= 0 and RESV(i) > 0) do
+					if (DFCL(i) <> -1) then
+						TGTX(i):= minlist(TFCL(i),(VINI(i) + (TGTS(i) - VINI(i)) * E / NSTG))
+					else
+						TGTX(i):= (VINI(i) + (TGTS(i) - VINI(i)) * E / NSTG)
+					end-if
+				end-do
+
+				forall(i in SHID|EXSH(i) <= 0 and RESV(i) > 0 and TGTS(i) >= VMIN(i) and TGTS(i) <= VMAX(i)) Hydro_Target_Storage_Min(i):= VOLM(i,B) + STGS(i) >= TGTX(i)
+				forall(i in SHID|EXSH(i) <= 0 and RESV(i) > 0 and TGTS(i) >= VMIN(i) and TGTS(i) <= VMAX(i)) Hydro_Target_Storage_Max(i):= VOLM(i,B) - STGS(i) <= TGTX(i)
+
+				forall(i in SHID|EXSH(i) <= 0 and RESV(i) > 0 and TGTS(i) >= VMIN(i) and TGTS(i) <= VMAX(i)) Hydro_Target_Storage_Slack(i):= STGS(i) <= 0.01 * TGTS(i) * E / NSTG
+
+			end-if
+
+		end-if
+
+	end-if
+
+	if (TERF = 4) then
+
+		forall(i in SHID|EXSH(i) <= 0 and RESV(i) > 0) Hydro_Target_Storage(i):= VOLM(i,B) = VOLM(i,0)
+
+	end-if
+
+end-if
+
+! 68) Hydro Discharge Rate - Up
+
+forall(i in SHID,t in A + 1..B|EXSH(i) <= 0 and RESV(i) > 0 and DSRU(i) > 0) Hydro_Discharge_Up(i,t):=   (TURB(i,t) + SPIL(i,t)) - (TURB(i,t - 1) + SPIL(i,t - 1)) <=  DSRU(i)*NMIN*DURT(t)
+
+! 69) Hydro Discharge Rate - Down
+
+forall(i in SHID,t in A + 1..B|EXSH(i) <= 0 and RESV(i) > 0 and DSRD(i) > 0) Hydro_Discharge_Down(i,t):= (TURB(i,t) + SPIL(i,t)) - (TURB(i,t - 1) + SPIL(i,t - 1)) >= -DSRD(i)*NMIN*DURT(t)
+
+! 72) Gas Pipeline Maximum Limit
+
+forall(l in SGLP,m in SFLW,t in A..B|EXSP(l) <= 0) Gas_Pipeline_Maximum(l,m,t):= GNLP(l,m,t) <= GNLM(l,m) / (DURT(t) * 24)
+
+! 73) Gas Node Minimum Production
+
+forall(n in SGNO,t in A..B|EXSN(n) <= 0 and GNMN(n) > 0.0) Gas_Node_Minimum_Production(n,t):= GNOD(n,t) >= GNMN(n) / (DURT(t) * 24)
+
+! 74) Gas Node Maximum Production
+
+forall(n in SGNO,t in A..B|EXSN(n) <= 0) Gas_Node_Maximum_Production(n,t):= GNOD(n,t) <= GNMX(n) / (DURT(t) * 24)
+
+! 75) Gas Network
+
+forall(n in SGNO,t in A..B) Gas_Network(n,t):= GNOD(n,t) +
+						  					   sum(l in SGLP|EXSP(l) <= 0 and GNTO(l) = n) GNLP(l,1,t)*(1 - GNLL(l,2)) -
+									  		   sum(l in SGLP|EXSP(l) <= 0 and GNTO(l) = n) GNLP(l,2,t) -
+									  		   sum(l in SGLP|EXSP(l) <= 0 and GNFR(l) = n) GNLP(l,1,t) +
+									  		   sum(l in SGLP|EXSP(l) <= 0 and GNFR(l) = n) GNLP(l,2,t)*(1 - GNLL(l,1)) =
+									  		   sum(j in STER|EXST(j) <= 0 and GNOT(j) = n) CNSM(j,t) / NMLL
+
+! 78) Hydro Start-Up
+
+forall(i in SHID,t in A..B|EXSH(i) <= 0 and COMH(i) > 0) do
+
+	if (MIP_PROBLEM = 1 and RMIP = 1 and MIPH(t) = 1) then
+		Hydro_Start_Up_1(i,CPRH(i,t)):= YHID(i,CPRH(i,t)) is_binary
+	else
+		Hydro_Start_Up_1(i,CPRH(i,t)):= YHID(i,CPRH(i,t)) <= NUM1
+	end-if
+
+	Hydro_Start_Up_2(i,CPRH(i,t)):= YHID(i,CPRH(i,t)) <= XHID(i,CPRH(i,t))
+
+	Hydro_Shutdown(i,CPRH(i,t)):= DHID(i,CPRH(i,t)) <= NUM1
+
+end-do
+
+forall(i in SHID,t in A..B|EXSH(i) <= 0 and COMH(i) > 0 and (CPRH(i,t) <> CPRH(i,t - 1))) Hydro_Ostrowsky(i,CPRH(i,t)):= XHID(i,CPRH(i,t)) - XHID(i,CPRH(i,t - 1)) = YHID(i,CPRH(i,t)) - DHID(i,CPRH(i,t))
+
+! 79) Maximum Number of Hydro Start-Ups
+
+forall(i in SHID|EXSH(i) <= 0 and COMH(i) > 0 and MXSH(i) > 0) Hydro_Maximum_Start_Up(i):= sum(t in A..B) YHID(i,CPRH(i,t)) <= round(MXSH(i) * (B - A + 1) / NSTG)
+
+! 80) Hydro Initial Condition
+
+forall(i in SHID|EXSH(i) <= 0 and COMH(i) > 0 and A = 1) Hydro_Initial_Commitment(i,0):= XHID(i,0) >= 0
+
+forall(i in SHID|EXSH(i) <= 0 and COMH(i) > 0 and A > 1 and INIC = 1 and (MXSH(i) > 0 or CSHP(i) > 0) and MIP_PROBLEM = 1 and RMIP = 1 and MIPH(A - 1) = 1 and IGEN = 0)
+	Hydro_Initial_Commitment(i,CPRH(i,A - 1)):= XHID(i,CPRH(i,A - 1)) = XINH(i,A - 1)
+
+end-procedure
+
+!***********************************************************************************************************************
+
+procedure solve_modl(A: integer, B: integer, D: integer)
+
+!******************
+! Solver Parameters
+!******************
+
+if (DEBUG or DEBG >= 2) then
+	setparam('XPRS_VERBOSE',true)
+end-if
+
+NCOR:= getparam('XPRS_CORESDETECTED')
+
+NPRC:= minlist(NPRC,NCOR,NSSL)
+
+if (NPRC > -1) then
+	NTHR:= maxlist(2,minlist(4,floor(NCOR / NPRC)))
+else
+	NTHR:= maxlist(2,minlist(4,floor(NCOR / NSSL)))
+end-if
+
+if (PARL = 0) then
+	setparam('XPRS_THREADS',minlist(4,NCOR))
+else
+	setparam('XPRS_THREADS',NTHR)
+end-if
+
+setparam('XPRS_HEURTHREADS',0)
+setparam('XPRS_MIPRELSTOP',MIPR)
+setparam('XPRS_LPLOG',500)
+setparam('XPRS_PRESOLVE',1)
+setparam('XPRS_BARPRESOLVEOPS',2)
+setparam("XPRS_CPUPLATFORM",0)
+setparam("XPRS_BARGAPSTOP",0)
+setparam('XPRS_CUTSTRATEGY',-1)
+setparam('XPRS_MIPTOL',1.0E-06)
+setparam('REALFMT','%.15g')
+
+if (DEBUG or DEBG > 0) then
+	setparam('XPRS_LOADNAMES',true)
+else
+	setparam('XPRS_LOADNAMES',false)
+end-if
+
+if (CRSV = 0) then
+	setparam('XPRS_CROSSOVER',0)
+else
+	setparam('XPRS_CROSSOVER',-1)
+end-if
+
+if (MEMO <> -1) then
+	setparam("XPRS_MAXMEMORY",MEMO)
+end-if
+
+if (D = 0) then
+	MAXX:= integer(- MAXT * (B - A + 1) / NSTG)
+else
+	MAXX:= integer(- MAXT * NUM3 * (B - A + 1) / NSTG)
+end-if
+
+setparam('XPRS_MAXTIME', MAXX)
+
+! ************
+! Model Export
+! ************
+
+if (EXPORT or WRLP = 1) then
+
+	if (IGEN < 2) then
+		exportprob(EP_MIN,PATH + 'ncplite-' + IPER + '-' + ISIM + '-' + ISLC,FOBJ)
+	else
+		exportprob(EP_MIN,PATH + 'ncplite-' + IPER + '-' + ISIM + '-' + ISLC+ '-' + HINI,FOBJ)
+	end-if
+
+	if (not DEBUG and DEBG = 0 and WRLP = 0) then
+		exit(1)
+	end-if
+
+end-if
+
+if (MIP_PROBLEM = 1 and RMIP = 1) then
+
+	if (RALG = 0) then
+		minimize(XPRS_BAR,FOBJ)
+	end-if
+
+	if (RALG = 1) then
+		minimize(XPRS_DUAL,FOBJ)
+	end-if
+
+	if (RALG = 2) then
+		minimize(XPRS_PRI,FOBJ)
+	end-if
+
+else
+
+	if (RALG = 0) then
+		minimize(XPRS_BAR+XPRS_LIN,FOBJ)
+	end-if
+
+	if (RALG = 1) then
+		minimize(XPRS_DUAL+XPRS_LIN,FOBJ)
+	end-if
+
+	if (RALG = 2) then
+		minimize(XPRS_PRI+XPRS_LIN,FOBJ)
+	end-if
+
+end-if
+
+if (NETW > 0 and CHIF = 0) then
+	chk_infdef(A,B,D)
+end-if
+
+CHMP:= 0
+CHLP:= 0
+
+check_stat(0)
+
+if (DEBUG or DEBG >= 2) then
+	writeln('Status Checked: ',IPER,'-',ISIM,'-',ISLC)
+end-if
+
+if (((mipstatus = XPRS_MIP_OPTIMAL) or (mipstatus = XPRS_MIP_SOLUTION))) then
+
+	fix_global
+
+	if (DEBUG or DEBG >= 2) then
+		writeln('Fixed Globals: ',IPER,'-',ISIM,'-',ISLC)
+	end-if
+
+end-if
+
+! 01) Joint Reservoir Constraints
+! 02) International Circuit Cost
+! 03) Fuel Reservoirs
+! 04) Fuel Contracts
+! 05) Secondary Reserve Types
+
+end-procedure
+
+!***********************************************************************************************************************
+
+procedure chk_infdef(A: integer, B: integer, D: integer)
+
+	lpstatus  := getparam('XPRS_LPSTATUS')
+	mipstatus := getparam('XPRS_MIPSTATUS')
+
+	if ((mipstatus = XPRS_MIP_INFEAS or mipstatus = XPRS_MIP_LP_NOT_OPTIMAL or lpstatus = XPRS_LP_INFEAS) and CHIF = 0) then
+
+		if (DEBUG or DEBG >= 2) then
+			writeln('Network Infeasibility Detected: ', IPER,'-',ISIM,'-',ISLC)
+		end-if
+
+		CHIF:= 1
+
+		forall(m in SBUS|sum(t in 1..NSTG) DEMB(m,t) > 0.0) IBDF(m):= 1
+
+		forall(m in SBUS,t in 1..NSTG|IBDF(m) = 1) create(GBUS(m,t))
+
+		! Updating Constraints
+
+		! 02) Deficit Cost
+
+		Obj_Function_Cdbf:= CDBF = sum(m in SBUS,k in SDEF,t in A..B|DEMB(m,t) > 0.0 and IBDF(m) = 1) DEFC(k)*DEFB(m,k,t)
+
+		! 41) Bus Demand
+
+		if (getsize(SLIN) > 0) then
+
+			forall(m in SBUS|BUSI(m) > 0 or IBDF(m) = 1) do
+				forall(t in A..B) Bus_Generation(m,t):= GBUS(m,t) = sum(i in SHID|EXSH(i) <= 0 and GENH(i) > 0 and BUSG(GENH(i)) = m) GHID(i,t) +
+					  					 		  					sum(j in STER,k in 1..NSEG(j)|EXST(j) <= 0 and BUSG(GENT(j)) = m) GTER(j,t,k) +
+										  		  					sum(r in SRNW|EXSR(r) <= 0 and BUSG(GENR(r)) = m and GRNW(r,t) <> 0.0) (GRNW(r,t) - DRNW(r,t)) +
+										  		  					sum(b in SBAT|EXSA(b) <= 0 and GENB(b) = m) (GBAT(b,t) - LBAT(b,t)) +
+										  		  					sum(i in SINJ|GENJ(i) = m and INJW(i,t) <> 0.0) (INJW(i,t) - DNJW(i,t)) +
+										  		  					sum(l in SLNK|EXSD(l) <= 0 and DCTO(l) = m) DCLF(l,1,t)*(1 - DCLL(l,2)) -
+										  		  					sum(l in SLNK|EXSD(l) <= 0 and DCTO(l) = m) DCLF(l,2,t) -
+										  		  					sum(l in SLNK|EXSD(l) <= 0 and DCFR(l) = m) DCLF(l,1,t) +
+										  		  					sum(l in SLNK|EXSD(l) <= 0 and DCFR(l) = m) DCLF(l,2,t)*(1 - DCLL(l,1)) +
+										  		  					sum(k in SDEF|DEMB(m,t) > 0.0 and IBDF(m) = 1) DEFB(m,k,t) -
+										  		  					sum(l in SLVE|DBEL(m,l,t) > 0.0) DBME(m,l,t)
+			end-do
+
+			forall(m in SBUS|BUSI(m) > 0 or IBDF(m) = 1) do
+				forall(t in A..B) Bus_Generation_Free(m,t):= GBUS(m,t) is_free
+			end-do
+
+			forall(k in 1..NISL,t in A..B) Island_Balance(k,t):= sum(m in SBUS|BISL(m) = k and (BUSI(m) > 0 or IBDF(m) = 1)) GBUS(m,t) -
+														 		 sum(m in SBUS|BISL(m) = k and DEMB(m,t) > 0.0) 			 DEMB(m,t)*DURT(t) = 0.0
+
+			forall(k in 1..NVIO,t in A..B|MAPH(t) = BVIO(k)) do
+				if (TVIO(k) = 0) then
+					Circuit_Violation_1(XVIO(k),t):= sum(m in SBUS|DEMB(m,t) > 0.0)			   BETA(m,FVIO(k))*(DEMB(m,t)*DURT(t)) -
+													 sum(m in SBUS|BUSI(m) > 0 or IBDF(m) = 1) BETA(m,FVIO(k))*(GBUS(m,t)) >= -FMAX(XVIO(k))*DURT(t)
+
+					Circuit_Violation_2(XVIO(k),t):= sum(m in SBUS|DEMB(m,t) > 0.0)			   BETA(m,FVIO(k))*(DEMB(m,t)*DURT(t)) -
+													 sum(m in SBUS|BUSI(m) > 0 or IBDF(m) = 1) BETA(m,FVIO(k))*(GBUS(m,t)) <= +FMAX(XVIO(k))*DURT(t)
+				else
+					Circuit_Min_SumFlow(XVIO(k),t):= sum(m in SBUS|TSUK(XVIO(k)) <> 1 and DEMB(m,t) > 0.0)			  BETA(m,FVIO(k))*(DEMB(m,t)*DURT(t)) -
+													 sum(m in SBUS|TSUK(XVIO(k)) <> 1 and BUSI(m) > 0 or IBDF(m) = 1) BETA(m,FVIO(k))*(GBUS(m,t)) +
+													 sum(l in SLNK|TSUK(XVIO(k))  > 0 and EXSD(l) <= 0) CSUK(XVIO(k),l) * (DCLF(l,1,t) - DCLF(l,2,t)) >= VSLC(XVIO(k),t)*DURT(t)
+
+					Circuit_Max_SumFlow(XVIO(k),t):= sum(m in SBUS|TSUK(XVIO(k)) <> 1 and DEMB(m,t) > 0.0)			  BETA(m,FVIO(k))*(DEMB(m,t)*DURT(t)) -
+													 sum(m in SBUS|TSUK(XVIO(k)) <> 1 and BUSI(m) > 0 or IBDF(m) = 1) BETA(m,FVIO(k))*(GBUS(m,t)) +
+													 sum(l in SLNK|TSUK(XVIO(k))  > 0 and EXSD(l) <= 0) CSUK(XVIO(k),l) * (DCLF(l,1,t) - DCLF(l,2,t)) <= VSUC(XVIO(k),t)*DURT(t)
+				end-if
+			end-do
+
+		else
+
+			forall(m in SBUS|BUSI(m) > 0 or IBDF(m) = 1) do
+				forall(t in A..B) Bus_Demand(m,t):= sum(i in SHID|EXSH(i) <= 0 and GENH(i) > 0 and BUSG(GENH(i)) = m) GHID(i,t) +
+										    	   	sum(j in STER,k in 1..NSEG(j)|EXST(j) <= 0 and BUSG(GENT(j)) = m) GTER(j,t,k) +
+										  			sum(r in SRNW|EXSR(r) <= 0 and BUSG(GENR(r)) = m and GRNW(r,t) <> 0) (GRNW(r,t) - DRNW(r,t)) +
+										  			sum(b in SBAT|EXSA(b) <= 0 and GENB(b) = m) (GBAT(b,t) - LBAT(b,t)) +
+										  			sum(i in SINJ|GENJ(i) = m and INJW(i,t) <> 0.0) (INJW(i,t) - DNJW(i,t)) +
+										  			sum(l in SLNK|EXSD(l) <= 0 and DCTO(l) = m) DCLF(l,1,t)*(1 - DCLL(l,2)) -
+										  			sum(l in SLNK|EXSD(l) <= 0 and DCTO(l) = m) DCLF(l,2,t) -
+										  			sum(l in SLNK|EXSD(l) <= 0 and DCFR(l) = m) DCLF(l,1,t) +
+										  			sum(l in SLNK|EXSD(l) <= 0 and DCFR(l) = m) DCLF(l,2,t)*(1 - DCLL(l,1)) +
+										  			sum(k in SDEF|DEMB(m,t) > 0.0 and IBDF(m) = 1) DEFB(m,k,t) = DEMB(m,t)*DURT(t) +
+										  		  	sum(l in SLVE|DBEL(m,l,t) > 0.0) DBME(m,l,t)
+			end-do
+
+		end-if
+
+		! 42) Bus Deficit
+
+		forall(m in SBUS,k in SDEF,t in A..B|NETW > 0 and DEMB(m,t) > 0.0 and IBDF(m) = 1) Bus_Deficit_Segments(m,k,t):= DEFB(m,k,t) <= DEFG(k)*DEMB(m,t)*DURT(t) / NCEM
+
+		! 43) Electrical Area
+
+		forall(k in SARE,t in A..B|NETW > 0 and DAEE(k) <> - 1) Electrical_Area_Export(k,t):= sum(i in SHID|EXSH(i) <= 0 and GENH(i) > 0 and AREB(BUSG(GENH(i))) = k) GHID(i,t) +
+																							  sum(j in STER,l in 1..NSEG(j)|EXST(j) <= 0 and AREB(BUSG(GENT(j))) = k) GTER(j,t,l) +
+											  				   			   					  sum(r in SRNW|EXSR(r) <= 0 and GRNW(r,t) <> 0.0 and AREB(BUSG(GENR(r))) = k) (GRNW(r,t) - DRNW(r,t)) +
+											  				   			   					  sum(i in SINJ|INJW(i,t) <> 0.0 and AREB(GENJ(i)) = k) (INJW(i,t) - DNJW(i,t)) +
+											  				   			   					  sum(b in SBAT|EXSA(b) <= 0 and AREB(GENB(b)) = k) (GBAT(b,t) - LBAT(b,t)) -
+											  				   			   					  sum(m in SBUS|AREB(m) = k) DEMB(m,t)*DURT(t) +
+											  				   			   					  sum(m in SBUS,l in SDEF|AREB(m) = k and DEMB(m,t) > 0.0 and IBDF(m) = 1) DEFB(m,l,t) <= +EXPA(k,t)*DURT(t)
+
+		forall(k in SARE,t in A..B|NETW > 0 and DAEI(k) <> - 1) Electrical_Area_Import(k,t):= sum(i in SHID|EXSH(i) <= 0 and GENH(i) > 0 and AREB(BUSG(GENH(i))) = k) GHID(i,t) +
+																		   					  sum(j in STER,l in 1..NSEG(j)|EXST(j) <= 0 and AREB(BUSG(GENT(j))) = k) GTER(j,t,l) +
+											  				   			   					  sum(r in SRNW|EXSR(r) <= 0 and GRNW(r,t) <> 0.0 and AREB(BUSG(GENR(r))) = k) (GRNW(r,t) - DRNW(r,t)) +
+											  				   			   					  sum(i in SINJ|INJW(i,t) <> 0.0 and AREB(GENJ(i)) = k) (INJW(i,t) - DNJW(i,t)) +
+											  				   			   					  sum(b in SBAT|EXSA(b) <= 0 and AREB(GENB(b)) = k) (GBAT(b,t) - LBAT(b,t)) -
+											  				   			   					  sum(m in SBUS|AREB(m) = k) DEMB(m,t)*DURT(t) +
+											  				   			   					  sum(m in SBUS,l in SDEF|AREB(m) = k and DEMB(m,t) > 0.0 and IBDF(m) = 1) DEFB(m,l,t) >= -IMPA(k,t)*DURT(t)
+
+		solve_modl(A,B,D)
+
+		forall(m in SBUS|IBCG(m) = 0) do
+			if (sum(k in SDEF,t in A..B|DEMB(m,t) > 0.0) adju_value(getsol(DEFB(m,k,t))) > 0.0) then
+				NBCG+= 1
+				IBCG(m):= 1
+			else
+				IBDF(m):= 0
+			end-if
+		end-do
+
+	end-if
+
+end-procedure
+
+!***********************************************************************************************************************
+
+procedure inter_modl(B: integer, C: integer, G: integer, H: integer)
+
+	! Retrieving Initial / Final Stages
+
+	X:= G
+	Y:= minlist(G + H - 1,B)
+
+	HINI:= X
+
+	! MIP Resolution
+
+	forall(t in X..B) do
+		if (t <= Y) then
+			MIPH(t):= 1
+		else
+			MIPH(t):= 0
+		end-if
+	end-do
+
+	if (GENESYS_LOG) then
+		writeln('Solving 3-hour problem - Stage ', IPEM, ' - Scenario ', ISIM, ' - Initial Hour ', X)
+	end-if
+
+	! Creating Model
+
+	model_exec(X,B,0,0)
+
+	! Adding Genesys Constraints
+
+	add_genctr(X,B)
+
+	! Solving Model
+
+	solve_modl(X,B,0)
+
+	! Writing Results
+
+	if (OUTPUT = 1) then
+
+		if (NETW > 0 and getsize(SBUS) > 0) then
+			get_cmgbus(X,X)
+		end-if
+
+		out_result(X,X,C)
+
+	end-if
+
+	! Updating Initial Condition
+
+	ini_condit(X,Y,C)
+	ctr_hidden(X,B)
+	hid_genctr(X,B)
+	upt_condit(X)
+
+	! Send Results
+
+	if (SEND_RESULTS = 1 and X = NSTG) then
+		if (getsize(SDAM) > 0) then
+			forall(i in SHID) VAUX(i):= adju_value(getsol(VOLM(i,NSTG)))
+			putHostArray('NCPL_VFIM',VAUX)
+		end-if
+	end-if
+
+	! True-Up Integration
+
+	if (TRUE_UP = 1) then
+
+		FRUN:= 0
+		LRUN:= 0
+
+		if (FIRST_RUN = 1 and HINI = 1) then
+			FRUN:= 1
+		end-if
+
+		if ((LAST_RUN = 1 and HINI = NSTG) or (LAST_RUN = 0 and HINI = NSTG and LOAD_HOST)) then
+			LRUN:= 1
+		end-if
+
+		load(True_Up,PATH_TRUE_UP + 'true_up.bim')
+
+		initializations to 'bin:shmem:path'
+			FRUN LRUN PATH HINI ISIM IPER ISND ISIN NGAM GAME
+		end-initializations
+
+		initializations to 'bin:shmem:input'
+			XCMM VINC GERT GERH OPCH GERI
+		end-initializations
+
+		run(True_Up)
+
+		wait
+
+		dropnextevent
+
+	end-if
+
+	unloadprob
+
+end-procedure
+
+!***********************************************************************************************************************
+
+procedure add_genctr(A: integer, B: integer)
+
+! ***********
+! Constraints
+! ***********
+
+! 56) Thermal Minimum Consumption
+
+forall(j in STER|EXST(j) <= 0 and MNCN(j) > 0 and IGEN < 2) 				Thermal_Min_Consumption(j):= (sum(t in A..B) CNSM(j,t)) + SCMN(j) >= MNCN(j) * NMIL * (B - A + 1) / NSTG
+forall(j in STER|EXST(j) <= 0 and MNCN(j) > 0 and IGEN = 2 and GFLM(j) = 1) Thermal_Min_Consumption(j):= (sum(t in A..B) CNSM(j,t)) + SCMN(j) >= MNCN(j)
+
+! 57) Elevation x Storage
+
+forall(i in SHID,k in 1..NUM4,t in A..B|EXSH(i) <= 0 and RESV(i) > 0 and HELV(i) > 0) Hydro_Elevation(i,k,t):= ELEV(i,t) <= BETH(i,k) + ALFH(i,k)*VOLM(i,t)
+
+! 58) Tailwater x Total Outflow
+
+forall(i in SHID,k in 1..NUM4,t in A..B|EXSH(i) <= 0 and RESV(i) > 0 and HTWT(i) > 0) Hydro_Tailwater(i,k,t):= TAIL(i,t) >= BETT(i,k) + ALFT(i,k)*(TURB(i,t) + SPIL(i,t))
+
+! 59) Power x Net Head
+
+forall(i in SHID,k in 1..NUM4,t in A..B|EXSH(i) <= 0 and RESV(i) > 0 and HNTH(i) > 0 and FPRM(i) > 0.0) Hydro_Net_Head(i,k,t):=  GHID(i,t) <= BETP(i,k) + ALFP(i,k)*(ELEV(i,t) - TAIL(i,t))
+
+! 60) Thermal Maximum Consumption
+
+forall(j in STER|EXST(j) <= 0 and MXCN(j) > 0 and IGEN < 2) 				Thermal_Max_Consumption(j):= sum(t in A..B) CNSM(j,t) <= MXCN(j) * NMIL * (B - A + 1) / NSTG
+forall(j in STER|EXST(j) <= 0 and MXCN(j) > 0 and IGEN = 2 and GFLM(j) = 1) Thermal_Max_Consumption(j):= sum(t in A..B) CNSM(j,t) <= MXCN(j)
+
+! 62) Fuel Minimum Consumption
+
+forall(m in SFUL|NTFL(m) > 0 and DMIN(m) <> -1 and FMIN(m) > 0 and IGEN < 2) Fuel_Min_Consumption(m):= sum(j in STER,t in A..B|EXST(j) <= 0 and FULT(j) = m) CNSM(j,t) >= FMIN(m) * NMIL * (B - A + 1) / NSTG
+forall(m in SFUL|NTFL(m) > 0 and DMIN(m) <> -1 and FMIN(m) > 0 and IGEN = 2) Fuel_Min_Consumption(m):= sum(j in STER,t in A..B|EXST(j) <= 0 and FULT(j) = m) CNSM(j,t) >= FMIN(m) * NMIL
+
+! 63) Initial Elevation
+
+forall(i in SHID|EXSH(i) <= 0 and RESV(i) > 0 and A = 1 and HELV(i) > 0) 			  Hydro_Initial_Elevation(i):= ELEV(i,A - 1) = interp_val(NUM5,i,SXHS,SXHH,adju_value(VINI(i)))
+
+forall(i in SHID|EXSH(i) <= 0 and RESV(i) > 0 and A > 1 and HELV(i) > 0 and INIC = 1) Hydro_Initial_Elevation(i):= ELEV(i,A - 1) = interp_val(NUM5,i,SXHS,SXHH,adju_value(maxlist(0.0,VFIM(i))))
+
+! 64) Hydro Forebay Drawdown
+
+forall(i in SHID,t in A..B|EXSH(i) <= 0 and RESV(i) > 0 and FDRD(i) > 0) Hydro_Forebay_Drawdown(i,t):= ELEV(i,t) - ELEV(i,t - 1) >= -FDRD(i)*DURT(t)
+
+! 65) Hydro Target Generation
+
+forall(i in SHID|EXSH(i) <= 0 and DGTG(i) <> - 1 and TGTG(i) > 0) Hydro_Target_Generation(i):= sum(t in A..B) (GHID(i,t)*SIGH(i) / DURT(t)) = TGTG(i)
+
+! 66) Maximum Spillage
+
+forall(i in SHID,t in A..B|EXSH(i) <= 0 and TMXS(i) > 0.0 and DMXS(i) <> -1) Hydro_Max_Spillage(i,t):= SPIL(i,t) - SMXS(i,t) <= TMXS(i)
+
+! 67) Hydro Forebay Fillup
+
+forall(i in SHID,t in A..B|EXSH(i) <= 0 and RESV(i) > 0 and FDRD(i) > 0) Hydro_Forebay_Fillup(i,t):= ELEV(i,t) - ELEV(i,t - 1) <= FFIU(i)*DURT(t)
+
+! 70) Hydro Minimum Spillage Factor
+
+forall(i in SHID,t in A..B|EXSH(i) <= 0 and TMNS(i) > 0.0 and DMNS(i) <> - 1 and FMNU = 1) Hydro_Min_Spillage_Factor(i,t):= SPIL(i,t) + SMNS(i,t) >= TMNS(i)*(TURB(i,t) + SPIL(i,t))
+
+! 76) Balancing Area Reserve
+
+forall(b in SBAL,t in A..B|BREG(b) = 1 and VHUR(b,t) >= 0) Balancing_Area_Up_Reserve(b,t):= 	sum(i in SHID|EXSH(i) <= 0 and BALH(i,b) = 1) RBUH(i,b,t) + sum(j in STER|EXST(j) <= 0 and BALT(j,b) = 1) RBUT(j,b,t) + DHUR(b,t) >= VHUR(b,t)*DURT(t)
+
+forall(b in SBAL,t in A..B|BREG(b) = 1 and VHDR(b,t) >= 0) Balancing_Area_Down_Reserve(b,t):= 	sum(i in SHID|EXSH(i) <= 0 and BALH(i,b) = 1) RBDH(i,b,t) + sum(j in STER|EXST(j) <= 0 and BALT(j,b) = 1) RBDT(j,b,t) + DHDR(b,t) >= VHDR(b,t)*DURT(t)
+
+! 77) Contingency Reserve
+
+forall(c in SCTG,t in A..B|CRAF(c) = 1) do
+
+	Contingency_Reserve(c,t):= 	sum(i in SHID|EXSH(i) <= 0 and BALH(i,CRBF(c)) = 1) RCUH(i,CRBF(c),t) +
+								sum(j in STER|EXST(j) <= 0 and BALT(j,CRBF(c)) = 1) RCUT(j,CRBF(c),t) + DCTR(c,t) >=
+								(CRDF(c) / NCEM) * sum(k in SLOA|BALD(LOAS(k),CRBF(c)) = 1)  DEMB(BUSL(k),t) * DURT(t) +
+								(CRGF(c) / NCEM) * sum(i in SHID|EXSH(i) <= 0 and BALH(i,CRBF(c)) = 1) GHID(i,t) +
+								(CRGF(c) / NCEM) * sum(r in SRNW|EXSR(r) <= 0 and BALR(r,CRBF(c)) = 1) (GRNW(r,t) - DRNW(r,t)) +
+								(CRGF(c) / NCEM) * sum(j in STER,k in 1..NSEG(j)|EXST(j) <= 0 and BALT(j,CRBF(c)) = 1) GTER(j,k,t)
+
+end-do
+
+end-procedure
+
+!***********************************************************************************************************************
+
+procedure ctr_hidden(A: integer, B: integer)
+
+! 01) Thermal Minimum Generation
+
+forall(j in STER,t in A..B|EXST(j) <= 0) sethidden(Thermal_Min_Gen(j,t),true)
+
+! 02) Thermal Maximum Generation
+
+forall(j in STER,t in A..B|EXST(j) <= 0) sethidden(Thermal_Max_Gen(j,t),true)
+forall(j in STER,t in A..B,k in 1..NSEG(j)|EXST(j) <= 0 and NSEG(j) > 1) sethidden(Thermal_Max_Seg_Gen(j,t,k),true)
+
+! 03) Thermal Commitment
+
+forall(j in STER,t in A..B|EXST(j) <= 0 and COMT(j) > 0 and TCMT(j) = -1) sethidden(Thermal_Commitment(j,CPRT(j,t)),true)
+
+! 04) Hydro Balance
+
+forall(i in SHID,t in A..B) sethidden(Hydro_Balance(i,t),true)
+forall(i in SHID,t in A..B|EXSH(i) <= 0) sethidden(Hydro_Reservoir_Slack(i,t),true)
+
+! 05) System Demand
+
+forall(m in SSYS,t in A..B|NETW = 0) sethidden(System_Demand(m,t),true)
+
+! 06) Thermal Ramp-Up
+
+forall(j in STER,t in A..B|EXST(j) <= 0 and RMPU(j) > 0.0 and RMPU(j)*NMIN >= maxlist(GMNF(j),GMIN(j,t)) and RMPU(j)*NMIN <= GMAX(j)) sethidden(Thermal_Ramp_Up(j,t),true)
+
+! 07) Thermal Ramp-Down
+
+forall(j in STER,t in A..B|EXST(j) <= 0 and RMPD(j) > 0.0 and RMPD(j)*NMIN >= maxlist(GMNF(j),GMIN(j,t)) and RMPD(j)*NMIN <= GMAX(j)) sethidden(Thermal_Ramp_Down(j,t),true)
+
+! 08) Generation Constraint
+
+forall(r in SRTG,t in A..B|DRGT(r) <> -1 and substr(TRTG(r),2,2) = '>') sethidden(System_Gen_Constraint_Grt(r,t),true)
+forall(r in SRTG,t in A..B|DRGT(r) <> -1 and substr(TRTG(r),2,2) = '<') sethidden(System_Gen_Constraint_Low(r,t),true)
+
+! 09) Minimum Storage
+
+forall(i in SHID,t in A..B|RESV(i) > 0 and (VMIN(i) > 0 or VMNO(i) > 0)) sethidden(Hydro_Min_Storage(i,t),true)
+forall(i in SHID|EXSH(i) <= 0 and RESV(i) > 0 and TVMN(i) > 0 and DVMN(i) <> -1) sethidden(Hydro_Min_Operative_Storage(i),true)
+
+! 10) Maximum Storage
+
+forall(i in SHID,t in A..B|RESV(i) > 0) sethidden(Hydro_Max_Storage(i,t),true)
+forall(i in SHID|EXSH(i) <= 0 and RESV(i) > 0 and TVMX(i) > 0 and DVMX(i) <> -1) sethidden(Hydro_Max_Operative_Storage(i),true)
+
+! 11) Minimum Turbining
+
+forall(i in SHID,t in A..B|EXSH(i) <= 0) sethidden(Hydro_Min_Turbining(i,t),true)
+
+! 12) Maximum Turbining
+
+forall(i in SHID,t in A..B|EXSH(i) <= 0) sethidden(Hydro_Max_Turbining(i,t),true)
+
+! 13) Minimum Total Outflow
+
+forall(i in SHID,t in A..B|EXSH(i) <= 0 and TOMN(i) > 0.0 and DOMN(i) <> -1) sethidden(Hydro_Min_Total_Outflow(i,t),true)
+
+! 14) Maximum Total Outflow
+
+forall(i in SHID,t in A..B|EXSH(i) <= 0 and DOMX(i) <> -1) sethidden(Hydro_Max_Total_Outflow(i,t),true)
+
+! 15) Alert Storage
+
+forall(i in SHID|EXSH(i) <= 0 and RESV(i) > 0 and TVAL(i) > 0.0 and DVAL(i) <> -1) sethidden(Hydro_Alert_Storage(i),true)
+
+! 16) Flood Control Storage
+
+forall(i in SHID|EXSH(i) <= 0 and RESV(i) > 0 and DFCL(i) <> -1) sethidden(Hydro_Flood_Control_Storage(i),true)
+
+! 17) Minimum Spillage
+
+forall(i in SHID,t in A..B|EXSH(i) <= 0 and TMNS(i) > 0.0 and DMNS(i) <> - 1 and FMNU = 0) sethidden(Hydro_Min_Spillage(i,t),true)
+
+! 18) Hydro Production / Pumping
+
+forall(i in SHID,t in A..B|EXSH(i) <= 0 and FPRM(i) <> 0.0) sethidden(Hydro_Production(i,t),true)
+
+! 19) Pumped Storage
+
+forall(i in SHID,t in A..B|EXSH(i) <= 0 and FPRM(i) < 0.0) sethidden(Hydro_Pumping(i,t),true)
+
+! 20) System Interconnection
+
+forall(l in SINT,k in SFLW,t in A..B|EXSI(l) <= 0 and NETW = 0) sethidden(Interconnection_Maximum(l,k,t),true)
+
+! 21) Initial Storage
+
+forall(i in SHID|RESV(i) > 0) sethidden(Hydro_Initial_Storage(i),true)
+
+! 22) Renewable Generation / Curtailment
+
+forall(r in SRNW,t in A..B|EXSR(r) <= 0 and GRNW(r,t) <> 0.0) sethidden(Renewable_Curtailment_1(r,t),true)
+forall(r in SRNW,t in A..B|EXSR(r) <= 0 and GRNW(r,t) < 0.0)  sethidden(Renewable_Curtailment_2(r,t),true)
+forall(r in SRNW,t in A..B|EXSR(r) <= 0 and GRNW(r,t) < 0.0)  sethidden(Renewable_Curtailment_3(r,t),true)
+
+! 23) Battery
+
+forall(b in SBAT|EXSA(b) <= 0) sethidden(Battery_Initial_Storage(b),true)
+
+forall(b in SBAT,k in 1..NCYB(b)|EXSA(b) <= 0) sethidden(Battery_Final_Storage(b,k),true)
+
+forall(b in SBAT,t in A..B|EXSA(b) <= 0) do
+	sethidden(Battery_Discharge(b,t),true)
+	sethidden(Battery_Charge(b,t),true)
+	sethidden(Battery_Max_Discharge_1(b,t),true)
+	sethidden(Battery_Max_Discharge_2(b,t),true)
+	sethidden(Battery_Max_Charge_1(b,t),true)
+	sethidden(Battery_Max_Charge_2(b,t),true)
+	sethidden(Battery_Operation(b,t),true)
+	sethidden(Battery_Max_Storage(b,t),true)
+	sethidden(Battery_Balance(b,t),true)
+end-do
+
+forall(b in SBAT,t in A..B|EXSA(b) <= 0 and MNBT(b) > 0) sethidden(Battery_Min_Storage(b,t),true)
+
+forall(b in SBAT,t in A..B|EXSA(b) <= 0 and BMPU(b) > 0.0 and BMPU(b)*NMIN <= PBAT(b)) sethidden(Battery_Charge_Ramp(b,t),true)
+forall(b in SBAT,t in A..B|EXSA(b) <= 0 and BMPD(b) > 0.0 and BMPD(b)*NMIN <= PBAT(b)) sethidden(Battery_Discharge_Ramp(b,t),true)
+
+forall(b in SBAT|EXSA(b) <= 0 and A > 1 and (BMPU(b) > 0.0 or BMPD(b) > 0.0)) do
+	sethidden(Battery_Initial_Charge(b),true)
+	sethidden(Battery_Initial_Discharge(b),true)
+end-do
+
+! 24) Minimum Uptime
+
+forall(j in STER,t in B + 1..B + integer(MUPT(j)) - 1|EXST(j) <= 0 and COMT(j) > 0 and MUPT(j) > 0 and B < NSTG and MIP_PROBLEM = 1 and RMIP = 1 and MIPH(t) = 1 and TCMT(j) = -1) sethidden(Thermal_Commitment(j,CPRT(j,t)),true)
+
+forall(j in STER,t in A..B,k in t + 1..t + integer(MUPT(j)/DURT(t)) - 1|EXST(j) <= 0 and NCPT(j) = NSTG and COMT(j) > 0 and MUPT(j) > DURT(t) and MIP_PROBLEM = 1 and RMIP = 1 and MIPH(t) = 1 and IGEN = 2 and TCMT(j) = -1) sethidden(Thermal_Min_Uptime(j,t,k),true)
+
+! 25) Minimum Downtime
+
+forall(j in STER,t in B + 1..B + integer(MDWT(j)) - 1|EXST(j) <= 0 and COMT(j) > 0 and MDWT(j) > 0 and B < NSTG and MIP_PROBLEM = 1 and RMIP = 1 and MIPH(t) = 1 and TCMT(j) = -1) sethidden(Thermal_Commitment(j,CPRT(j,t)),true)
+
+forall(j in STER,t in A..B,k in t + 1..t + integer(MDWT(j)/DURT(t)) - 1|EXST(j) <= 0 and NCPT(j) = NSTG and COMT(j) > 0 and MDWT(j) > DURT(t) and MIP_PROBLEM = 1 and RMIP = 1 and MIPH(t) = 1 and IGEN = 2 and TCMT(j) = -1) sethidden(Thermal_Min_Downtime(j,t,k),true)
+
+! 26) Hydro Maximum Generation
+
+forall(i in SHID,t in A..B|EXSH(i) <= 0) sethidden(Hydro_Max_Gen(i,t),true)
+
+! 27) Thermal Secondary Reserve
+
+forall(j in STER,t in A..B|EXST(j) <= 0 and SECT(j,t) > 0) sethidden(Thermal_Max_Reserve(j,t),true)
+
+! 28) Hydro Secondary Reserve
+
+forall(i in SHID,t in A..B|EXSH(i) <= 0 and SECH(i,t) > 0 and FPRM(i) > 0.0) do
+	sethidden(Hydro_Max_Reserve_1(i,t),true)
+	sethidden(Hydro_Max_Reserve_2(i,t),true)
+end-do
+
+! 29) System Secondary Reserve
+
+forall(r in SRSG,t in A..B|TRSG(r) = 1 and VRSG(r,t) > 0) sethidden(System_Secondary_Reserve(r,t),true)
+
+! 30) Thermal Consumption
+
+forall(j in STER,t in A..B|EXST(j) <= 0) sethidden(Thermal_Consumption(j,t),true)
+
+! 31) Thermal Start-Up
+
+forall(j in STER,t in A..B|EXST(j) <= 0 and COMT(j) > 0) do
+	sethidden(Thermal_Start_Up_1(j,CPRT(j,t)),true)
+	sethidden(Thermal_Start_Up_2(j,CPRT(j,t)),true)
+end-do
+
+! 32) Thermal Initial Condition
+
+forall(j in STER|EXST(j) <= 0 and A > 1 and (RMPU(j) > 0.0 or RMPD(j) > 0.0)) sethidden(Thermal_Initial_Generation(j),true)
+
+forall(j in STER|EXST(j) <= 0 and COMT(j) > 0 and A = 1) sethidden(Thermal_Initial_Commitment(j,0),true)
+
+forall(j in STER|EXST(j) <= 0 and COMT(j) > 0 and A > 1 and NINI(j) > 0 and NINI(j) < MUPT(j) and XINI(j,A - 1) = 1 and MIP_PROBLEM = 1 and RMIP = 1 and TCMT(j) = -1) do
+	forall(t in A..A + integer(MUPT(j)) - NINI(j) - 1|MIPH(t) = 1) sethidden(Thermal_Initial_Commitment(j,t),true)
+end-do
+
+forall(j in STER|EXST(j) <= 0 and COMT(j) > 0 and A > 1 and NINI(j) > 0 and NINI(j) < MDWT(j) and XINI(j,A - 1) = 0 and MIP_PROBLEM = 1 and RMIP = 1 and TCMT(j) = -1) do
+	forall(t in A..A + integer(MDWT(j)) - NINI(j) - 1|MIPH(t) = 1) sethidden(Thermal_Initial_Commitment(j,t),true)
+end-do
+
+! 33) Thermal Shutdown
+
+forall(j in STER,t in A..B|EXST(j) <= 0 and COMT(j) > 0) sethidden(Thermal_Shutdown(j,CPRT(j,t)),true)
+forall(j in STER,t in A..B|EXST(j) <= 0 and COMT(j) > 0 and (CPRT(j,t) <> CPRT(j,t - 1))) sethidden(Thermal_Ostrowsky(j,CPRT(j,t)),true)
+
+! 34) Future Cost Function
+
+if (TERF <= 0) then
+	forall(j in SFCF,k in SCUT) sethidden(Future_Cost_Function_2(j,k),true)
+end-if
+
+! 35) System Deficit
+
+forall(m in SSYS,k in SDEF,t in A..B|NETW = 0 and DEMS(m,t) > 0.0) sethidden(System_Deficit_Segments(m,k,t),true)
+
+! 36) Non-Controllable Spillage
+
+forall(i in SHID,t in A..B|EXSH(i) <= 0 and RESV(i) > 0 and VNOC(i) > 0 and NCSP > 0) do
+	sethidden(Hydro_Spillage_Controllable_1(i,t),true)
+	sethidden(Hydro_Spillage_Controllable_2(i,t),true)
+	sethidden(Hydro_Spillage_Controllable_3(i,t),true)
+end-do
+
+! 37) Multi-Fuel Thermal Plants
+
+forall(j in STER,t in A..B|EXST(j) <= 0 and TFIC(j) = 0 and NTFC(j) > 0) sethidden(Thermal_Multi_Fuel(j,t),true)
+
+forall(j in STER,t in A..B|EXST(j) <= 0 and COMT(j) > 0 and TFIC(j) = 0 and NTFC(j) > 0) do
+	sethidden(Thermal_Multi_Fuel_Commit_1(j,t),true)
+	sethidden(Thermal_Multi_Fuel_Commit_2(j,t),true)
+	forall(m in STER|EXST(m) <= 0 and COMT(m) > 0 and TFIC(m) = j and m <> j and GMAX(m) > 0.0) sethidden(Thermal_Multi_Fuel_Commit_2(m,t),true)
+end-do
+
+! 38) Fuel Availability
+
+forall(m in SFUL|NTFL(m) > 0) sethidden(Fuel_Availability(m),true)
+
+forall(m in SFUL,t in A..B|NTFL(m) > 0) sethidden(Fuel_Rate(m,t),true)
+
+! 39) Irrigation
+
+forall(i in SHID,t in A..B|TIRR(i) > 0.0 and DIRR(i) <> - 1) sethidden(Hydro_Irrigation(i,t),true)
+
+! 40) DC Link Maximum Limit
+
+forall(l in SLNK,k in SFLW,t in A..B|NETW > 0 and EXSD(l) <= 0) sethidden(DC_Link_Maximum(l,k,t),true)
+
+! 41) Bus Demand
+
+if (NETW > 0) then
+
+	if (getsize(SLIN) > 0) then
+
+		forall(n in 1..NISL,t in A..B) sethidden(Island_Balance(n,t),true)
+
+		forall(k in 1..NVIO,t in A..B|MAPH(t) = BVIO(k)) do
+
+			if (TVIO(k) = 0) then
+				sethidden(Circuit_Violation_1(XVIO(k),t),true)
+				sethidden(Circuit_Violation_2(XVIO(k),t),true)
+			else
+				sethidden(Circuit_Min_SumFlow(XVIO(k),t),true)
+				sethidden(Circuit_Max_SumFlow(XVIO(k),t),true)
+			end-if
+
+		end-do
+
+		forall(m in SBUS,t in A..B) do
+			sethidden(Bus_Generation(m,t),true)
+			sethidden(Bus_Generation_Free(m,t),true)
+		end-do
+
+	else
+
+		forall(m in SBUS,t in A..B) sethidden(Bus_Demand(m,t),true)
+
+		forall(k in 1..NVIO,t in A..B|MAPH(t) = BVIO(k) and TVIO(k) = 1) do
+			sethidden(Circuit_Min_SumFlow(XVIO(k),t),true)
+			sethidden(Circuit_Max_SumFlow(XVIO(k),t),true)
+		end-do
+
+	end-if
+
+end-if
+
+! 42) Bus Deficit
+
+forall(m in SBUS,k in SDEF,t in A..B|NETW > 0 and DEMB(m,t) > 0.0) sethidden(Bus_Deficit_Segments(m,k,t),true)
+
+! 43) Electrical Area
+
+forall(k in SARE,t in A..B|NETW > 0 and DAEE(k) <> - 1) sethidden(Electrical_Area_Export(k,t),true)
+forall(k in SARE,t in A..B|NETW > 0 and DAEI(k) <> - 1) sethidden(Electrical_Area_Import(k,t),true)
+
+! 44) Run of River Regulation
+
+forall(i in SHID,t in A..B|RESV(i) = -1) sethidden(Run_Of_River_Min_Storage(i,t),true)
+forall(i in SHID,t in A..B|RESV(i) = -1) sethidden(Run_Of_River_Max_Storage(i,t),true)
+
+forall(i in SHID,k in 1..NCYH(i)|RESV(i) = -1) sethidden(Run_Of_River_Regulation(i,k),true)
+
+! 45) Thermal Concave Function
+
+forall(j in STER,t in A..B,k in 2..NSEG(j)|EXST(j) <= 0 and CONC(j) = 1 and GMAX(j) > 0.0) do
+	sethidden(Thermal_Max_Seg_Gen_Concave(j,t,k),true)
+	if (GESP(j,k - 1)*GMAX(j)*DURT(t) > 0.0) then
+		sethidden(Thermal_Concave_1(j,t,k),true)
+		sethidden(Thermal_Concave_2(j,t,k),true)
+	end-if
+end-do
+
+! 46) Maximum Number of Thermal Start-Ups
+
+forall(j in STER|EXST(j) <= 0 and COMT(j) > 0 and MXSP(j) > 0) sethidden(Thermal_Maximum_Start_Up(j),true)
+
+! 47) Maximum Number of Thermal Shutdowns
+
+forall(j in STER|EXST(j) <= 0 and COMT(j) > 0 and MXSD(j) > 0) sethidden(Thermal_Maximum_Shutdown(j),true)
+
+! 48) Sum of Interconnections
+
+forall(k in SSMI,t in A..B|NETW = 0 and DSCY(k) <> -1) do
+	sethidden(Interconnection_Sum_Minimum(k,t),true)
+	sethidden(Interconnection_Sum_Maximum(k,t),true)
+end-do
+
+! 49) Combined Cycle
+
+forall(i in SCOM,t in A..B|CCOS = 0 or (CCOS = 1 and CCOP(i) = 0)) do
+	sethidden(Thermal_Combined_Cycle_1(i,t),true)
+	sethidden(Thermal_Combined_Cycle_2(i,t),true)
+end-do
+
+forall(i in SCOM,t in A..B|CCOS = 1 and CCOP(i) > 0) do
+	forall(j in STER|EXST(j) <= 0 and  GMAX(j) > 0 and CCOM(j) = i) sethidden(Thermal_Combined_Cycle_3(j,t),true)
+end-do
+
+! 50) Injection / Surplus
+
+forall(i in SINJ,t in A..B|INJW(i,t) <> 0.0) sethidden(Injection_Surplus_1(i,t),true)
+forall(i in SINJ,t in A..B|INJW(i,t) < 0.0)  sethidden(Injection_Surplus_2(i,t),true)
+forall(i in SINJ,t in A..B|INJW(i,t) < 0.0)  sethidden(Injection_Surplus_3(i,t),true)
+
+! 51) Elastic Demand
+
+if (NETW = 0) then
+	forall(l in SLVE,t in A..B|DMEL(l,t) > 0.0) sethidden(System_Elastic_Demand(l,t),true)
+else
+	forall(m in SBUS,l in SLVE,t in A..B|DBEL(m,l,t) > 0.0) sethidden(Bus_Elastic_Demand(m,l,t),true)
+end-if
+
+! 52) Fuel Emission
+
+forall(j in STER,t in A..B|EXST(j) <= 0 and TCO2(j) > 0.0 and ECO2(FULT(j)) > 0.0) sethidden(Thermal_CO2_Emission(j,t),true)
+
+! 53) Thermal Commitment Precedence
+
+forall(j in STER,t in A..B|EXST(j) <= 0 and IPRE(j) > 0 and CCOM(j) = 0 and MIP_PROBLEM = 1 and RMIP = 1 and MIPH(t) = 1) sethidden(Thermal_Precedence(j,t),true)
+
+! 54) Hydro Commitment
+
+forall(i in SHID,t in A..B|EXSH(i) <= 0 and COMH(i) > 0) sethidden(Hydro_Commitment(i,t),true)
+
+! 55) Hydro Minimum Generation
+
+forall(i in SHID,t in A..B|EXSH(i) <= 0 and COMH(i) > 0 and PMIN(i) > 0) sethidden(Hydro_Min_Gen(i,t),true)
+
+! 61) Hydro Target Storage
+
+if (TERF = 0 or TERF = 1) then
+	forall(i in SHID|EXSH(i) <= 0 and RESV(i) > 0 and TGTS(i) >= VMIN(i) and TGTS(i) <= VMAX(i) and IGEN < 2) sethidden(Hydro_Target_Storage_Min(i),true)
+	forall(i in SHID|EXSH(i) <= 0 and RESV(i) > 0 and TGTS(i) >= VMIN(i) and TGTS(i) <= VMAX(i) and IGEN < 2) sethidden(Hydro_Target_Storage_Max(i),true)
+end-if
+
+if (TERF = 2) then
+	forall(i in SHID|EXSH(i) <= 0 and RESV(i) > 0 and TGTS(i) >= VMIN(i) and TGTS(i) <= VMAX(i) and IGEN < 2) sethidden(Hydro_Target_Storage(i),true)
+end-if
+
+if (TERF = 3) then
+	forall(i in SHID|EXSH(i) <= 0 and RESV(i) > 0 and TGTS(i) >= VMIN(i) and TGTS(i) <= VMAX(i) and IGEN < 2) sethidden(Hydro_Target_Storage_Min(i),true)
+	forall(i in SHID|EXSH(i) <= 0 and RESV(i) > 0 and TGTS(i) >= VMIN(i) and TGTS(i) <= VMAX(i) and IGEN < 2) sethidden(Hydro_Target_Storage_Max(i),true)
+	forall(i in SHID|EXSH(i) <= 0 and RESV(i) > 0 and TGTS(i) >= VMIN(i) and TGTS(i) <= VMAX(i) and IGEN < 2) sethidden(Hydro_Target_Storage_Slack(i),true)
+end-if
+
+if (TERF = 4) then
+	forall(i in SHID|EXSH(i) <= 0 and RESV(i) > 0 and IGEN < 2) sethidden(Hydro_Target_Storage(i),true)
+end-if
+
+! 68) Hydro Discharge Rate - Up
+
+forall(i in SHID,t in A..B|EXSH(i) <= 0 and RESV(i) > 0 and DSRU(i) > 0) sethidden(Hydro_Discharge_Up(i,t),true)
+
+! 69) Hydro Discharge Rate - Down
+
+forall(i in SHID,t in A..B|EXSH(i) <= 0 and RESV(i) > 0 and DSRD(i) > 0) sethidden(Hydro_Discharge_Down(i,t),true)
+
+! 72) Gas Pipeline Maximum Limit
+
+forall(l in SGLP,m in SFLW,t in A..B|EXSP(l) <= 0) sethidden(Gas_Pipeline_Maximum(l,m,t),true)
+
+! 73) Gas Node Minimum Production
+
+forall(n in SGNO,t in A..B|EXSN(n) <= 0 and GNMN(n) > 0.0) sethidden(Gas_Node_Minimum_Production(n,t),true)
+
+! 74) Gas Node Maximum Production
+
+forall(n in SGNO,t in A..B|EXSN(n) <= 0) sethidden(Gas_Node_Maximum_Production(n,t),true)
+
+! 75) Gas Network
+
+forall(n in SGNO,t in A..B) sethidden(Gas_Network(n,t),true)
+
+! 78) Hydro Start-Up
+
+forall(i in SHID,t in A..B|EXSH(i) <= 0 and COMH(i) > 0) do
+	sethidden(Hydro_Start_Up_1(i,CPRH(i,t)),true)
+	sethidden(Hydro_Start_Up_2(i,CPRH(i,t)),true)
+end-do
+
+forall(i in SHID,t in A..B|EXSH(i) <= 0 and COMH(i) > 0) sethidden(Hydro_Shutdown(i,CPRH(i,t)),true)
+forall(i in SHID,t in A..B|EXSH(i) <= 0 and COMH(i) > 0 and (CPRH(i,t) <> CPRH(i,t - 1))) sethidden(Hydro_Ostrowsky(i,CPRH(i,t)),true)
+
+! 79) Maximum Number of Hydro Start-Ups
+
+forall(i in SHID|EXSH(i) <= 0 and COMH(i) > 0 and MXSH(i) > 0) sethidden(Hydro_Maximum_Start_Up(i),true)
+
+! 80) Hydro Initial Condition
+
+forall(i in SHID|EXSH(i) <= 0 and COMH(i) > 0 and A = 1) sethidden(Hydro_Initial_Commitment(i,0),true)
+
+end-procedure
+
+!***********************************************************************************************************************
+
+procedure hid_genctr(A: integer, B: integer)
+
+! 56) Thermal Minimum Consumption
+
+forall(j in STER|EXST(j) <= 0 and MNCN(j) > 0) sethidden(Thermal_Min_Consumption(j),true)
+
+! 57) Elevation x Storage
+
+forall(i in SHID,k in 1..NUM4,t in A..B|EXSH(i) <= 0 and RESV(i) > 0 and HELV(i) > 0) sethidden(Hydro_Elevation(i,k,t),true)
+
+! 58) Tailwater x Total Outflow
+
+forall(i in SHID,k in 1..NUM4,t in A..B|EXSH(i) <= 0 and RESV(i) > 0 and HTWT(i) > 0) sethidden(Hydro_Tailwater(i,k,t),true)
+
+! 59) Power x Net Head
+
+forall(i in SHID,k in 1..NUM4,t in A..B|EXSH(i) <= 0 and RESV(i) > 0 and HNTH(i) > 0 and FPRM(i) > 0.0) sethidden(Hydro_Net_Head(i,k,t),true)
+
+! 60) Thermal Maximum Consumption
+
+forall(j in STER|EXST(j) <= 0 and MXCN(j) > 0) sethidden(Thermal_Max_Consumption(j),true)
+
+! 62) Fuel Minimum Consumption
+
+forall(m in SFUL|NTFL(m) > 0 and DMIN(m) <> -1 and FMIN(m) > 0) sethidden(Fuel_Min_Consumption(m),true)
+
+! 63) Initial Elevation
+
+forall(i in SHID|EXSH(i) <= 0 and RESV(i) > 0 and HELV(i) > 0) sethidden(Hydro_Initial_Elevation(i),true)
+
+! 64) Hydro Forebay Drawdown
+
+forall(i in SHID,t in A..B|EXSH(i) <= 0 and RESV(i) > 0 and FDRD(i) > 0) sethidden(Hydro_Forebay_Drawdown(i,t),true)
+
+! 65) Hydro Target Generation
+
+forall(i in SHID|EXSH(i) <= 0 and DGTG(i) <> - 1 and TGTG(i) > 0) sethidden(Hydro_Target_Generation(i),true)
+
+! 66) Maximum Spillage
+
+forall(i in SHID,t in A..B|EXSH(i) <= 0 and TMXS(i) > 0.0 and DMXS(i) <> -1) sethidden(Hydro_Max_Spillage(i,t),true)
+
+! 67) Hydro Forebay Fillup
+
+forall(i in SHID,t in A..B|EXSH(i) <= 0 and RESV(i) > 0 and FDRD(i) > 0) sethidden(Hydro_Forebay_Fillup(i,t),true)
+
+! 70) Hydro Minimum Spillage Factor
+
+forall(i in SHID,t in A..B|EXSH(i) <= 0 and TMNS(i) > 0.0 and DMNS(i) <> - 1 and FMNU = 1) sethidden(Hydro_Min_Spillage_Factor(i,t),true)
+
+! 76) Balancing Area Reserve
+
+forall(b in SBAL,t in A..B|BREG(b) = 1 and VHUR(b,t) >= 0) sethidden(Balancing_Area_Up_Reserve(b,t),true)
+
+forall(b in SBAL,t in A..B|BREG(b) = 1 and VHDR(b,t) >= 0) sethidden(Balancing_Area_Down_Reserve(b,t),true)
+
+! 77) Contingency Reserve
+
+forall(c in SCTG,t in A..B|CRAF(c) = 1) sethidden(Contingency_Reserve(c,t),true)
+
+end-procedure
+
+!***********************************************************************************************************************
+
+procedure ini_condit(A: integer, B: integer, C: integer)
+
+	forall(j in STER,t in A..B|EXST(j) <= 0 and COMT(j) > 0 and (MUPT(j) > DURT(t) or MDWT(j) > DURT(t) or CSTD(j) > 0 or MXSD(j) > 0 or CSTP(j) > 0 or MXSP(j) > 0) and MIP_PROBLEM = 1 and RMIP = 1 and MIPH(t) = 1) XINI(j,t):= integer(getsol(XTER(j,CPRT(j,t))))
+
+	forall(i in SHID,t in A..B|EXSH(i) <= 0 and COMH(i) > 0 and (CSHP(i) > 0 or MXSH(i) > 0) and MIP_PROBLEM = 1 and RMIP = 1 and MIPH(t) = 1) XINH(i,t):= integer(getsol(XHID(i,CPRH(i,t))))
+
+	forall(i in SHID,t in maxlist(B - TVTT(i),1)..B|EXSH(i) <= 0 and TVTT(i) > 0) TINI(i,t):= getsol(TURB(i,t))
+
+	forall(i in SHID,t in maxlist(B - TVTS(i),1)..B|TVTS(i) > 0) SINI(i,t):= getsol(SPIL(i,t))
+
+	if (TRUE_UP = 0) then
+
+		forall(i in SHID|RESV(i) <> 0) VFIM(i):= getsol(VOLM(i,B))
+
+		forall(j in STER|EXST(j) <= 0 and COMT(j) > 0 and NCPT(j) = NSTG and (MUPT(j) > 0 or MDWT(j) > 0) and MIP_PROBLEM = 1 and RMIP = 1 and IGEN = 0) do
+			NINI(j):= 0
+			IAUX:= B
+			while (XINI(j,IAUX) = XINI(j,B) and IAUX >= A and MIPH(IAUX) = 1) do
+				NINI(j)+= 1
+				IAUX:= IAUX - 1
+			end-do
+		end-do
+
+		forall(j in STER|EXST(j) <= 0) GINI(j):= sum(k in 1..NSEG(j)) getsol(GTER(j,B,k))
+
+		forall(b in SBAT|EXSA(b) <= 0) do
+			BFIM(b):= getsol(VBAT(b,B))
+			BCIN(b):= getsol(CBAT(b,B))
+			BDIN(b):= getsol(DBAT(b,B))
+		end-do
+
+	end-if
+
+	if (TRUE_UP = 1) then
+
+		forall(i in SHID|RESV(i) <> 0) do
+			VFIM(i):= getsol(VOLM(i,A))
+			VINC(i):= getsol(VOLM(i,A - 1))
+		end-do
+
+		forall(j in STER|EXST(j) <= 0) do
+			GINI(j):= sum(k in 1..NSEG(j)) getsol(GTER(j,A,k))
+			forall(t in A..B) do
+				XCMM(j,t):= XINI(j,t)
+				GERT(j,t):= sum(k in 1..NSEG(j)) getsol(GTER(j,t,k))
+			end-do
+		end-do
+
+		forall(i in SHID|EXSH(i) <= 0) do
+			OPCH(i):= OPCX(i + NHID * (C - 1)) * NMIL
+			forall(t in A..B|FPRM(i) <> 0.0) GERH(i,t):= getsol(GHID(i,t))
+		end-do
+
+		forall(i in SINJ,t in A..B|INJW(i,t) <> 0) GERI(i,t):= INJW(i,t) - getsol(DNJW(i,t))
+
+		forall(b in SBAT|EXSA(b) <= 0) BFIM(b):= getsol(VBAT(b,A))
+
+	end-if
+
+end-procedure
+
+!***********************************************************************************************************************
+
+procedure fix_condit(A: integer, B: integer, C: integer)
+
+	if (C = 0) then
+
+		forall(j in STER,t in A..B|EXST(j) <= 0 and COMT(j) > 0 and TCMT(j) = -1 and MIP_PROBLEM = 1 and RMIP = 1 and MIPH(t) = 1) do
+			IFIX(j):= 1
+			XFIX(j,t):= integer(getsol(XTER(j,CPRT(j,t))))
+		end-do
+
+		forall(j in STER|EXST(j) <= 0 and GFLM(j) = 1) do
+			MNCN(j):= sum(t in A..B) getsol(CNSM(j,t)) * (1 - (GFLX(j) / NCEM))
+			MXCN(j):= sum(t in A..B) getsol(CNSM(j,t)) * (1 + (GFLX(j) / NCEM))
+		end-do
+
+	end-if
+
+	if (C = 1) then
+
+		forall(j in STER|EXST(j) <= 0 and COMT(j) > 0 and TCMT(j) = -1 and MIP_PROBLEM = 1 and RMIP = 1) IFIX(j):= 2
+
+		forall(j in STER|EXST(j) <= 0 and GFLM(j) = 1) do
+			MNCN(j):= 0.0
+			MXCN(j):= 0.0
+		end-do
+
+	end-if
+
+end-procedure
+
+!***********************************************************************************************************************
+
+procedure upt_condit(G: integer)
+
+	forall(j in STER|EXST(j) <= 0 and MNCN(j) > 0 and GFLM(j) = 1) MNCN(j):= maxlist(0.0,MNCN(j) - getsol(CNSM(j,G)))
+	forall(j in STER|EXST(j) <= 0 and MXCN(j) > 0 and GFLM(j) = 1) MXCN(j):= maxlist(0.0,MXCN(j) - getsol(CNSM(j,G)))
+
+end-procedure
+
+!***********************************************************************************************************************
+
+procedure fix_global
+
+	if (DEBG = 3) then
+		setparam('XPRS_VERBOSE',true)
+	else
+		setparam('XPRS_VERBOSE',false)
+	end-if
+
+	fixglobal(true)
+
+	if (RALG = 0) then
+		minimize(XPRS_BAR+XPRS_LIN,FOBJ)
+	end-if
+
+	if (RALG = 1) then
+		minimize(XPRS_DUAL+XPRS_LIN,FOBJ)
+	end-if
+
+	if (RALG = 2) then
+		minimize(XPRS_PRI+XPRS_LIN,FOBJ)
+	end-if
+
+	check_stat(1)
+
+end-procedure
+
+!***********************************************************************************************************************
+
+procedure check_stat(A: integer)
+
+	lpstatus  := getparam('XPRS_LPSTATUS')
+	mipstatus := getparam('XPRS_MIPSTATUS')
+
+	if (DEBUG) then
+		writeln("LPSTATUS = ",lpstatus)
+		writeln("MPSTATUS = ",mipstatus)
+	end-if
+
+	! Checking if the case is purely linear
+
+	if (A = 0 and getparam("XPRS_MIPENTS") = 0) then
+		A:= 1
+	end-if
+
+	! Changing the Optmization Algorithm
+
+	if (A = 0 and mipstatus = XPRS_MIP_INFEAS and ((CHMP <= 2 and RALG = 0) or CHMP <= 1)) then
+
+		CHMP+= 1
+
+		if (DEBUG or DEBG >= 2) then
+			writeln('Optmization Algorithm Changed: MIP-',IPER,'-',ISIM,'-',ISLC,'-',CHMP)
+		end-if
+
+		loadprob(FOBJ)
+
+		if (RALG = 0) then
+
+			if (CHMP = 1) then
+				setparam('XPRS_CUTSTRATEGY',0)
+				setparam('XPRS_MAXTIME', MAXX * NUM3)
+				minimize(XPRS_BAR,FOBJ)
+			end-if
+
+			if (CHMP = 2) then
+				setparam('XPRS_CUTSTRATEGY',-1)
+				setparam('XPRS_MAXTIME', MAXX)
+				minimize(XPRS_DUAL,FOBJ)
+			end-if
+
+			if (CHMP = 3) then
+				minimize(XPRS_PRI,FOBJ)
+			end-if
+
+		end-if
+
+		if (RALG = 1) then
+
+			if (CHMP = 1) then
+				minimize(XPRS_BAR,FOBJ)
+			end-if
+
+			if (CHMP = 2) then
+				minimize(XPRS_PRI,FOBJ)
+			end-if
+
+		end-if
+
+		if (RALG = 2) then
+
+			if (CHMP = 1) then
+				minimize(XPRS_BAR,FOBJ)
+			end-if
+
+			if (CHMP = 2) then
+				minimize(XPRS_DUAL,FOBJ)
+			end-if
+
+		end-if
+
+		check_stat(0)
+
+	end-if
+
+	if (A = 1 and (lpstatus = XPRS_LP_INFEAS or lpstatus = XPRS_LP_UNSOLVED or lpstatus = XPRS_LP_UNFINISHED) and ((CHLP <= 2 and RALG = 0) or CHLP <= 1)) then
+
+		CHLP+= 1
+
+		if (DEBUG or DEBG >= 2) then
+			writeln('Optmization Algorithm Changed: LP-',IPER,'-',ISIM,'-',ISLC,'-',CHLP)
+		end-if
+
+		loadprob(FOBJ)
+
+		if (RALG = 0) then
+
+			if (CHLP = 1) then
+				setparam("XPRS_BARGAPSTOP",1.0E-5)
+				minimize(XPRS_BAR+XPRS_LIN,FOBJ)
+			end-if
+
+			if (CHLP = 2) then
+				minimize(XPRS_DUAL+XPRS_LIN,FOBJ)
+			end-if
+
+			if (CHLP = 3) then
+				minimize(XPRS_PRI+XPRS_LIN,FOBJ)
+			end-if
+
+		end-if
+
+		if (RALG = 1) then
+
+			if (CHLP = 1) then
+				minimize(XPRS_BAR+XPRS_LIN,FOBJ)
+			end-if
+
+			if (CHLP = 2) then
+				minimize(XPRS_PRI+XPRS_LIN,FOBJ)
+			end-if
+
+		end-if
+
+		if (RALG = 2) then
+
+			if (CHLP = 1) then
+				minimize(XPRS_BAR+XPRS_LIN,FOBJ)
+			end-if
+
+			if (CHLP = 2) then
+				minimize(XPRS_DUAL+XPRS_LIN,FOBJ)
+			end-if
+
+		end-if
+
+		check_stat(1)
+
+	end-if
+
+	IERR:= 1
+
+	! Analyzing the MIP convergence status
+
+	if (A = 0) then
+
+		if (mipstatus = XPRS_MIP_INFEAS or mipstatus = XPRS_MIP_NOT_LOADED or mipstatus = XPRS_MIP_UNBOUNDED) then
+			writeln
+			writeln('************************************************************************')
+			if (DEBUG or DEBG > 0) then
+				if (IGEN < 2) then
+					writesol(PATH + 'inf_ncplite-' + IPER + '-' + ISIM + '-' + ISLC + '.slx',"")
+				else
+					writesol(PATH + 'inf_ncplite-' + IPER + '-' + ISIM + '-' + ISLC + '-' + HINI + '.slx',"")
+				end-if
+			end-if
+		end-if
+
+		case mipstatus of
+
+			XPRS_MIP_NOT_LOADED:	writeln('                   Error: Problem has not been loaded.                  ')
+			XPRS_MIP_INFEAS: 		writeln(' Error: Mixed-integer problem is infeasible - no integer solution found.')
+			XPRS_MIP_UNBOUNDED:		writeln('               Error: Mixed-integer problem is unbounded.               ')
+			else					IERR:= 0
+
+		end-case
+
+		! Reporting the problem cases
+
+		if (mipstatus = XPRS_MIP_NO_SOL_FOUND or mipstatus = XPRS_MIP_LP_NOT_OPTIMAL or (mipstatus = XPRS_MIP_LP_OPTIMAL and lpstatus <> XPRS_LP_OPTIMAL)) then
+
+			saveHostData(IPER,ISIM)
+
+			INIC:= 0
+			IEMP:= 1
+
+			fopen(PATH + 'convergence.log',F_APPEND)
+				writeln(IPER,',',ISIM,',',ISLC)
+			fclose(F_APPEND)
+
+		end-if
+
+		! Calculating the convergence gaps
+
+		if (IERR = 0 and INIC = 1) then
+
+			BEST_BOUND:= 			getparam("XPRS_BESTBOUND")
+			BEST_INTEGER_SOLUTION:=	getparam("XPRS_MIPOBJVAL")
+
+			if (BEST_INTEGER_SOLUTION <> 0.0) then
+				RGAP:= abs(abs(BEST_BOUND) - abs(BEST_INTEGER_SOLUTION)) / abs(BEST_INTEGER_SOLUTION)
+			end-if
+
+		end-if
+
+	end-if
+
+	! Analyzing the LP convergence status
+
+	if (A = 1) then
+
+		if (lpstatus <> XPRS_LP_OPTIMAL) then
+			writeln
+			writeln('************************************************************************')
+			if (DEBUG or DEBG > 0) then
+				if (IGEN < 2) then
+					writesol(PATH + 'inf_ncplite-' + IPER + '-' + ISIM + '-' + ISLC + '.slx',"")
+				else
+					writesol(PATH + 'inf_ncplite-' + IPER + '-' + ISIM + '-' + ISLC + '-' + HINI + '.slx',"")
+				end-if
+			end-if
+		end-if
+
+		case lpstatus of
+
+			XPRS_LP_UNSTARTED:		writeln('                 Error: Linear relaxation is unstarted.                 ')
+			XPRS_LP_INFEAS:			writeln('       Error: Linear relaxation is infeasible - no solution found.      ')
+			XPRS_LP_CUTOFF:			writeln('       Error: Objective in linear relaxation is worse than cutoff.      ')
+			XPRS_LP_UNFINISHED:		writeln('                 Error: Linear relaxation is unfinished.                ')
+			XPRS_LP_UNBOUNDED:		writeln('                 Error: Linear relaxation is unbounded.                 ')
+			XPRS_LP_CUTOFF_IN_DUAL:	writeln('                         Error: Cut-off in dual.                        ')
+			XPRS_LP_UNSOLVED:		writeln('         Error: Time out reached. Linear relaxation is unsolved.        ')
+			XPRS_LP_NONCONVEX:		writeln('      Error: Problem contains quadratic data, which is not convex.      ')
+			else					IERR:= 0
+
+		end-case
+
+		if (DEBG = 3) then
+			saveHostData(IPER,ISIM)
+		end-if
+
+	end-if
+
+	! Reporting the error message / Creating the execution logs
+
+	if (IERR = 1) then
+
+		setparam('XPRS_VERBOSE',true)
+		setparam('XPRS_LOADNAMES',true)
+
+		fopen(PATH + 'message.log',F_OUTPUT)
+
+		loadprob(FOBJ)
+
+		if (A = 0) then
+
+			if (RALG = 0) then
+
+				if (CHMP = 0) then
+					minimize(XPRS_BAR,FOBJ)
+				end-if
+
+				if (CHMP = 1) then
+					setparam('XPRS_CUTSTRATEGY',0)
+					setparam('XPRS_MAXTIME', MAXX * NUM3)
+					minimize(XPRS_BAR,FOBJ)
+				end-if
+
+				if (CHMP = 2) then
+					minimize(XPRS_DUAL,FOBJ)
+				end-if
+
+				if (CHMP = 3) then
+					minimize(XPRS_PRI,FOBJ)
+				end-if
+
+			end-if
+
+			if (RALG = 1) then
+
+				if (CHMP = 0) then
+					minimize(XPRS_DUAL,FOBJ)
+				end-if
+
+				if (CHMP = 1) then
+					minimize(XPRS_BAR,FOBJ)
+				end-if
+
+				if (CHMP = 2) then
+					minimize(XPRS_PRI,FOBJ)
+				end-if
+
+			end-if
+
+			if (RALG = 2) then
+
+				if (CHMP = 0) then
+					minimize(XPRS_PRI,FOBJ)
+				end-if
+
+				if (CHMP = 1) then
+					minimize(XPRS_BAR,FOBJ)
+				end-if
+
+				if (CHMP = 2) then
+					minimize(XPRS_DUAL,FOBJ)
+				end-if
+
+			end-if
+
+		end-if
+
+		if (A = 1) then
+
+			if (RALG = 0) then
+
+				if (CHLP = 0) then
+					minimize(XPRS_BAR+XPRS_LIN,FOBJ)
+				end-if
+
+				if (CHLP = 1) then
+					setparam("XPRS_BARGAPSTOP",1.0E-5)
+					minimize(XPRS_BAR+XPRS_LIN,FOBJ)
+				end-if
+
+				if (CHLP = 2) then
+					minimize(XPRS_DUAL+XPRS_LIN,FOBJ)
+				end-if
+
+				if (CHLP = 3) then
+					minimize(XPRS_PRI+XPRS_LIN,FOBJ)
+				end-if
+
+			end-if
+
+			if (RALG = 1) then
+
+				if (CHLP = 0) then
+					minimize(XPRS_DUAL+XPRS_LIN,FOBJ)
+				end-if
+
+				if (CHLP = 1) then
+					minimize(XPRS_BAR+XPRS_LIN,FOBJ)
+				end-if
+
+				if (CHLP = 2) then
+					minimize(XPRS_PRI+XPRS_LIN,FOBJ)
+				end-if
+
+			end-if
+
+			if (RALG = 2) then
+
+				if (CHLP = 0) then
+					minimize(XPRS_PRI+XPRS_LIN,FOBJ)
+				end-if
+
+				if (CHLP = 1) then
+					minimize(XPRS_BAR+XPRS_LIN,FOBJ)
+				end-if
+
+				if (CHLP = 2) then
+					minimize(XPRS_DUAL+XPRS_LIN,FOBJ)
+				end-if
+
+			end-if
+
+		end-if
+
+		fclose(F_OUTPUT)
+
+		if (IGEN < 2) then
+			exportprob(EP_MPS,PATH + 'inf_ncplite-' + IPER + '-' + ISIM + '-' + ISLC,FOBJ)
+			exportprob(EP_MIN,PATH + 'inf_ncplite-' + IPER + '-' + ISIM + '-' + ISLC,FOBJ)
+			savestate(PATH + 'inf_ncplite-' + IPER + '-' + ISIM + '-' + ISLC + '.svf')
+		else
+			exportprob(EP_MPS,PATH + 'inf_ncplite-' + IPER + '-' + ISIM + '-' + ISLC + '-' + HINI,FOBJ)
+			exportprob(EP_MIN,PATH + 'inf_ncplite-' + IPER + '-' + ISIM + '-' + ISLC + '-' + HINI,FOBJ)
+			savestate(PATH + 'inf_ncplite-' + IPER + '-' + ISIM + '-' + ISLC + '-' + HINI + '.svf')
+		end-if
+
+		writeln('             Problem with the solution. Please contact PSR.             ')
+		writeln('************************************************************************')
+		writeln
+
+		exit(1)
+
+	end-if
+
+end-procedure
+
+!***********************************************************************************************************************
+
+procedure check_defc(A: integer, B: integer, C: integer)
+
+	IRUN:= 0
+
+	if (NETW = 0) then
+		forall(t in A..B,m in SSYS|DEMS(m,t) > 0.0) do
+			if (adju_value(getsol(DEFS(m,1,t))) >= NUM1) then
+				IRUN:= 1
+			end-if
+		end-do
+	else
+		forall(t in A..B,m in SBUS|DEMB(m,t) > 0.0 and IBDF(m) = 1) do
+			if (adju_value(getsol(DEFB(m,1,t))) >= NUM1) then
+				IRUN:= 1
+			end-if
+		end-do
+	end-if
+
+	if (IRUN = 0 and RGAP >= 0.5) then
+		IRUN:= 2
+	end-if
+
+	if (IRUN >= 1) then
+
+		D:= 1
+
+		if (IRUN = 1) then
+			if (DEBUG or DEBG >= 2) then
+				writeln('Execution - Deficit: ',IPER,'-',ISIM,'-',ISLC)
+			end-if
+		end-if
+
+		if (IRUN = 2) then
+			if (DEBUG or DEBG >= 2) then
+				writeln('Execution - Gap: ',IPER,'-',ISIM,'-',ISLC)
+			end-if
+		end-if
+
+		model_exec(A,B,C,E)
+
+		if (GENESYS = 1) then
+			add_genctr(A,B)
+		end-if
+
+		solve_modl(A,B,D)
+
+	end-if
+
+end-procedure
+
+!***********************************************************************************************************************
+
+function adju_value(A:real):real
+
+	if (abs(A) <= NM03) then
+		A:= 0.0
+	end-if
+
+	returned:= A
+
+end-function
+
+!***********************************************************************************************************************
+
+function my_xprtrim(A:string):integer
+
+	X:= getsize(A)
+
+	while (substr(A,X,X) = ' ') do
+		X:= X - 1
+	end-do
+
+	returned:= X
+
+end-function
+
+!***********************************************************************************************************************
+
+function interp_val(A: integer, B: integer, C: array(range,range) of real, D: array(range,range) of real, E: real):real
+
+	K:= 1
+
+	forall(j in 1..A - 1) do
+		if (C(B,j + 1) - C(B,j) > 0.0) then
+			if (E > C(B,j)) then
+	   			K:= j + 1
+			end-if
+      	end-if
+	end-do
+
+	if (K = 1) then
+		Y:= D(B,K)
+	elif (K = A + 1) then
+		Y:= D(B,A)
+	else
+		Y:= D(B,K - 1) + (D(B,K) - D(B,K - 1)) / (C(B,K) - C(B,K - 1)) * (E - C(B,K - 1))
+	end-if
+
+	returned:= Y
+
+end-function
+
+!***********************************************************************************************************************
+
+function my_fmtisim(A:integer):string
+
+	if (A > 10) then
+		if (A > 100) then
+			if (A > 1000) then
+				X:= '0' + A
+			else
+				X:= '00' + A
+			end-if
+		else
+			X:= '000' + A
+		end-if
+	else
+		X:= '0000' + A
+	end-if
+
+	returned:= X
+
+end-function
+
+end-model

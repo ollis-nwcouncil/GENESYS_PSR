@@ -1,0 +1,394 @@
+! ---------------------------------------------------------------------------
+! Model definition
+! ---------------------------------------------------------------------------
+
+   if (PRINT_LOG > 0) then
+     writeln(" ")
+     writeln("------------------------------------------------------------------------")
+     writeln("Execution process")
+     writeln("------------------------------------------------------------------------")
+   end-if
+
+!  variables and constraints
+!  -------------------------
+declarations
+! average & LDR scenario flow (MW) in each interconnection, per hour; lower/upper bound slacks
+   favgint: dynamic array(1..H, 1..if(L>0,L,1)) of mpvar
+   fslbavgint: dynamic array(1..H, 1..if(L>0,L,1)) of mpvar
+   fsubavgint: dynamic array(1..H, 1..if(L>0,L,1)) of mpvar
+   flinint: dynamic array(1..S, 1..H, 1..if(L>0,L,1)) of mpvar
+   fslblinint: dynamic array(1..S, 1..H, 1..if(L>0,L,1)) of mpvar
+   fsublinint: dynamic array(1..S, 1..H, 1..if(L>0,L,1)) of mpvar
+
+! thermal plant variables, per hour
+   gavgth: dynamic array(1..H, 1..J) of mpvar                        ! average generation per hour (MW)
+   glinth: dynamic array(1..H, 1..J) of mpvar                        ! linear rule coefficient for generation per hour (adimensional)
+   smxth: dynamic array(1..S, 1..H, 1..J) of mpvar                   ! max limit slack (MW)
+   smnth: dynamic array(1..S, 1..H, 1..J) of mpvar                   ! min limit slack (MW)
+
+! hydro plant and reservoir variables
+   uavghy: dynamic array(1..H, 1..I) of mpvar                        ! average turbined volume (hm3)
+   glinhy: dynamic array(1..H, 1..I) of mpvar                        ! linear rule coefficient for generation per hour (adimensional)
+   volfavghy: dynamic array(1..I) of mpvar                           ! average final volume (hm3)
+   volfhy: dynamic array(1..S, 1..I) of mpvar                        ! final volume per scenario (hm3)
+   spilavghy: dynamic array(1..I) of mpvar                           ! average spillage (hm3)
+   spilhy: dynamic array(1..S, 1..I) of mpvar                        ! spillage per scenario (hm3)
+
+! Objective function (hydro&thermal cost)
+   OBJ: linctr
+
+! interconnection scenario LDR flow upper & lower bound; average equal to scenario flow case its terminal nodes belong to distinct balancing authories
+   INTLINSLB: array(1..S, 1..H, 1..if(L>0,L,1)) of linctr
+   INTLINSUB: array(1..S, 1..H, 1..if(L>0,L,1)) of linctr
+   INTBA: array(1..S, 1..H, 1..if(L>0,L,1)) of linctr
+   INTAVGLB: array(1..H, 1..if(L>0,L,1)) of linctr
+   INTAVGUB: array(1..H, 1..if(L>0,L,1)) of linctr
+
+! Area (thermal+hydro) gen-load average & scenario LDR balance equations, per hour
+   ABALAVG: array(1..H, 1..A) of linctr
+   ABALSCE: array(1..S, 1..H, 1..A) of linctr
+
+! Balancing authority (thermal+hydro) gen - load balance equation, per hour, expressed as linear rule
+   BABALLIN: array(1..H, 1..B) of linctr
+
+! Thermal plant average min/max generation, per hour
+   THAVGMAX: array(1..H, 1..J) of linctr
+   THAVGMIN: array(1..H, 1..J) of linctr
+
+! Thermal plant min/max generation, per scenario & hour, expressed as linear rule
+   THLINMAX: array(1..S, 1..H, 1..J) of linctr
+   THLINMIN: array(1..S, 1..H, 1..J) of linctr
+
+! Hydro reservoir volume balance average equation
+   HYBALAVG: array(1..I) of linctr
+
+! Hydro reservoir volume balance equation, per scenario, expressed as linear rule
+   HYBALSCE: array(1..S, 1..I) of linctr
+
+! Hydro reservoir average volume upper bound
+   HYVOLAVGUB: array(1..I) of linctr
+
+! Hydro reservoir average volume lower bound
+   HYVOLAVGLB: array(1..I) of linctr
+
+! Hydro reservoir volume upper bound, per scenario, expressed as linear rule
+   HYVOLUB: array(1..S, 1..I) of linctr
+
+! Hydro reservoir volume lower bound, per scenario, expressed as linear rule
+   HYVOLLB: array(1..S, 1..I) of linctr
+
+! Hydro plant average turbined upper bound, per hour
+   HYAVGTURUB: array(1..H, 1..I) of linctr
+
+! Hydro plant turbine limit, per hour, expressed as linear rule
+   HYLINTURUB: array(1..H, 1..I) of linctr
+
+! Hydro plant generation lower bound, per scenario & hour, expressed as linear rule
+   HYGENLB: array(1..S, 1..H, 1..I) of linctr
+end-declarations
+
+! Create interconnection average & scenario flow, per hour; lower/upper bound slacks
+   if( L > 0 ) then
+     forall(l in 1..L|EXISINT(l) <= 0)
+       forall(h in 1..H)
+         create(favgint(h,l))
+
+     forall(l in 1..L|EXISINT(l) <= 0)
+       forall(h in 1..H)
+         create(fslbavgint(h,l))
+
+     forall(l in 1..L|EXISINT(l) <= 0)
+       forall(h in 1..H)
+         create(fsubavgint(h,l))
+
+     forall(l in 1..L|EXISINT(l) <= 0)
+       forall(s in 1..S, h in 1..H|PRSC(s) > 0)
+         create(flinint(s,h,l))
+
+     forall(l in 1..L|EXISINT(l) <= 0 and BAARE(AFRINT(l)) = BAARE(ATOINT(l)))
+       forall(s in 1..S, h in 1..H|PRSC(s) > 0)
+         create(fslblinint(s,h,l))
+
+     forall(l in 1..L|EXISINT(l) <= 0 and BAARE(AFRINT(l)) = BAARE(ATOINT(l)))
+       forall(s in 1..S, h in 1..H|PRSC(s) > 0)
+         create(fsublinint(s,h,l))
+   end-if
+
+! Create hydro volume & spillage, average & per renew scenario
+     forall(i in 1..I|VMINHY(i) < VMAXHY(i))
+       forall(s in 1..S|PRSC(s) > 0)
+         create(volfhy(s,i))
+
+     forall(i in 1..I|VMINHY(i) < VMAXHY(i))
+       create(volfavghy(i))
+
+     forall(i in 1..I)
+       create(spilavghy(i))
+
+     forall(i in 1..I)
+       forall(s in 1..S|PRSC(s) > 0)
+         create(spilhy(s,i))
+
+! Create hydro turbine average & thermal average generation
+     forall(i in 1..I|PCHY(i) <> 0)
+       forall(h in 1..H)
+         create(uavghy(h,i))
+
+     forall(j in 1..J|EXISTH(j) <= 0)
+       forall(h in 1..H|COMMTH(j,h) = 1)
+         create(gavgth(h,j))
+
+! Create allowed hydro & thermal LDR variables, per hour
+     forall(i in 1..I|PCHY(i) <> 0 and FLINHY(i) = 0)
+       forall(h in 1..H)
+         create(glinhy(h,i))
+
+     forall(j in 1..J|EXISTH(j) <= 0 and FLINTH(j) = 0)
+       forall(h in 1..H|COMMTH(j,h) = 1)
+         create(glinth(h,j))
+
+! Create thermal max/min slacks for max/min capacity, per hour, linear decision rule
+     forall(j in 1..J|EXISTH(j) <= 0 and FLINTH(j) = 0)
+       forall(s in 1..S, h in 1..H|PRSC(s) > 0 and COMMTH(j,h) = 1)
+          create(smxth(s,h,j))
+
+     forall(j in 1..J|EXISTH(j) <= 0 and FLINTH(j) = 0)
+       forall(s in 1..S, h in 1..H|PRSC(s) > 0 and COMMTH(j,h) = 1)
+          create(smnth(s,h,j))
+
+! HOURLY DISPATCH LINEAR STOCHASTIC MODEL: S renewable scenarios, using LDR
+! --------------------------------------------------------------------------------------------------------------------------------------------------------------
+!0. Objective function (k$): average hydro & thermal gen costs + penalized lower/upper overloads in interconnections + penalized lower/upper thermal limit violations
+     OBJ:=
+       sum(j in 1..J|EXISTH(j) <= 0) sum(h in 1..H|COMMTH(j,h) = 1) COSTTH(j,h)*gavgth(h,j) +
+       sum(j in 1..J|EXISTH(j) <= 0) sum(h in 1..H, s in 1..S|PRSC(s) > 0) PRSC(s)*( NETLOADSHB(s,h,BATH(j)) - NETAVGLOADHB(h,BATH(j)) )*glinth(h,j) +
+       sum(i in 1..I|PCHY(i) <> 0) sum(h in 1..H) OPCSTHY(i)*PCHY(i)*uavghy(h,i) +
+       sum(i in 1..I|PCHY(i) <> 0) sum(h in 1..H, s in 1..S|PRSC(s) > 0) PRSC(s)*( NETLOADSHB(s,h,BAHY(i)) - NETAVGLOADHB(h,BAHY(i)) )*glinhy(h,i)  +
+       sum(j in 1..J|EXISTH(j) <= 0 and FLINTH(j) = 0) sum(s in 1..S, h in 1..H|PRSC(s) > 0 and COMMTH(j,h) = 1) 1000*smxth(s,h,j) +
+       sum(j in 1..J|EXISTH(j) <= 0 and FLINTH(j) = 0) sum(s in 1..S, h in 1..H|PRSC(s) > 0 and COMMTH(j,h) = 1) 10000*smnth(s,h,j) +
+       if( L=0, 0, sum(l in 1..L|EXISINT(l) <= 0 and BAARE(AFRINT(l)) = BAARE(ATOINT(l))) sum(s in 1..S, h in 1..H|PRSC(s) > 0) 1000*fslblinint(s,h,l) ) +
+       if( L=0, 0, sum(l in 1..L|EXISINT(l) <= 0 and BAARE(AFRINT(l)) = BAARE(ATOINT(l))) sum(s in 1..S, h in 1..H|PRSC(s) > 0) 1000*fsublinint(s,h,l) ) +
+       if( L=0, 0, sum(l in 1..L|EXISINT(l) <= 0) sum(h in 1..H) 5000*fslbavgint(h,l) ) +
+       if( L=0, 0, sum(l in 1..L|EXISINT(l) <= 0) sum(h in 1..H) 5000*fsubavgint(h,l) )
+
+!1. Area gen-load average (MW) balance equation, representing average thermal/hydro generations & interconnnection flows, per hour
+     forall(h in 1..H, a in 1..A)
+       ABALAVG(h,a):=
+        sum(j in 1..J|EXISTH(j) <= 0 and ARETH(j) = a and COMMTH(j,h) = 1) gavgth(h,j) +
+        sum(i in 1..I|PCHY(i) <> 0 and AREHY(i) = a) PCHY(i)*uavghy(h,i) -
+        if( L=0, 0, sum(l in 1..L|EXISINT(l) <= 0 and AFRINT(l) = a) favgint(h,l) ) +
+        if( L=0, 0, sum(l in 1..L|EXISINT(l) <= 0 and ATOINT(l) = a) favgint(h,l) ) =
+        if( TYPARE(a)=1, NETAVGLOADHA(h,a), NETLOADSHA(ISND,h,a) )
+
+!2. Area (internal) gen-load LDR (MW) balance equation, representing LDR thermal/hydro generations & interconnnection flows, per scenario & hour
+     forall(s in 1..S, h in 1..H, a in 1..A|PRSC(s) > 0 and TYPARE(a) = 1)
+       ABALSCE(s,h,a):=
+        sum(j in 1..J|EXISTH(j) <= 0 and ARETH(j) = a and COMMTH(j,h) = 1) (gavgth(h,j) + (NETLOADSHB(s,h,BATH(j)) - NETAVGLOADHB(h,BAARE(a)))*glinth(h,j)) +
+        sum(i in 1..I|PCHY(i) <> 0 and AREHY(i) = a) (PCHY(i)*uavghy(h,i) + (NETLOADSHB(s,h,BAHY(i)) - NETAVGLOADHB(h,BAARE(a)))*glinhy(h,i))  -
+        if( L=0, 0, sum(l in 1..L|EXISINT(l) <= 0 and AFRINT(l) = a) flinint(s,h,l) ) +
+        if( L=0, 0, sum(l in 1..L|EXISINT(l) <= 0 and ATOINT(l) = a) flinint(s,h,l) ) =
+        NETLOADSHA(s,h,a)
+
+!3. Balancing authority generation-load (MW) balance equation, per hour, expressed as linear rule; case it has renewable & at least 2 hydro/thermal plants & >0 internal areas
+     forall(b in 1..B|NRNBA(b) > 0 and NTHBA(b) + NHYBA(b) > 1 and TYPBA(b) > 0)
+       forall(h in 1..H)
+         BABALLIN(h,b):=
+           sum(j in 1..J|TYPARE(ARETH(j)) = 1 and EXISTH(j) <= 0 and BATH(j) = b and FLINTH(j) = 0 and COMMTH(j,h) = 1) glinth(h,j) +
+           sum(i in 1..I|TYPARE(AREHY(i)) = 1 and BAHY(i) = b and FLINHY(i) = 0 and PCHY(i) <> 0) glinhy(h,i) = 1
+
+!4. Thermal plant average max generation (MW), per hour
+     forall(j in 1..J|EXISTH(j) <= 0 and FLINTH(j) = 0)
+       forall(h in 1..H|COMMTH(j,h) = 1)
+         THAVGMAX(h,j):=
+           gavgth(h,j) <= PMAXTH(j)
+
+!5. Thermal plant average min generation (MW), per hour
+     forall(j in 1..J|EXISTH(j) <= 0 and FLINTH(j) = 0)
+       forall(h in 1..H|COMMTH(j,h) = 1)
+         THAVGMIN(h,j):=
+           gavgth(h,j) >= PMINTH(j)
+
+!6. Thermal plant max generation (MW), per scenario & hour, expressed as linear rule
+     forall(j in 1..J|EXISTH(j) <= 0 and FLINTH(j) = 0)
+       forall(s in 1..S, h in 1..H|PRSC(s) > 0 and COMMTH(j,h) = 1)
+         THLINMAX(s,h,j):=
+           (gavgth(h,j) + (NETLOADSHB(s,h,BATH(j)) - NETAVGLOADHB(h,BATH(j)))*glinth(h,j)) - smxth(s,h,j) <= PMAXTH(j)
+
+!7. Thermal plant min generation (MW), per scenario & hour, expressed as linear rule
+     forall(j in 1..J|EXISTH(j) <= 0 and FLINTH(j) = 0)
+       forall(s in 1..S, h in 1..H|PRSC(s) > 0 and COMMTH(j,h) = 1)
+         THLINMIN(s,h,j):=
+           (gavgth(h,j) + (NETLOADSHB(s,h,BATH(j)) - NETAVGLOADHB(h,BATH(j)))*glinth(h,j)) + smnth(s,h,j) >= PMINTH(j)
+
+!8. Hydro reservoir average volume (hm3) balance equation
+     forall(i in 1..I)
+       HYBALAVG(i):=
+         if(VMINHY(i) < VMAXHY(i), volfavghy(i), 0) +
+         spilavghy(i) +
+         if(PCHY(i)=0, 0, sum(h in 1..H) uavghy(h,i) ) -
+         if(NUPU(i)=0, 0, sum(m in 1..NUPU(i)|PCHY(UPU(m,i)) <> 0) sum(h in 1..H) uavghy(h,UPU(m,i)) ) -
+         if(NUPS(i)=0, 0, sum(m in 1..NUPS(i)) spilavghy(UPS(m,i)) ) =
+         VOLIHY(i) + CHM3*INFLHY(HS,i)
+
+!9. Hydro reservoir volume (hm3) balance equation, per renew scenario, expressed as linear rule
+     forall(i in 1..I)
+       forall(s in 1..S|PRSC(s) > 0)
+         HYBALSCE(s,i):=
+           if(VMINHY(i) < VMAXHY(i), volfhy(s,i), 0) +
+           spilhy(s,i) +
+           if(PCHY(i)=0, 0, sum(h in 1..H) uavghy(h,i) + if(FLINHY(i)>0, 0, CHM3/PCHY(i)*sum(h in 1..H) NETDLOADSHB(s,h,BAHY(i))*glinhy(h,i) ) ) -
+           if(NUPS(i)=0, 0, sum(m in 1..NUPS(i)) spilhy(s,UPS(m,i))  -
+           if(NUPU(i)=0, 0, sum(m in 1..NUPU(i)|PCHY(UPU(m,i)) <> 0) sum(h in 1..H) uavghy(h,UPU(m,i)) +
+             if(FLINHY(i)>0, 0, sum(m in 1..NUPU(i)|PCHY(UPU(m,i)) <> 0) CHM3/PCHY(UPU(m,i))*sum(h in 1..H) NETDLOADSHB(s,h,BAHY(UPU(m,i)))*glinhy(h,UPU(m,i)) ) ) ) =
+           VOLIHY(i) + CHM3*INFLHY(HS,i)
+
+!10. Hydro reservoir average volume (hm3) upper bound
+     forall(i in 1..I|VMINHY(i) < VMAXHY(i))
+       if(EXISHY(i) <= 0) then
+         HYVOLAVGUB(i):=
+           volfavghy(i) <= VMAXHY(i)
+       else
+         HYVOLAVGUB(i):=
+           volfavghy(i) = 0
+       end-if
+
+!11. Hydro reservoir average volume (hm3) lower bound
+     forall(i in 1..I|EXISHY(i) <= 0 and VMINHY(i) < VMAXHY(i))
+       HYVOLAVGLB(i):=
+         volfavghy(i) >= VMINHY(i)
+
+!12. Hydro reservoir volume (hm3) upper bound, per renew scenario
+     forall(i in 1..I|VMINHY(i) < VMAXHY(i))
+       if(EXISHY(i) <= 0) then
+         forall(s in 1..S|PRSC(s) > 0)
+           HYVOLUB(s,i):=
+             volfhy(s,i) <= VMAXHY(i)
+       else
+         forall(s in 1..S|PRSC(s) > 0)
+           HYVOLUB(s,i):=
+             volfhy(s,i) = 0
+       end-if
+
+!13. Hydro reservoir volume (hm3) lower bound, per renew scenario
+     forall(i in 1..I|VMINHY(i) < VMAXHY(i))
+       forall(s in 1..S|PRSC(s) > 0)
+         HYVOLLB(s,i):=
+           volfhy(s,i) >= VMINHY(i)
+
+!14. Hydro plant average turbined (hm3) bound, per hour
+     forall(i in 1..I|PCHY(i) <> 0)
+       if(EXISHY(i) <= 0) then
+         forall(h in 1..H)
+           HYAVGTURUB(h,i):=
+             uavghy(h,i) <= UMAXHY(i)
+       else
+         forall(h in 1..H)
+           HYAVGTURUB(h,i):=
+             uavghy(h,i) = 0
+       end-if
+
+!15. Hydro plant turbined energy limit (m3/s*MW/m3/s), per hour, expressed as linear rule
+     forall(i in 1..I|PCHY(i) <> 0 and FLINHY(i) = 0)
+       forall(h in 1..H)
+         HYLINTURUB(h,i):=
+           PCHY(i)*uavghy(h,i) + MXDEVLOADHB(h,BAHY(i))*glinhy(h,i) <= PCHY(i)*UMAXHY(i)
+
+!16. Hydro plant non negative generation (m3/s*MW/m3/s), per scenario & hour, expressed as linear rule
+     forall(i in 1..I|PCHY(i) <> 0 and FLINHY(i) = 0)
+       forall(h in 1..H, s in 1..S|PRSC(s) > 0 )
+          HYGENLB(s,h,i):=
+            PCHY(i)*uavghy(h,i) + ( NETLOADSHB(s,h,BAHY(i)) - NETAVGLOADHB(h,BAHY(i)) )*glinhy(h,i) >= 0
+
+!17. Average & Linear interchange scenario hourly flow lower/upper bound; linear is equal to hourly average flow case Balancing authorities of its terminal nodes are distinct
+     if( L > 0 ) then
+       forall(l in 1..L|EXISINT(l) <= 0)
+         forall(h in 1..H)
+           favgint(h,l) is_free
+
+       forall(l in 1..L|EXISINT(l) <= 0)
+         forall(s in 1..S, h in 1..H|PRSC(s) > 0)
+           flinint(s,h,l) is_free
+
+       forall(l in 1..L|EXISINT(l) <= 0)
+         forall(h in 1..H)
+           INTAVGUB(h,l):=
+             favgint(h,l) - fsubavgint(h,l) <= CFTINT(l,h)
+
+       forall(l in 1..L|EXISINT(l) <= 0)
+         forall(h in 1..H)
+           INTAVGLB(h,l):=
+             favgint(h,l) + fslbavgint(h,l) >= -CTFINT(l,h)
+
+       forall(l in 1..L|EXISINT(l) <= 0 and BAARE(AFRINT(l)) <> BAARE(ATOINT(l)))
+         forall(s in 1..S, h in 1..H|PRSC(s) > 0)
+           INTBA(s,h,l):=
+             flinint(s,h,l) - favgint(h,l) = 0
+
+       forall(l in 1..L|EXISINT(l) <= 0 and BAARE(AFRINT(l)) = BAARE(ATOINT(l)))
+         forall(s in 1..S, h in 1..H|PRSC(s) > 0)
+           INTLINSUB(s,h,l):=
+             flinint(s,h,l) - fsublinint(s,h,l) <= CFTINT(l,h)
+
+       forall(l in 1..L|EXISINT(l) <= 0 and BAARE(AFRINT(l)) = BAARE(ATOINT(l)))
+         forall(s in 1..S, h in 1..H|PRSC(s) > 0)
+           INTLINSLB(s,h,l):=
+             flinint(s,h,l) + fslblinint(s,h,l) >= -CTFINT(l,h)
+     end-if
+
+! Fixed reference dispatch, inflexible thermal plants, per hour
+     forall(j in 1..J|EXISTH(j) <= 0 and FLINTH(j) > 0)
+       forall(h in 1..H|COMMTH(j,h) = 1)
+         gavgth(h,j) = FXTHREF(h,j)
+
+! Fixed reference turbine, inflexible hydro plants, per hour
+     forall(i in 1..I|EXISHY(i) <= 0 and FLINHY(i) > 0 and PCHY(i) <> 0)
+       forall(h in 1..H)
+         uavghy(h,i) = FXHYREF(h,i)/PCHY(i)
+
+! Forbid future hydro plant hourly redispatch
+     forall(i in 1..I|EXISHY(i) = 1 and PCHY(i) <> 0 and FLINHY(i) = 0)
+       forall(h in 1..H)
+         glinhy(h,i) = 0
+
+! Forbid thermal plant hourly redispatch case its area is external
+     forall(j in 1..J|TYPARE(ARETH(j)) = 0 and EXISTH(j) <= 0 and FLINTH(j) = 0)
+       forall(h in 1..H)
+         glinth(h,j)= 0
+
+! Forbid thermal plant hourly redispatch case its balancing authority has no renewable plant or all its areas are external
+     forall(b in 1..B|NRNBA(b) = 0 or TYPBA(b) = 0)
+       forall(j in 1..J|EXISTH(j) <= 0 and FLINTH(j) = 0 and BATH(j) = b)
+         forall(h in 1..H|COMMTH(j,h) = 1)
+           glinth(h,j) = 0
+
+! Forbid hydro plant hourly redispatch case its area is external
+     forall(i in 1..I|TYPARE(AREHY(i)) = 0 and PCHY(i) <> 0 and FLINHY(i) = 0)
+       forall(h in 1..H)
+         glinhy(h,i) = 0
+
+! report
+     if (PRINT_LOG > 0) then
+	     forall(b in 1..B|NRNBA(b) = 0 or TYPBA(b) = 0)
+	       forall(i in 1..I|PCHY(i) <> 0 and FLINHY(i) = 0 and BAHY(i) = b)
+	          writeln(IDHY(i)," hydro plant has balancing authority# ",IDBA(b)," in area with flag int/ext ",TYPBA(b)," ,#renewables=",NRNBA(b),":redispatch is forbidden")
+	 end-if        
+
+! solver parameters
+! -----------------
+   setparam("XPRS_LPLOG",0)              ! Turn off LP log
+
+   if (PRINT_LEVEL >= 0) then
+     setparam("XPRS_VERBOSE",true)         ! Set verbose mode
+   else
+     setparam("XPRS_VERBOSE",false)        ! Disable verbose mode
+   end-if
+
+   setparam("XPRS_MAXTIME",-SEC)         ! max CPU time (seconds), only active if SEC<>0
+
+!  starttime:= gettime
+
+   if( ALG = 0 ) then
+     minimize(OBJ)
+   else
+     minimize(XPRS_BAR+XPRS_LIN,OBJ)
+   end-if

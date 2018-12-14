@@ -1,0 +1,113 @@
+model 'true_up.mos'
+
+uses 'mmetc'
+uses 'mmxprs'
+uses 'mmsystem'
+uses 'PSRClasses'
+uses 'PSRNetwork'
+uses 'PSRIntegration'
+
+! ---------------------------------------------------------------------------
+! Lujan: Consideracoes gerais
+! ---------------------------------------------------------------------------
+! 1. Se considerou um unico segmento de custo termico
+! 2. Se considerou somente demanda inelastica
+! 3. Na integracao com Genesys se considerou:
+!    a. area = barra
+!    b. limite interconexao definido em funcao dos limites dos linkdc
+! 4. Se considera 1 cenario de afluencia fixo para cada integracao com NCPLite
+! 5. Sera considerado S = # cenarios renovaveis
+! ---------------------------------------------------------------------------
+
+! ---------------------------------------------------------------------------
+! Lujan: Passar para o Gerson
+! ---------------------------------------------------------------------------
+! 1. Taxa de desconto lida: DESR, ver se vai ser incorporada ao modelo
+! 2. Os fatores de perdas do linkdc estao sendo accessados do
+!    PSRClasses (LFTINT, LTFINT) e devem ser incluidos no modelo
+! ---------------------------------------------------------------------------
+
+! ---------------------------------------------------------------------------
+! Parameters
+! ---------------------------------------------------------------------------
+parameters
+  PATH_PSRCLASSES     = '.\'
+  PRINT_LEVEL         = -2    ! 0: summary, 1: input, 2: input\output, -1: print execution hour, -2: no print
+  PRINT_LOG           = 0     ! 0: No, 1: Yes
+  LP_FILE             = false ! print lp file
+end-parameters
+
+! ---------------------------------------------------------------------------
+! Functions / Procedures
+! ---------------------------------------------------------------------------
+  forward procedure clean_data_tu(CC: integer, HH: array(range,range) of real)
+  forward procedure set_graphs_tu(AA: integer, BB: integer, CC: integer, DD: string, EE: string, GG: set of string, HH: array(range,range) of real, II: integer, JJ: integer, KK: integer, LL: integer, MM: string)
+
+  forward function  my_fmtisim(A: integer):string
+! ---------------------------------------------------------------------------
+! PSRClasses input data
+! ---------------------------------------------------------------------------
+  include 'true_up_input.mos'
+
+! ---------------------------------------------------------------------------
+! Model definition
+! ---------------------------------------------------------------------------
+  include 'true_up_model.mos'
+
+! ---------------------------------------------------------------------------
+! Output
+! ---------------------------------------------------------------------------
+  include 'true_up_output.mos'
+
+! ---------------------------------------------------------------------------
+! Graphical result
+! ---------------------------------------------------------------------------
+  include 'true_up_graph.mos'
+
+! ---------------------------------------------------------------------------
+! Release memory
+! ---------------------------------------------------------------------------
+
+  fdelete("shmem:path")
+  fdelete("shmem:input")
+
+  unloadprob
+
+! ---------------------------------------------------------------------------
+! Close PSR Classes Lists and Graphs
+! ---------------------------------------------------------------------------
+
+  if (LRUN = 1) then
+
+  	if (ictrlgnd_tu <> 0) then
+			PSRIOElementHourlyScenarios_close(ictrlgnd_tu)
+  	end-if
+
+  	if (ictrlres_tu <> 0) then
+			PSRIOElementHourlyScenarios_close(ictrlres_tu)
+		end-if
+
+		if (ictrload_tu <> 0) then
+			PSRIOElementHourlyScenarios_close(ictrload_tu)
+		end-if
+
+  	forall(i in 1..4) do
+			iograf_tu(i):= getPSRType('PTR_GRAPH_TU' + strfmt(i,-3))
+			if (CASSANDRA_WRITE = 1) then
+				ret:= PSRIOGrafResult_closeSave(iograf_tu(i))
+			elif (PARALLEL_REOPEN <> 1) then
+				ret:= PSRIOGrafResultBinary_closeSave(iograf_tu(i))
+			end-if
+  	end-do
+
+  	clearBuffers(study_tu)
+
+  end-if
+
+! ---------------------------------------------------------------------------
+! End execution
+! ---------------------------------------------------------------------------
+
+  exit(0)
+
+end-model

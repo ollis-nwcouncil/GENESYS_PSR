@@ -1,0 +1,436 @@
+! *******************
+! SDDP Dumping Memory
+! *******************
+
+! Parallel Processing
+
+if (PARL = 1 and AWSF = 0 and SDDP2 = 0) then
+	COMM:= getHostInt('COMMUNICATOR')
+end-if
+
+! Number of processors
+
+NPRC:= getHostInt2('NUMPROC',-1)
+MEMO:= getHostInt2('MEMORY',-1)
+
+! Hydro Data
+
+if (getsize(SHID) > 0) then
+
+	if (TERF <= 0) then
+
+		! Future Cost Function
+
+		NDAM:= getHostInt2('NDAM',0)
+		NCUT:= getHostInt2('FCF_NCUT',0)
+		NFCF:= getHostInt2('FCF_COUNT',1)
+
+		forall(i in 1..NFCF) SFCF+= {i}
+		forall(i in 1..NCUT) SCUT+= {i}
+
+		if (NDAM > 0 and NCUT > 0) then
+
+			! Future Cost Function (RHS)
+
+			getHostArray('FCF_RHS',FRHS)
+
+			! Future Cost Function Coefficients
+
+			getHostArray2D('FCF_HYDVOL',FVOL,NDAM,NCUT)
+
+			! Future Cost Function - Hydro Plant Index
+
+			getHostArray('FCF_IND',FIND)
+
+			! Future Cost Function Index
+
+			if (SDDP2 = 0) then
+				getHostArray('FCF_INDEX',FCFX)
+			else
+				forall(i in SCUT) FCFX(i):= 1
+			end-if
+
+		end-if
+
+	end-if
+
+	! Initial Volumes
+
+	getHostArray('VOLINI',VINX)
+
+	! Production Factors
+
+	getHostArray('PRODT',FPRM)
+
+	forall(i in SHID) FPRM(i):= FPRM(i) * NCV1
+
+	! Evaporation [Hm3]
+
+	getHostArray('EVAP',EVAP)
+
+	! Infiltration [Hm3]
+
+	getHostArray('FILT',FILT)
+
+	! Maximum Slack Evaporation / Infiltration [Hm3]
+
+	forall(i in SHID,t in 1..NSTG) do
+		if (INFL(i)*CNV1(t) < (EVAP(i) + FILT(i))*CNV3(t)) then
+			MXSR(i,t):= (EVAP(i) + FILT(i))*CNV3(t) - INFL(i)*CNV1(t)
+		else
+			MXSR(i,t):= 0.0
+		end-if
+	end-do
+
+	! Target Storage [Hm3]
+
+	if (TERF > -1 and TERF < 4) then
+
+		if (GENESYS = 1) then
+			getHostArray('TGT_STG',TGTX)
+			forall(i in SHID) TGTS(i):= TGTX(i)
+		else
+			getHostArray('TGT_STG',TGTS)
+		end-if
+
+		forall(i in SHID|EXSH(i) <= 0 and RESV(i) > 0 and DFCL(i) <> -1) TGTS(i):= minlist(TFCL(i),TGTS(i))
+
+	end-if
+
+	! Opportunity Cost [k$/MWh]
+
+	getHostArray('OPP_CST',OPCX)
+
+	forall(i in SHID|GENESYS = 0) OPCH(i):= OPCX(i) * NMIL
+
+	! Water Value [k$/Hm3]
+
+	getHostArray('WATER_VALUE',WVLX)
+
+	forall(i in SHID|GENESYS = 0) WAVL(i):= WVLX(i)
+
+end-if
+
+! Thermal Data
+
+if (getsize(STER) > 0) then
+
+	if (GENESYS = 1) then
+		getHostArray('TER_CMT',TCMT)
+	else
+		forall(j in STER) TCMT(j):= -1
+	end-if
+
+end-if
+
+! Network Data
+
+if (NETW > 0 and SDDP2 = 0) then
+
+	if (getsize(SBUS) > 0) then
+
+		NBDF:= getHostInt2('NBUSDEF',0)
+
+		if (NBDF > 0) then
+			getHostArray('BUSDEF',CBDF)
+			forall(m in SBUS,k in 1..NBDF|CODB(m) = CBDF(k)) IBDF(m):= 1
+		end-if
+
+		NBCG:= getHostInt2('NBCG',0)
+
+		if (NBCG > 0) then
+			getHostArray('IBCG',IBCG)
+			forall(m in SBUS|IBCG(m) = 1) IBDF(m):= integer(IBCG(m))
+		end-if
+
+	end-if
+
+	NISL:= getHostInt2('NISL',0)
+	NVIO:= getHostInt2('NVIOL',0)
+	NBET:= getHostInt2('NBET',0)
+
+	getHostArray('ISLBUS',BISL)
+	getHostArray('IDXVIO',XVIO)
+	getHostArray('TYPVIO',TVIO)
+	getHostArray('BETVIO',FVIO)
+	getHostArray('BLKVIO',BVIO)
+
+	getHostArray2D('BETA',BETA,NBUS,NBET)
+
+end-if
+
+! Selected Outputs
+
+NGRF:= getHostInt2('OUT_SIZE',0)
+
+getHostArray('OUT_IDX',OUTI)
+getHostArray('OUT_ATTR',OUTK)
+getHostArray('OUT_DESC',OUTD)
+getHostArray('OUT_UNID',OUTU)
+getHostArray('OUT_FNAME',OUTN)
+getHostArray('OUT_VAR_SER',OUTS)
+getHostArray('OUT_VAR_HOUR',OUTH)
+
+if (CASSANDRA_WRITE = 1) then
+	PARALLEL_WRITE:= 0
+end-if
+
+if (SDDP2 = 1 and PARALLEL_WRITE = 1) then
+	getHostArray('OUT_SELECT',OUTW)
+else
+	if (NGAM > 0) then
+		forall(IGRF in 1..NGRF) OUTW(IGRF):= GAME
+	else
+		forall(IGRF in 1..NGRF) OUTW(IGRF):= ISIN
+	end-if
+end-if
+
+! Integration Time
+
+if ((DEBUG or PROFILER) and PARL = 0) then
+	if (PROFILER) then
+		fselect(my_out)
+	end-if
+	TINT:= currenttime / 1000. + currentdate * 3600 * 24
+	writeln('SDDP Integration Time: ', (TINT - TCLS), ' sec')
+end-if
+
+! *********************
+! Penalties Calculation
+! *********************
+
+! Hydro Production Factor Signal
+
+forall(i in SHID|EXSH(i) <= 0 and FPRM(i) >= 0.0) SIGH(i):= +1
+forall(i in SHID|EXSH(i) <= 0 and FPRM(i) <  0.0) SIGH(i):= -1
+
+! Accumulated Hydro Production Factor
+
+forall(i in SHID) do
+	FPRA(i):= maxlist(0,FPRM(i))
+	ij:= JUST(i)
+	while (ij <> 0 and FPRM(ij) >= 0.0) do
+    	if ((TMAX(ij) > NM04) and (EXSH(ij) <= 0)) then
+      		FPRA(i):= FPRA(i) + FPRM(ij)
+    	end-if
+    	ij:= JUST(ij)
+  	end-do
+end-do
+
+! Hydro Maximum Capacity [MW]
+
+forall(i in SHID) POTH(i):= minlist(POTH(i),abs(FPRM(i))*TMAX(i))
+
+! Most Expensive Thermal Plant
+
+TRMC:= 0.0
+forall(j in STER,t in 1..NSTG,k in 1..NSEG(j)) do
+	TAUX:= (FCOS(FULT(j)) + CTRS(j))*CESP(j,t,k) + OMCT(j)
+	if (TAUX > TRMC) then
+		TRMC:= TAUX
+	end-if
+end-do
+
+if (TRMC = 0.0) then
+	TRMC:= 0.9*DEFC(NDEF)
+end-if
+
+! Alert Storage
+
+forall(i in SHID|EXSH(i) <= 0 and TVAL(i) > 0.0 and PVAL(i) <= 0) PVAL(i):= 1.1*TRMC*FPRA(i)*NM03*CNV2(1)
+
+! Minimum Operative Storage
+
+forall(i in SHID|EXSH(i) <= 0 and TVMN(i) > 0.0 and PVMN(i) <= 0) PVMN(i):= 1.1*DEFC(NDEF)*FPRA(i)*NM03*CNV2(1)
+
+! Maximum Operative Storage
+
+forall(i in SHID|EXSH(i) <= 0 and TVMX(i) > 0.0 and PVMX(i) <= 0) PVMX(i):= 1.1*DEFC(NDEF)*FPRA(i)*NM03*CNV2(1)
+
+! Minimum Spillage
+
+forall(i in SHID|EXSH(i) <= 0 and TMNS(i) > 0.0 and PMNS(i) <= 0) PMNS(i):= 1.1*DEFC(NDEF)*FPRA(i)*NM03*CNV2(1)
+
+! Target Storage
+
+if (TERF = 0 or TERF = 1) then
+	forall(i in SHID|EXSH(i) <= 0 and RESV(i) > 0 and TGTS(i) >= VMIN(i) and TGTS(i) <= VMAX(i)) PGTS(i):= 1.1*DEFC(NDEF)*FPRA(i)*NM03*CNV2(1)
+end-if
+
+! Irrigation
+
+forall(i in SHID|TIRR(i) > 0.0) do
+
+	if (PIRT(i) = 0) then
+		PIRR(i):= 1.1*DEFC(NDEF)*FPRA(i)*NM03
+	elif (PIRT(i) = 1) then
+		PIRR(i):= 1.1*TRMC*FPRA(i)*NM03
+	else
+		PIRR(i):= PIRR(i)*CNV2(1)
+	end-if
+
+end-do
+
+! Generation Constraint
+
+forall(k in SRTG|PRTG(k) <= 0) PRTG(k):= 1.1*DEFC(NDEF) / NMIL
+
+! Secondary Reserve
+
+forall(k in SRSG|PRSG(k) <= 0) PRSG(k):= 1.1*DEFC(NDEF) / NMIL
+
+forall(k in SRSG,t in 1..NSTG|SYSG(k) > 0 and TUSG(SYSG(k)) = 12) VRSG(k,t):= VRSG(k,t) * DEMS(SYSG(k),t)
+
+! Primary Reserve
+
+forall(j in STER|EXST(j) <= 0 and PRTX(j) > 0.0) do
+
+	if (TUPT(SYST(j)) = 2) then
+		forall(t in 1..NSTG) PRMT(j,t):= PRMT(j,t) * PINT(j) / NCEM
+	end-if
+
+	if (TUPT(SYST(j)) = 14) then
+		forall(t in 1..NSTG) PRMT(j,t):= PRMT(j,t) * GMAX(j) / NCEM
+	end-if
+
+end-do
+
+forall(i in SHID|EXSH(i) <= 0 and PRHX(i) > 0.0) do
+
+	if (TUPH(SYSH(i)) = 2 or TUPH(SYSH(i)) = 14) then
+		forall(t in 1..NSTG) PRMH(i,t):= PRMH(i,t) * PINH(i) / NCEM
+	end-if
+
+	if (TUPH(SYSH(i)) = 14) then
+		forall(t in 1..NSTG) PRMH(i,t):= PRMH(i,t) * POTH(i) / NCEM
+	end-if
+
+end-do
+
+! Balancing Area Reserve
+
+forall(b in SBAL) PBAR(b):= 1.1*DEFC(NDEF) / NMIL
+
+! Contingency Reserve
+
+forall(c in SCTG|CRAF(c) = 1) PCTR(c):= 1.1*DEFC(NDEF) / NMIL
+
+! Non-Controllable Spillage
+
+forall(i in SHID) do
+
+	ij:= JUST(i)
+	while (ij <> 0 and FPRM(ij) >= 0.0) do
+		MONT(ij,i):= 1
+		ij:= JUST(ij)
+	end-do
+
+	ij:= JUSV(i)
+	while (ij <> 0 and FPRM(ij) >= 0.0) do
+		MONV(ij,i):= 1
+		ij:= JUSV(ij)
+	end-do
+
+end-do
+
+forall(i in SHID) do
+
+	VMXX(i):= VMAX(i)
+
+	if (TFCL(i) > 0.0) then
+		VMXX(i):= minlist(TFCL(i),VMAX(i))
+	end-if
+
+	MXSL(i):= (VMXX(i) - VMIN(i))*CNV2(1) + INFL(i)*NSTG
+
+	forall(k in SHID|i <> k and (MONT(i,k) = 1 or MONV(i,k) = 1)) do
+
+		VMXX(k):= VMAX(k)
+
+		if (TFCL(k) > 0.0) then
+			VMXX(k):= minlist(TFCL(k),VMAX(k))
+		end-if
+
+		MXSL(i):= MXSL(i) + (VMXX(k) - VMIN(k))*CNV2(1) + INFL(k)*NSTG
+
+	end-do
+
+end-do
+
+! Spillage Penalty Adjustment
+
+forall(i in SHID|(JUSV(i) <> JUST(i)) and JUSV(i) <> 0 and FPRM(i) > NM03) NSPL(i):= 1
+
+! ************************
+! Thermal Concave Function
+! ************************
+
+forall(j in STER|NSEG(j) > 1 and CESP(j,1,1) > CESP(j,1,2)) CONC(j):= 1
+
+! *************
+! Discount Rate
+! *************
+
+if (DESR <> 0.0) then
+	DESR:= NUM1 / pow(NUM1 + DESR,- NSTG / NANO)
+else
+	DESR:= 1.0
+end-if
+
+! **************
+! FCF Adjustment
+! **************
+
+if (NCUT > 0 and TERF <= 0) then
+
+	forall(j in SFCF) do
+		MRHX(j):= NUMB
+		forall(k in SCUT|FCFX(k) = j) MRHX(j):= minlist(MRHX(j),FRHS(k))
+		forall(k in SCUT|FCFX(k) = j) FRHS(k):= FRHS(k) - MRHX(j)
+	end-do
+
+else
+
+	forall(j in SFCF) MRHX(j):= 0.0
+
+end-if
+
+! ***************
+! Initial Storage
+! ***************
+
+forall(i in SHID|EXSH(i) <= 0 and RESV(i) > 0) VINI(i):= minlist(VMAX(i),maxlist(VINX(i),VMIN(i)))
+
+! **************************************
+! Most Valuable Future Cost Function Cut
+! **************************************
+
+if (TERF <= 0 and NCUT > 0) then
+
+	TEMX:= -NUMB
+	IEMX:= 1
+
+	forall(k in SCUT) do
+
+		TEMP:= FRHS(k) + sum(i in SHID|FIND(i) > 0) VINI(i) * minlist(0,FVOL(FIND(i),k))
+
+		if (TEMP > TEMX) then
+	  		IEMX:= k
+	  	  	TEMX:= TEMP
+		end-if
+
+	  	forall(i in SHID|FIND(i) > 0) FTMX(i):= minlist(0,FVOL(FIND(i),IEMX))
+
+	end-do
+
+end-if
+
+! SDDP Adjustment Vectors Time
+
+if ((DEBUG or PROFILER) and PARL = 0) then
+	if (PROFILER) then
+		fselect(my_out)
+	end-if
+	TADJ:= currenttime / 1000. + currentdate * 3600 * 24
+	writeln('SDDP Adjustment Vectors Time: ', (TADJ - TINT), ' sec')
+end-if

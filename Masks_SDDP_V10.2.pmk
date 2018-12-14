@@ -1,0 +1,4584 @@
+//--------------------------------------------------------------------------------------------------
+// Possible outputs of the models
+//--------------------------------------------------------------------------------------------------
+
+DEFINE_MASK MIXROWDATA SDDP_v10.2_grafConfiguration
+TOTAL_BLOCK	2
+
+DEFINE_BLOCK
+BLOCK_IDENT	!Nm_attr
+BLOCK_FIM 999
+NEXT_BLOCK 2
+DEFINE_HEADER
+!Nm attr Description.......................................
+END_HEADER
+DEFINE_DATA
+Num		      INTEGER   1,3
+Attr		  STRING    5,8
+Descr		  STRING	10,59
+END_DATA
+END_BLOCK
+
+DEFINE_BLOCK
+BLOCK_IDENT	!Nm
+BLOCK_FIM 999
+DEFINE_HEADER
+!Nm (Graph..........................)(Unit.) FileName.... clas
+END_HEADER
+DEFINE_DATA
+Num		      INTEGER   1,3
+Nome		  STRING    5,37
+Unit		  STRING	39,44
+NomeArquivo   STRING	63,75
+Classe        STRING	91,94
+END_DATA
+END_BLOCK
+
+END_MASK
+
+//--------------------------------------------------------------------------------------------------
+// output mask for the file indice.grf
+//--------------------------------------------------------------------------------------------------
+
+DEFINE_MASK ROWDATA SDDP_v10.2_indiceGrf
+
+DEFINE_DATA
+NomeArquivo		STRING		1,12
+Nome			STRING		14,42
+Unid			STRING		48,53
+Attr			STRING		55,58
+END_DATA
+
+END_MASK
+
+//--------------------------------------------------------------------------------------------------
+// selected outputs of the models
+//--------------------------------------------------------------------------------------------------
+
+DEFINE_MASK ROWDATA SDDP_v10.2_selectedOutputs
+
+DEFINE_HEADER
+Num Graph.........................|.....Unid Type  Y/N
+END_HEADER
+
+DEFINE_DATA
+Num		INTEGER		1,3
+Nome	STRING		5,34
+Unid	STRING		36,44
+Type	STRING		46,49
+Y/N		INTEGER		52,54
+END_DATA
+
+END_MASK
+
+//--------------------------------------------------------------------------------------------------
+// mask for systems
+//--------------------------------------------------------------------------------------------------
+
+DEFINE_MASK ROWDATA SDDP_v10.2_sistem
+
+DEFINE_HEADER
+ NUM NOME                 ID UnM
+END_HEADER
+
+DEFINE_DATA
+Num		INTEGER		1,4
+Nome		STRING		6,25
+ID		STRING		27,28
+UnM		STRING		30,32 AUTOSET(model.parm("UnM"))
+END_DATA
+
+END_MASK
+DEFINE_MASK ROWDATA SDDP_v10.2_sistem_timezone
+
+DEFINE_HEADER
+ NUM NOME                 ID UnM tz.
+END_HEADER
+
+DEFINE_DATA
+Num		INTEGER		1,4
+Nome		STRING		6,25
+ID		STRING		27,28
+UnM		STRING		30,32 AUTOSET(model.parm("UnM"))
+TimeZoneOffset	INTEGER		34,36 AUTOSET(model.parm("TimeZoneOffset"))
+END_DATA
+
+END_MASK
+
+//---------------------------------------------------------------------
+//---------------------------------------------------------------------
+DEFINE_MASK MIXROWDATA SDDP_v10.2_cemime
+
+TOTAL_BLOCK	2
+
+//-------------------------------------------------------------
+//-- PRIMEIRO BLOCO ->  Identificacao da Emissao            ---
+//-------------------------------------------------------------
+DEFINE_BLOCK
+BLOCK_IDENT	****
+BLOCK_LENGTH 1
+NEXT_BLOCK 2
+
+DEFINE_DATA
+IdentBloco	STRING		1,12	****_Planta:
+Num		INTEGER		14,17
+Nome		STRING		19,30
+END_DATA
+
+END_BLOCK
+//-------------------------------------------------------------
+//-- SEGUNDO BLOCO -> Dados dos custos de emissao           ---
+//-------------------------------------------------------------
+DEFINE_BLOCK
+BLOCK_IDENT	Year
+
+DEFINE_HEADER
+A~no ......1 ......2 ......3 ......4 ......5 ......6 ......7 ......8 ......9 .....10 .....11 .....12
+END_HEADER
+
+DEFINE_MACRO
+VAR	N	1,12
+END_MACRO
+
+DEFINE_DATA
+Ano		INTEGER		1,4
+Dado$(N)	REAL		5+8*($(N)-1),12+8*($(N)-1)
+END_DATA
+
+END_BLOCK
+
+END_MASK
+//---------------------------------------------------------------------
+//---------------------------------------------------------------------
+DEFINE_MASK MIXROWDATA SDDP_v10.2_cemise
+
+TOTAL_BLOCK	2
+
+//-------------------------------------------------------------
+//-- PRIMEIRO BLOCO -> Identificacao da Emissao             ---
+//-------------------------------------------------------------
+DEFINE_BLOCK
+BLOCK_IDENT	****
+BLOCK_LENGTH 1
+NEXT_BLOCK 2
+
+DEFINE_DATA
+IdentBloco	STRING		1,12	****_Planta:
+Num		INTEGER		14,17
+Nome		STRING		19,30
+END_DATA
+
+END_BLOCK
+//-------------------------------------------------------------
+//-- SEGUNDO BLOCO -> Dados dos custos de emissao           ---
+//-------------------------------------------------------------
+DEFINE_BLOCK
+BLOCK_IDENT	Year
+
+DEFINE_HEADER
+A~no ......1 ......2 ......3 ......4 ......5 ......6 ......7 ......8 ......9 .....10 .....11 .....12 .....13 .....14 .....15 .....16 .....17 .....18 .....19 .....20 .....21 .....22 .....23 .....24 .....25 .....26 .....27 .....28 .....29 .....30 .....31 .....32 .....33 .....34 .....35 .....36 .....37 .....38 .....39 .....40 .....41 .....42 .....43 .....44 .....45 .....46 .....47 .....48 .....49 .....50 .....51 .....52
+END_HEADER
+
+DEFINE_MACRO
+VAR	N	1,52
+END_MACRO
+
+DEFINE_DATA
+Ano		INTEGER		1,4
+Dado$(N)	REAL		5+8*($(N)-1),12+8*($(N)-1)
+END_DATA
+
+END_BLOCK
+
+END_MASK
+//---------------------------------------------------------------------
+//---------------------------------------------------------------------
+DEFINE_MASK MIXROWDATA SDDP_v10.2_msumcirc21
+
+TOTAL_BLOCK	2
+
+//-------------------------------------------------------------
+//-- PRIMEIRO BLOCO -> Identificacao da Data de Modificacao ---
+//-------------------------------------------------------------
+DEFINE_BLOCK
+BLOCK_IDENT	MOD
+BLOCK_LENGTH 1
+NEXT_BLOCK 2
+
+DEFINE_DATA
+IdentBloco	STRING		1,5	MOD:_
+Data		DATE		6,15	DD/MM/YYYY
+END_DATA
+
+END_BLOCK
+//-------------------------------------------------------------
+//-- SEGUNDO BLOCO -> Dados de Restricao                    ---
+//-------------------------------------------------------------
+DEFINE_BLOCK
+BLOCK_IDENT	#Res
+
+DEFINE_HEADER
+#Res (...Nome...) L.b.p1 U.b.p1 L.b.p2 U.b.p2 L.b.p3 U.b.p3 L.b.p4 U.b.p4 L.b.p5 U.b.p5
+END_HEADER
+
+DEFINE_MACRO
+VAR	P	1,21
+END_MACRO
+
+DEFINE_DATA
+Num		INTEGER		1,4
+Nome		STRING		6,17
+LB($(P))	REAL		5+14*$(P),10+14*$(P)	AUTOSET
+UB($(P))	REAL		12+14*$(P),17+14*$(P)	AUTOSET
+END_DATA
+
+END_BLOCK
+END_MASK
+
+//--------------------------------------------------------------------------------------------------
+// Senvitivity
+//--------------------------------------------------------------------------------------------------
+DEFINE_MASK ROWDATA SDDP_V10.2_Sensitivity
+
+DEFINE_HEADER
+Keyword..... .Sys Num. ....Factor
+END_HEADER
+
+DEFINE_DATA
+Keyword      STRING      1 12
+SystemCode   INTEGER    14 17
+ElementCode  INTEGER    19 22
+Factor       REAL       24 33
+END_DATA
+
+END_MASK
+
+//--------------------------------------------------------------------------------------------------
+// CVaR
+//--------------------------------------------------------------------------------------------------
+DEFINE_MASK ROWDATA SDDP_V10.2_CVaR
+
+DEFINE_HEADER
+!Code Name........ StgI StgF Alpha CVaR.Max Init.Penalty
+END_HEADER
+
+DEFINE_DATA
+Code           INTEGER     1  5  AUTOSET(model.parm("Code"))
+Name           STRING      7 18  AUTOSET(model.parm("Name"))
+InitialStage   INTEGER    20 23  AUTOSET(model.parm("InitialStage"))
+FinalStage     INTEGER    25 28  AUTOSET(model.parm("FinalStage"))
+Alpha          REAL       30 34  AUTOSET(model.parm("Alpha"))
+CVaR.Max       REAL       36 43  AUTOSET(model.parm("CVaR.Max"))
+Init.Penalty   REAL       45 56  AUTOSET(model.parm("Init.Penalty"))
+END_DATA
+
+END_MASK
+
+//---------------------------------------------------------------------
+//---------------------------------------------------------------------
+DEFINE_MASK ROWDATA SDDP_v10.2_expimpar
+
+DEFINE_HEADER
+ Num Area.Name ..            .Export .Import .Export .Import .Export .Import .Export .Import .Export .Import
+END_HEADER
+
+DEFINE_MACRO
+VAR	N	1,5
+END_MACRO
+
+
+DEFINE_DATA
+Num		INTEGER		1,4
+Nome		STRING		6,29
+Export($(N))      REAL	        14+16*$(N),20+16*$(N)	AUTOSET
+Import($(N))      REAL	        22+16*$(N),28+16*$(N)	AUTOSET
+END_DATA
+
+END_MASK
+
+DEFINE_MASK ROWDATA SDDP_v10.2_expimpar21
+
+DEFINE_HEADER
+ Num Area.Name ..            .Export .Import .Export .Import .Export .Import .Export .Import .Export .Import
+END_HEADER
+
+DEFINE_MACRO
+VAR	N	1,5
+VAR	P2	6,21
+END_MACRO
+
+
+DEFINE_DATA
+Num		INTEGER		1,4
+Nome		STRING		6,29
+Export($(N))      REAL	        14+16*$(N),20+16*$(N)	AUTOSET
+Import($(N))      REAL	        22+16*$(N),28+16*$(N)	AUTOSET
+Export($(P2))      REAL	        14+16,20+16	AUTOSET
+Import($(P2))      REAL	        22+16,28+16	AUTOSET
+END_DATA
+
+END_MASK
+
+//---------------------------------------------------------------------
+//---------------------------------------------------------------------
+DEFINE_MASK MIXROWDATA SDDP_v10.2_mareas
+
+TOTAL_BLOCK	2
+
+//-------------------------------------------------------------
+//-- PRIMEIRO BLOCO -> Identificacao da Data de Modificacao ---
+//-------------------------------------------------------------
+DEFINE_BLOCK
+BLOCK_IDENT	MOD
+BLOCK_LENGTH 1
+NEXT_BLOCK 2
+
+DEFINE_DATA
+IdentBloco	STRING		1,5	MOD:_
+Data		DATE		6,15	DD/MM/YYYY
+END_DATA
+
+END_BLOCK
+
+//-------------------------------------------------------------
+//-- SEGUNDO BLOCO -> Dados de Modificacao                  ---
+//-------------------------------------------------------------
+DEFINE_BLOCK
+BLOCK_IDENT	Num
+
+DEFINE_HEADER
+ Num Area.Name ..            .Export .Import .Export .Import .Export .Import .Export .Import .Export .Import
+END_HEADER
+
+DEFINE_MACRO
+VAR	N	1,5
+END_MACRO
+
+DEFINE_DATA
+Num		INTEGER		1,4
+Nome		STRING		6,29
+Export($(N))      REAL	        14+16*$(N),20+16*$(N)	AUTOSET
+Import($(N))      REAL	        22+16*$(N),28+16*$(N)	AUTOSET
+END_DATA
+
+END_BLOCK
+END_MASK
+
+//---------------------------------------------------------------------
+//---------------------------------------------------------------------
+DEFINE_MASK ROWDATA SDDP_v10.2_Duvase
+
+DEFINE_HEADER
+A~no Blk ....1 ....2 ....3 ....4 ....5 ....6 ....7 ....8 ....9 ...10 ...11 ...12 ...13 ...14 ...15 ...16 ...17 ...18 ...19 ...20 ...21 ...22 ...23 ...24 ...25 ...26 ...27 ...28 ...29 ...30 ...31 ...32 ...33 ...34 ...35 ...36 ...37 ...38 ...39 ...40 ...41 ...42 ...43 ...44 ...45 ...46 ...47 ...48 ...49 ...50 ...51 ...52
+END_HEADER
+
+DEFINE_MACRO
+VAR	N	1,52
+END_MACRO
+
+DEFINE_DATA
+Ano		INTEGER		1,4
+Bloco		INTEGER		6,8
+Duracao$(N)	REAL		9+6*($(N)-1),14+6*($(N)-1)
+END_DATA
+END_MASK
+//---------------------------------------------------------------------
+//---------------------------------------------------------------------
+DEFINE_MASK ROWDATA SDDP_v10.2_Duvame
+
+DEFINE_HEADER
+A~no Blk ....1 ....2 ....3 ....4 ....5 ....6 ....7 ....8 ....9 ...10 ...11 ...12
+END_HEADER
+
+DEFINE_MACRO
+VAR	N	1,12
+END_MACRO
+
+DEFINE_DATA
+Ano		INTEGER		1,4
+Bloco		INTEGER		6,8
+Duracao$(N)	REAL		9+6*($(N)-1),14+6*($(N)-1)
+END_DATA
+END_MASK
+
+
+//---------------------------------------------------------------------
+//---------------------------------------------------------------------
+DEFINE_MASK ROWDATA SDDP_v10.2_ctermi
+
+DEFINE_HEADER
+!Num ...Nombre... #Uni Tipo .PotIns .GerMin .GerMax ..Teif. ..Ih... .CVaria .MR. Comb ...G1.. .CEsp.1 ...G2.. .CEsp.2 ...G3.. .CEsp.3 NAdF ...1 ...2 ...3 ComT CTransp StartUp sfal CEsp1-2 CEsp2-2 CEsp3-2 CEsp1-3 CEsp2-3 CEsp3-3 CEsp1-4 CEsp2-4 CEsp3-4 CEsp1-5 CEsp2-5 CEsp3-5 NGas NuCC ..NombreCC.. CoefE.
+END_HEADER
+
+DEFINE_MACRO
+VAR	P	2,5
+VAR	S	1,3
+END_MACRO
+
+DEFINE_DATA
+Num		INTEGER	1	4
+Nome		STRING	6	17
+Unidades	INTEGER	19	22	AUTOSET
+Existing	INTEGER 24	27	AUTOSET
+PotInst         REAL	29	35	AUTOSET
+GerMin		REAL	37	43	AUTOSET
+GerMax		REAL	45	51	AUTOSET
+ICP		REAL	53	59	AUTOSET
+IH		REAL	61	67	AUTOSET
+O&MCost		REAL	69	75	AUTOSET
+MR              INTEGER 77	80
+Comb		INTEGER	82	85
+G(1)		REAL	87	93	AUTOSET
+G(2)		REAL	103	109	AUTOSET
+G(3)		REAL	119	125	AUTOSET
+CEsp(1,1)	REAL	95	101	AUTOSET
+CEsp(2,1)	REAL	111	117	AUTOSET
+CEsp(3,1)	REAL	127	133	AUTOSET
+NAdF		INTEGER	135	138	AUTOSET
+NAF(1)		INTEGER	140	143	AUTOSET
+NAF(2)		INTEGER	145	148	AUTOSET
+NAF(3)		INTEGER	150	153	AUTOSET
+ComT		INTEGER 155	158	AUTOSET
+CTransp		REAL	160	166	AUTOSET
+StartUp		REAL	168	174	AUTOSET
+sfal		INTEGER	176	179	AUTOSET
+CEsp($(S),$(P))	REAL	181+24*($(P)-2)+8*($(S)-1),187+24*($(P)-2)+8*($(S)-1)	AUTOSET
+NGas		INTEGER	277	280
+NuCC 		INTEGER	282	285
+NameCC		STRING	287	298
+CoefE		REAL	300	305	AUTOSET
+END_DATA
+
+END_MASK
+//---------------------------------------------------------------------
+//---------------------------------------------------------------------
+DEFINE_MASK ROWDATA SDDP_v10.2_ctermi21
+
+DEFINE_HEADER
+!Num ...Nombre... #Uni Tipo .PotIns .GerMin .GerMax ..Teif. ..Ih... .CVaria .MR. Comb ...G1.. .CEsp.1 ...G2.. .CEsp.2 ...G3.. .CEsp.3 NAdF ...1 ...2 ...3 ComT CTransp StartUp sfal CEsp1-2 CEsp2-2 CEsp3-2 CEsp1-3 CEsp2-3 CEsp3-3 CEsp1-4 CEsp2-4 CEsp3-4 CEsp1-5 CEsp2-5 CEsp3-5 NGas NuCC ..NombreCC.. CoefE.
+END_HEADER
+
+DEFINE_MACRO
+VAR	P	2,5
+VAR	P2	6,21
+VAR	S	1,3
+END_MACRO
+
+DEFINE_DATA
+Num		INTEGER	1	4
+Nome		STRING	6	17
+Unidades	INTEGER	19	22	AUTOSET
+Existing	INTEGER 24	27	AUTOSET
+PotInst         REAL	29	35	AUTOSET
+GerMin		REAL	37	43	AUTOSET
+GerMax		REAL	45	51	AUTOSET
+ICP		REAL	53	59	AUTOSET
+IH		REAL	61	67	AUTOSET
+O&MCost		REAL	69	75	AUTOSET
+MR              INTEGER 77	80
+Comb		INTEGER	82	85
+G(1)		REAL	87	93	AUTOSET
+G(2)		REAL	103	109	AUTOSET
+G(3)		REAL	119	125	AUTOSET
+CEsp(1,1)	REAL	95	101	AUTOSET
+CEsp(2,1)	REAL	111	117	AUTOSET
+CEsp(3,1)	REAL	127	133	AUTOSET
+NAdF		INTEGER	135	138	AUTOSET
+NAF(1)		INTEGER	140	143	AUTOSET
+NAF(2)		INTEGER	145	148	AUTOSET
+NAF(3)		INTEGER	150	153	AUTOSET
+ComT		INTEGER 155	158	AUTOSET
+CTransp		REAL	160	166	AUTOSET
+StartUp		REAL	168	174	AUTOSET
+sfal		INTEGER	176	179	AUTOSET
+CEsp($(S),$(P))	REAL	181+24*($(P)-2)+8*($(S)-1),187+24*($(P)-2)+8*($(S)-1)	AUTOSET
+CEsp(1,$(P2)) REAL	95	101	AUTOSET
+CEsp(2,$(P2)) REAL	111	117	AUTOSET
+CEsp(3,$(P2)) REAL	127	133	AUTOSET
+NGas		INTEGER	277	280
+NuCC 		INTEGER	282	285
+NameCC		STRING	287	298
+CoefE		REAL	300	305	AUTOSET
+END_DATA
+
+END_MASK
+//---------------------------------------------------------------------
+//---------------------------------------------------------------------
+DEFINE_MASK ROWDATA SDDP_v10.2_chidro
+
+DEFINE_HEADER
+ NUM ...Nombre... .PV. .VAA .TAA #Uni Tipo ....Pot .FPMed. .QMin.. .QMax.. .VMin.. .VMax.. .VInic. Min.V+T ..VNC.. ..ICP.. ...IH.. ..FP1.. ..Vol1. ..FP2.. ..Vol2. ..FP3.. ..Vol3. ..FP4.. ..Vol4. ..FP5.. ..Vol5. .Area1. ..Vol1. .Area2. ..Vol2. .Area3. ..Vol3. .Area4. ..Vol4. .Area5. ..Vol5. .Filt1. ..Vol1. .Filt2. ..Vol2. .Filt3. ..Vol3. .Filt4. ..Vol4. .Filt5. ..Vol5. .Cota1. .Vol1.. .Cota2. .Vol2.. .Cota3. .Vol3.. .Cota4. .Vol4.. .Cota5. .Vol5.. .Ev1 .Ev2 .Ev3 .Ev4 .Ev5 .Ev6 .Ev7 .Ev8 .Ev9 Ev10 Ev11 Ev12 tini tfil .faa tare .varea. tfil .vfiltr F.Reg.. pVar .ICV C.Vert. sfal Cos.O&M Irxh RendT&G .EA. Niv.Jus I JuAr I .TurIn1 .TotIn1 .TurIn2 .TotIn2 .TurIn3 .TotIn3 .TurIn4 .TotIn4 .TurIn5 .TotIn5 H V .CFuga1 ..Def1. .CFuga2 ..Def2. .CFuga3 ..Def3. .CFuga4 ..Def4. .CFuga5 ..Def5. E PHidTur PHidVer sv st RunR
+END_HEADER
+
+DEFINE_MACRO
+VAR     P     1,5
+VAR     M     1,12
+END_MACRO
+
+DEFINE_DATA
+Num                   INTEGER         1              4
+Nome                  STRING          6             17
+PV                    INTEGER        19             22
+VAA                   INTEGER        24             27
+TAA                   INTEGER        29             32
+Unidades              INTEGER        34             37            AUTOSET
+Existing              INTEGER        39             42            AUTOSET
+PotInst               REAL           44             50            AUTOSET
+FPMed                 REAL           51             58            AUTOSET
+Qmin                  REAL           60             66            AUTOSET
+Qmax                  REAL           68             74            AUTOSET
+Vmin                  REAL           76             82            AUTOSET
+Vmax                  REAL           84             90            AUTOSET
+Vinic                 REAL           92             98            AUTOSET(model.parm("Vinic"))
+VNC                   INTEGER       108            114            AUTOSET(model.parm("VNC"))
+DfTotMin              REAL          100            106            AUTOSET
+ICP                   REAL          116            122            AUTOSET
+IH                    REAL          124            130            AUTOSET
+Eaflu                 INTEGER       791            791            AUTOSET
+FP($(P))              REAL          116+(16*$(P))  122+(16*$(P))  AUTOSET(model.parm("FP($(P))"))
+FP.VOL($(P))          REAL          124+(16*$(P))  130+(16*$(P))  AUTOSET(model.parm("FP.VOL($(P))"))
+SxA_Area($(P))        REAL          196+(16*$(P))  202+(16*$(P))  AUTOSET(model.parm("SxA_Area($(P))"))
+SxA_Storage($(P))     REAL          204+(16*$(P))  210+(16*$(P))  AUTOSET(model.parm("SxA_Storage($(P))"))
+SxF_Filtration($(P))  REAL          276+(16*$(P))  282+(16*$(P))  AUTOSET(model.parm("SxF_Filtration($(P))"))
+SxF_Storage($(P))     REAL          284+(16*$(P))  290+(16*$(P))  AUTOSET(model.parm("SxF_Storage($(P))"))
+SxH_Head($(P))        REAL          356+(16*$(P))  362+(16*$(P))  AUTOSET(model.parm("SxH_Head($(P))"))
+SxH_Storage($(P))     REAL          364+(16*$(P))  370+(16*$(P))  AUTOSET(model.parm("SxH_Storage($(P))"))
+Evap($(M))            REAL          447+(5*$(M))   450+(5*$(M))   AUTOSET(model.parm("Evap($(M))"))
+VinicType             INTEGER       512            515            AUTOSET(model.parm("VinicType"))
+FAAType               INTEGER       517            520
+FAA                   INTEGER       522            525
+AreaType              INTEGER       527            530            AUTOSET(model.parm("AreaType"))
+AreaConst             REAL          532            538            AUTOSET(model.parm("AreaConst"))
+FiltType              INTEGER       540            543            AUTOSET(model.parm("FiltType"))
+FiltConst             REAL          545            551            AUTOSET(model.parm("FiltConst"))
+RegFactor             REAL          553            559            AUTOSET(model.parm("RegFactor"))
+ProdTypePol           INTEGER       561            564            AUTOSET(model.parm("ProdTypePol"))
+SpillCostType         INTEGER       566            569            AUTOSET(model.parm("SpillCostType"))
+SpillCost             REAL          571            577            AUTOSET(model.parm("SpillCost"))
+OutSampling           INTEGER       579            582            AUTOSET(model.parm("OutSampling"))
+O&MCost               REAL          584            590            AUTOSET
+ProdTypeSim           INTEGER       592            595            AUTOSET(model.parm("ProdTypeSim"))
+TurbGenEffic          REAL          597            603            AUTOSET(model.parm("TurbGenEffic"))
+AssocReservoir        INTEGER       605            608
+MeanTailLevel         REAL          610            616            AUTOSET(model.parm("MeanTailLevel"))
+DownSEType            INTEGER       618            618
+DownSEPlant           INTEGER       620            623
+Indicador             INTEGER       625            625            AUTOSET
+TurIn($(P))           REAL          611+(16*$(P))  617+(16*$(P))  AUTOSET
+TotIn($(P))           REAL          619+(16*$(P))  626+(16*$(P))  AUTOSET
+//IxT_Turbining($(P)) REAL          611+(16*$(P))  617+(16*$(P))  AUTOSET(model.parm("IxT_Turbining($(P))"))
+//IxT_Inflow($(P))    REAL          619+(16*$(P))  625+(16*$(P))  AUTOSET(model.parm("IxT_Inflow($(P))"))
+OxT_Tail($(P))        REAL          695+(16*$(P))  701+(16*$(P))  AUTOSET
+OxT_Outflow($(P))     REAL          703+(16*$(P))  709+(16*$(P))  AUTOSET
+//SECalcFlag          INTEGER       791            791            AUTOSET(model.parm("SECalcFlag")
+TurbLossFactor        REAL          793            799            AUTOSET(model.parm("TurbLossFactor")
+SpillLossFactor       REAL          801            807            AUTOSET(model.parm("SpillLossFactor")
+SysSpillingId         STRING        809            810
+SysTurbiningId        STRING        812            813
+RunRiverType          INTEGER       815            818            AUTOSET(model.parm("RunRiverType")
+
+END_DATA
+
+END_MASK
+//---------------------------------------------------------------------
+//---------------------------------------------------------------------
+DEFINE_MASK ROWDATA SDDP_v10.2_cgnd
+
+DEFINE_HEADER
+!Num Name........ .Bus. Tipo #Uni .PotIns ..FatOpe ProbFal SFal Site
+END_HEADER
+
+DEFINE_DATA
+Num		INTEGER	1	4
+Nome		STRING	6	17
+CodBus		INTEGER	19	23
+Existing	INTEGER 25	28	AUTOSET
+Unidades	INTEGER	30	33	AUTOSET
+PotInst         REAL	35	41	AUTOSET
+FatOpe      	REAL	43	50	AUTOSET
+ICP	        REAL	52	58	AUTOSET
+sfal		INTEGER	60	63	AUTOSET
+Site		INTEGER	65	68
+END_DATA
+
+END_MASK
+//---------------------------------------------------------------------
+//---------------------------------------------------------------------
+DEFINE_MASK ROWDATA SDDP_v10.2_mgnd
+
+DEFINE_HEADER
+!d/mm/yyyy .Num Name........ .Bus. Tipo #Uni .PotIns ..FatOpe ProbFal SFal
+END_HEADER
+
+DEFINE_DATA
+Data 		DATE	1	10      DD/MM/YYYY AUTOSET
+Num		INTEGER	12	15
+Nome		STRING	17	28
+CodBus		INTEGER	30	34
+Existing	INTEGER 36	39	AUTOSET
+Unidades	INTEGER	41	44	AUTOSET
+PotInst         REAL	46	52	AUTOSET
+FatOpe      	REAL	54	61	AUTOSET
+ICP	         REAL	63      69	AUTOSET
+sfal		INTEGER	71	74	AUTOSET
+END_DATA
+
+END_MASK
+//---------------------------------------------------------------------
+//---------------------------------------------------------------------
+DEFINE_MASK ROWDATA SDDP_cgnd_v2.0
+
+DEFINE_HEADER
+$version=2
+!Num Name........ .Bus. Tipo #Uni .PotIns ..FatOpe ProbFal SFal Stat.
+END_HEADER
+
+DEFINE_DATA
+Num		INTEGER	1	4
+Nome		STRING	6	17
+CodBus		INTEGER	19	23
+Existing	INTEGER 25	28	AUTOSET
+Unidades	INTEGER	30	33	AUTOSET
+PotInst         REAL	35	41	AUTOSET
+FatOpe      	REAL	43	50	AUTOSET
+ICP	        REAL	52	58	AUTOSET
+sfal		INTEGER	60	63	AUTOSET
+Site		INTEGER	65	69
+END_DATA
+
+END_MASK
+//---------------------------------------------------------------------
+//---------------------------------------------------------------------
+DEFINE_MASK ROWDATA SDDP_cgnd_v3.0
+
+DEFINE_HEADER
+$version=3
+!Num Name........ .Bus. Tipo #Uni .PotIns ..FatOpe ProbFal SFal Stat. ....O&M CurtCos TechTyp
+END_HEADER
+
+DEFINE_DATA
+Num					INTEGER	1	4
+Nome				STRING	6	17
+CodBus				INTEGER	19	23
+Existing			INTEGER 25	28	AUTOSET
+Unidades			INTEGER	30	33 	AUTOSET
+PotInst         	REAL	35	41 	AUTOSET
+FatOpe      		REAL	43	50 	AUTOSET
+ICP	        		REAL	52	58 	AUTOSET
+sfal				INTEGER	60	63 	AUTOSET
+Site				INTEGER	65	69
+O&MCost     		REAL	71	77 	AUTOSET
+CurtailmentCost	    REAL	79	85 	AUTOSET
+TechType    		INTEGER	87	93 	AUTOSET(model.parm("TechType"))
+END_DATA
+
+END_MASK
+//---------------------------------------------------------------------
+//---------------------------------------------------------------------
+DEFINE_MASK ROWDATA SDDP_mgnd_v3.0
+
+DEFINE_HEADER
+$version=3
+!d/mm/yyyy .Num Name........ .Bus. Tipo #Uni .PotIns ..FatOpe ProbFal SFal Stat. ....O&M CurtCos
+END_HEADER
+
+DEFINE_DATA
+Data 		DATE	1	10      DD/MM/YYYY AUTOSET
+Num		INTEGER	12	15
+Nome		STRING	17	28
+CodBus		INTEGER	30	34
+Existing	INTEGER 36	39	AUTOSET
+Unidades	INTEGER	41	44	AUTOSET
+PotInst         REAL	46	52	AUTOSET
+FatOpe      	REAL	54	61	AUTOSET
+ICP	         REAL	63      69	AUTOSET
+sfal		INTEGER	71	74	AUTOSET
+O&MCost     	REAL	82	88 	AUTOSET
+CurtailmentCost	REAL	90	96 	AUTOSET
+
+END_DATA
+
+END_MASK
+//---------------------------------------------------------------------
+//---------------------------------------------------------------------
+DEFINE_MASK ROWDATA SDDP_v10.2_volmor
+
+DEFINE_HEADER
+ NUM ...Nombre... dd/mm/aaaa Dur. Volm.pu
+END_HEADER
+
+DEFINE_DATA
+Num			INTEGER	1,4
+Nome			STRING	6,17
+DateDeadStorage		DATE	19,28	DD/MM/YYYY	AUTOSET(model.parm("DateDeadStorage"))
+DurationDeadStorage	INTEGER	30,33	AUTOSET(model.parm("DurationDeadStorage"))
+InitialValueDeadStorage	REAL	35,41	AUTOSET(model.parm("InitialValueDeadStorage"))
+END_DATA
+
+END_MASK
+//---------------------------------------------------------------------
+//---------------------------------------------------------------------
+DEFINE_MASK ROWDATA SDDP_v10.2_polhid
+
+DEFINE_HEADER
+ NUM ...Nombre... .TP ...PrdEsp... ...PrdHid... U .....A0..... .....A1..... .....A2..... .....A3..... .....A4.....
+END_HEADER
+
+DEFINE_MACRO
+VAR     P     0,4
+END_MACRO
+
+DEFINE_DATA
+Num			INTEGER	1,4
+Nome			STRING	6,17
+PrdEsp		REAL	23,34	AUTOSET(model.parm("PrdEsp"))
+PrdHid		REAL	36,47	AUTOSET(model.parm("PrdHid"))
+PolU		INTEGER	49,49	AUTOSET(model.parm("PolU"))
+PolA$(P)	REAL	51+$(P)*13,62+$(P)*13	AUTOSET(model.parm("PolA$(P)"))
+END_DATA
+
+END_MASK
+//--------------------------------------------------------------------------------------------------
+// Interconnection
+//--------------------------------------------------------------------------------------------------
+DEFINE_MASK ROWDATA SDDP_V10.2_Interconnection
+
+DEFINE_HEADER
+FROM   TO cap1... loss1.. cap2... loss2.. .Num ....Name.... cap1... cap2... cap1... cap2... cap1... cap2... cap1... cap2... cint1.. cint2.. cint1.. cint2.. cint1.. cint2.. cint1.. cint2.. cint1.. cint2.. Tipo UnM
+END_HEADER
+
+DEFINE_MACRO
+VAR	N	2,5
+VAR	M	1,5
+END_MACRO
+
+DEFINE_DATA
+FROM               INTEGER   1,4
+TO                 INTEGER   6,9
+Num                INTEGER   43,46
+Nome               STRING    48,59
+Capacity->(1)      REAL      11,17				AUTOSET
+LossFactor->       REAL      19,25				AUTOSET
+Capacity<-(1)      REAL      27,33				AUTOSET
+LossFactor<-       REAL      35,41				AUTOSET
+Capacity->($(N))   REAL      61+16*($(N)-2),67+16*($(N)-2)	AUTOSET
+Capacity<-($(N))   REAL      69+16*($(N)-2),75+16*($(N)-2)	AUTOSET
+Cost->($(M))       REAL      125+16*($(M)-1),131+16*($(M)-1)   	AUTOSET
+Cost<-($(M))       REAL      133+16*($(M)-1),139+16*($(M)-1)	AUTOSET
+Existing           INTEGER   205,208				AUTOSET
+Currency           STRING    210,212				AUTOSET(model.parm("Currency"))
+
+END_DATA
+
+END_MASK
+
+//--------------------------------------------------------------------------------------------------
+// Interconnection
+//--------------------------------------------------------------------------------------------------
+DEFINE_MASK ROWDATA SDDP_V10.2_Interconnection21
+
+DEFINE_HEADER
+FROM   TO cap1... loss1.. cap2... loss2.. .Num ....Name.... cap1... cap2... cap1... cap2... cap1... cap2... cap1... cap2... cint1.. cint2.. cint1.. cint2.. cint1.. cint2.. cint1.. cint2.. cint1.. cint2.. Tipo UnM
+END_HEADER
+
+DEFINE_MACRO
+VAR	N	2,5
+VAR	M	1,5
+VAR	P	6,21
+END_MACRO
+
+DEFINE_DATA
+FROM               INTEGER   1,4
+TO                 INTEGER   6,9
+Num                INTEGER   43,46
+Nome               STRING    48,59
+Capacity->(1)      REAL      11,17				AUTOSET
+LossFactor->       REAL      19,25				AUTOSET
+Capacity<-(1)      REAL      27,33				AUTOSET
+LossFactor<-       REAL      35,41				AUTOSET
+Capacity->($(N))   REAL      61+16*($(N)-2),67+16*($(N)-2)	AUTOSET
+Capacity<-($(N))   REAL      69+16*($(N)-2),75+16*($(N)-2)	AUTOSET
+Cost->($(M))       REAL      125+16*($(M)-1),131+16*($(M)-1)   	AUTOSET
+Cost<-($(M))       REAL      133+16*($(M)-1),139+16*($(M)-1)	AUTOSET
+Existing           INTEGER   205,208				AUTOSET
+Currency           STRING    210,212				AUTOSET(model.parm("Currency"))
+Capacity->($(P))   REAL      213+$(P),213+$(P)			AUTOSET
+Capacity<-($(P))   REAL      213+$(P),213+$(P)			AUTOSET
+Cost->($(P))       REAL      213+$(P),213+$(P)			AUTOSET
+Cost<-($(P))       REAL      213+$(P),213+$(P)			AUTOSET
+
+END_DATA
+
+END_MASK
+
+
+DEFINE_MASK MIXROWDATA SDDP_V10.2_minter
+TOTAL_BLOCK	2
+
+//-------------------------------------------------------------
+//-- PRIMEIRO BLOCO -> Identificacao da Data de Modificacao ---
+//-------------------------------------------------------------
+DEFINE_BLOCK
+BLOCK_IDENT	MOD
+
+DEFINE_DATA
+IdentBloco	STRING		1,5	MOD:_
+Data		DATE		6,15	DD/MM/YYYY
+END_DATA
+
+END_BLOCK
+
+//-------------------------------------------------------------
+//-- SEGUNDO BLOCO -> Dados de Barra                        ---
+//-------------------------------------------------------------
+DEFINE_BLOCK
+BLOCK_IDENT	 FROM
+
+DEFINE_HEADER
+FROM   TO cap1... loss1.. cap2... loss2.. .Num ....Name.... cap1... cap2... cap1... cap2... cap1... cap2... cap1... cap2... cint1.. cint2.. cint1.. cint2.. cint1.. cint2.. cint1.. cint2.. cint1.. cint2.. TC UnM
+END_HEADER
+
+DEFINE_MACRO
+VAR	N	2,5
+VAR	M	1,5
+END_MACRO
+
+DEFINE_DATA
+FROM               INTEGER   1,4
+TO                 INTEGER   6,9
+Code               INTEGER   43,46
+Name               STRING    48,59
+Capacity->(1)      REAL      11,17				AUTOSET
+LossFactor->       REAL      19,25				AUTOSET
+Capacity<-(1)      REAL      27,33				AUTOSET
+LossFactor<-       REAL      35,41				AUTOSET
+Capacity->($(N))   REAL      61+16*($(N)-2),67+16*($(N)-2)	AUTOSET
+Capacity<-($(N))   REAL      69+16*($(N)-2),75+16*($(N)-2)	AUTOSET
+Existing           INTEGER   205,208				AUTOSET
+END_DATA
+END_BLOCK
+
+END_MASK
+
+//---------------------------------------------------------------------
+//---------------------------------------------------------------------
+DEFINE_MASK ROWDATA SDDP_v10.2_Dbus
+
+DEFINE_HEADER
+ NUM. Tp ...NombreB.. Id  # tg Plnt Nombre Gener.Area %per1 Ploa1 Pind1 PerF1 %per2 Ploa2 Pind2 PerF2 %per3 Ploa3 Pind3 PerF3 %per4 Ploa4 Pind4 PerF4 %per5 Ploa5 Pind5 PerF5 Icca
+END_HEADER
+
+DEFINE_MACRO
+VAR	N	1,5
+END_MACRO
+
+DEFINE_DATA
+Bus		INTEGER		1,5
+Tipo		INTEGER		7,8
+Nome		STRING		10,21
+IdSistema       STRING		23,24
+NdxBarra	INTEGER		25,27
+TpUsina		INTEGER		29,30
+CodUsina	INTEGER		32,35
+NomeUsina	STRING		37,48
+CodArea		INTEGER		50,53
+Pload$(N)	REAL		37+24*$(N),41+24*$(N)	AUTOSET(modelcarga.vector("P($(N))")[*])
+Pind$(N)	REAL		43+24*$(N),47+24*$(N)	AUTOSET(modelcarga.vector("Pind($(N))")[*])
+PerF$(N)	REAL		49+24*$(N),53+24*$(N)	AUTOSET(modelcarga.vector("PerF($(N))")[*])
+Icca		INTEGER		175,178
+END_DATA
+END_MASK
+
+//---------------------------------------------------------------------
+//---------------------------------------------------------------------
+DEFINE_MASK MIXROWDATA SDDP_v10.2_Mbus
+
+TOTAL_BLOCK	2
+
+//-------------------------------------------------------------
+//-- PRIMEIRO BLOCO -> Identificacao da Data de Modificacao ---
+//-------------------------------------------------------------
+DEFINE_BLOCK
+BLOCK_IDENT	MOD
+
+DEFINE_DATA
+IdentBloco	STRING		1,5	MOD:_
+Data		DATE		6,15	DD/MM/YYYY
+END_DATA
+
+END_BLOCK
+
+//-------------------------------------------------------------
+//-- SEGUNDO BLOCO -> Dados de Barra                        ---
+//-------------------------------------------------------------
+DEFINE_BLOCK
+BLOCK_IDENT	 NUM.
+
+DEFINE_HEADER
+ NUM. Tp ...NombreB.. Id  # tg Plnt Nome Gerador Area %per1 Ploa1 Pind1 PerF1 %per2 Ploa2 Pind2 PerF2 %per3 Ploa3 Pind3 PerF3 %per4 Ploa4 Pind4 PerF4 %per5 Ploa5 Pind5 PerF5
+END_HEADER
+
+DEFINE_MACRO
+VAR	N	1,5
+END_MACRO
+
+DEFINE_DATA
+Bus		INTEGER		1,5
+Tipo		INTEGER		7,8
+Nome		STRING		10,21
+IdSistema       STRING		23,24
+NdxBarra	INTEGER		27,27
+TpUsina		INTEGER		29,30
+CodUsina	INTEGER		32,35
+NomeUsina	STRING		37,48
+CodArea		INTEGER		50,53
+Pload$(N)	REAL		37+24*$(N),41+24*$(N)	AUTOSET(modelcarga.vector("P($(N))")[*])
+Pind$(N)	REAL		43+24*$(N),47+24*$(N)	AUTOSET(modelcarga.vector("Pind($(N))")[*])
+PerF$(N)	REAL		49+24*$(N),53+24*$(N)	AUTOSET(modelcarga.vector("PerF($(N))")[*])
+Icca		INTEGER		175,178			AUTOSET(modelcarga.vector("Icca")[*])
+END_DATA
+
+END_BLOCK
+
+END_MASK
+//---------------------------------------------------------------------
+//---------------------------------------------------------------------
+DEFINE_MASK ROWDATA SDDP_v10.2_volt
+
+DEFINE_HEADER
+(Bus) (...Nome...) O (.kV.)
+END_HEADER
+
+DEFINE_DATA
+Bus		INTEGER		1,5
+Name		STRING		7,18
+Kv		REAL		22,27	AUTOSET(model.parm("Kv"))
+END_DATA
+END_MASK
+
+//---------------------------------------------------------------------
+//---------------------------------------------------------------------
+DEFINE_MASK ROWDATA SDDP_v10.2_Dcirc
+
+DEFINE_HEADER
+#BOR.   #BDE.    .RESIS.REACT Nome........(MVAR)(Tmn)(Tmx)(  MW)(MW)   # I C ...1 ...2 ...3 ...4 ...5 iflh Prob(%) Cmon S                             sf st
+END_HEADER
+
+DEFINE_DATA
+Bor		INTEGER		1,5
+Bde		INTEGER		9,13
+R		REAL		18,23	AUTOSET(modelcircuito.vector("R")[*])
+X		REAL		24,29	AUTOSET(modelcircuito.vector("X")[*])
+Nome		STRING		31,42
+MVAr		REAL		43,48	AUTOSET(modelcircuito.vector("MVAr")[*])
+Tmn		REAL		49,53	AUTOSET(modelcircuito.vector("Tmn")[*])
+Tmx		REAL		54,58	AUTOSET(modelcircuito.vector("Tmx")[*])
+Rn		REAL		59,64	AUTOSET(modelcircuito.vector("Rn")[*])
+Re		REAL		65,68	AUTOSET(modelcircuito.vector("Re")[*])
+Id		INTEGER		69,72
+I		INTEGER		74,74	AUTOSET(modelcircuito.vector("I")[*])
+C		INTEGER		76,76	AUTOSET(modelcircuito.parm("FlagContingency"))
+Iflh		INTEGER		103,106	AUTOSET(modelcircuito.vector("Iflh")[*])
+Prob		REAL		108,114	AUTOSET(modelcircuito.vector("Prob")[*])
+Cmon		INTEGER		119,119	AUTOSET(modelcircuito.parm("FlagMonitored"))
+Status		INTEGER		121,121	AUTOSET(modelcircuito.vector("Status")[*])
+FlagDC		INTEGER		126,126	AUTOSET(modelcircuito.parm("FlagDC"))
+Pmn		REAL		133,140	AUTOSET(modelcircuito.vector("Pmn")[*])
+Pmx		REAL		142,149	AUTOSET(modelcircuito.vector("Pmx")[*])
+SysFromId       STRING          151,152
+SysToId         STRING          154,155
+END_DATA
+END_MASK
+//---------------------------------------------------------------------
+//---------------------------------------------------------------------
+DEFINE_MASK ROWDATA SDDP_dcirc_v2.0
+
+DEFINE_HEADER
+$version=2
+#BOR.   #BDE.NN  .RESIS.REACT Nome........(MVAR)(Tmn)(Tmx)(  MW)(MW) (Num) I C ....1 ....2 ....3 ....4 ....5 iflh Prob(%) Cmon S RPK2 PRTC ..phsmin ..phsmax sf st
+END_HEADER
+
+DEFINE_DATA
+Bor		INTEGER		1,5
+Bde		INTEGER		9,13
+R		REAL		18,23	AUTOSET(modelcircuito.vector("R")[*])
+X		REAL		24,29	AUTOSET(modelcircuito.vector("X")[*])
+Nome		STRING		31,42
+MVAr		REAL		43,48	AUTOSET(modelcircuito.vector("MVAr")[*])
+Tmn		REAL		49,53	AUTOSET(modelcircuito.vector("Tmn")[*])
+Tmx		REAL		54,58	AUTOSET(modelcircuito.vector("Tmx")[*])
+Rn		REAL		59,64	AUTOSET(modelcircuito.vector("Rn")[*])
+Re		REAL		65,68	AUTOSET(modelcircuito.vector("Re")[*])
+Id		INTEGER		69,74
+I		INTEGER		75,76	AUTOSET(modelcircuito.vector("I")[*])
+C		INTEGER		78,78	AUTOSET(modelcircuito.parm("FlagContingency"))
+Iflh		INTEGER		110,113	AUTOSET(modelcircuito.vector("Iflh")[*])
+Prob		REAL		114,121	AUTOSET(modelcircuito.vector("Prob")[*])
+Cmon		INTEGER		126,126	AUTOSET(modelcircuito.parm("FlagMonitored"))
+Status		INTEGER		128,128	AUTOSET(modelcircuito.vector("Status")[*])
+FlagDC		INTEGER		130,130	AUTOSET(modelcircuito.parm("FlagDC"))
+Pmn		REAL		140,147	AUTOSET(modelcircuito.vector("Pmn")[*])
+Pmx		REAL		149,156	AUTOSET(modelcircuito.vector("Pmx")[*])
+SysFromId       STRING          158,159
+SysToId         STRING          161,162
+END_DATA
+END_MASK
+//---------------------------------------------------------------------
+//---------------------------------------------------------------------
+DEFINE_MASK MIXROWDATA SDDP_v10.2_Mcirc
+
+TOTAL_BLOCK	2
+
+//-------------------------------------------------------------
+//-- PRIMEIRO BLOCO -> Identificacao da Data de Modificacao ---
+//-------------------------------------------------------------
+DEFINE_BLOCK
+BLOCK_IDENT	MOD
+BLOCK_LENGTH 1
+NEXT_BLOCK 2
+
+
+DEFINE_DATA
+IdentBloco	STRING		1,5	MOD:_
+Data		DATE		6,15	DD/MM/YYYY
+END_DATA
+
+END_BLOCK
+
+//-------------------------------------------------------------
+//-- SEGUNDO BLOCO -> Dados de Circuito                     ---
+//-------------------------------------------------------------
+DEFINE_BLOCK
+BLOCK_IDENT	#BOR
+
+DEFINE_HEADER
+#BOR.   #BDE.    .RESIS.REACT Nome........(MVAR)(Tmn)(Tmx)(  MW)(MW)   # I C ...1 ...2 ...3 ...4 ...5 iflh Prob(%) Cmon S                             sf st
+END_HEADER
+
+DEFINE_DATA
+Bor		INTEGER		1,5
+Bde		INTEGER		9,13
+R		REAL		18,23	AUTOSET
+X		REAL		24,29	AUTOSET
+Nome		STRING		31,42
+MVAr		REAL		43,48	AUTOSET
+Tmn		REAL		49,53	AUTOSET
+Tmx		REAL		54,58	AUTOSET
+Rn		REAL		59,64	AUTOSET
+Re		REAL		65,68	AUTOSET
+Id		INTEGER		69,72
+I		INTEGER		73,74	AUTOSET
+Iflh		INTEGER		103,106	AUTOSET
+Prob		REAL		108,114	AUTOSET
+Status		INTEGER		121,121	AUTOSET
+Pmn		REAL		133,140	AUTOSET
+Pmx		REAL		142,149	AUTOSET
+SysFromId       STRING          151,152
+SysToId         STRING          154,155
+END_DATA
+
+END_BLOCK
+
+END_MASK
+//---------------------------------------------------------------------
+//---------------------------------------------------------------------
+DEFINE_MASK MIXROWDATA SDDP_mcirc_v2.0
+
+TOTAL_BLOCK	3
+
+//-------------------------------------------------------------
+//-- PRIMEIRO BLOCO -> Identificacao da versao ---
+//-------------------------------------------------------------
+DEFINE_BLOCK
+BLOCK_IDENT	$version=2
+BLOCK_LENGTH 1
+NEXT_BLOCK 2
+
+
+DEFINE_DATA
+IdentBloco	STRING		1,10	$version=2
+END_DATA
+
+END_BLOCK
+
+//-------------------------------------------------------------
+//-- SEGUNDO BLOCO -> Identificacao da Data de Modificacao ---
+//-------------------------------------------------------------
+DEFINE_BLOCK
+BLOCK_IDENT	MOD
+BLOCK_LENGTH 1
+NEXT_BLOCK 3
+
+
+DEFINE_DATA
+IdentBloco	STRING		1,5	MOD:_
+Data		DATE		6,15	DD/MM/YYYY
+END_DATA
+
+END_BLOCK
+
+//-------------------------------------------------------------
+//-- TERCEIRO BLOCO -> Dados de Circuito                     ---
+//-------------------------------------------------------------
+DEFINE_BLOCK
+BLOCK_IDENT	#BOR
+
+DEFINE_HEADER
+#BOR.   #BDE.NN  .RESIS.REACT Nome........(MVAR)(Tmn)(Tmx)(  MW)(MW) (Num) I C ....1 ....2 ....3 ....4 ....5 iflh Prob(%) Cmon S RPK2 PRTC ..phsmin ..phsmax sf st
+END_HEADER
+
+DEFINE_DATA
+Bor		INTEGER		1,5
+Bde		INTEGER		9,13
+R		REAL		18,23	AUTOSET
+X		REAL		24,29	AUTOSET
+Nome		STRING		31,42
+MVAr		REAL		43,48	AUTOSET
+Tmn		REAL		49,53	AUTOSET
+Tmx		REAL		54,58	AUTOSET
+Rn		REAL		59,64	AUTOSET
+Re		REAL		65,68	AUTOSET
+Id		INTEGER		69,74
+I		INTEGER		75,76	AUTOSET
+Iflh		INTEGER		110,113	AUTOSET
+Prob		REAL		114,121	AUTOSET
+Status		INTEGER		128,128	AUTOSET
+Pmn		REAL		140,147	AUTOSET
+Pmx		REAL		149,156	AUTOSET
+SysFromId       STRING          158,159
+SysToId         STRING          161,162
+END_DATA
+END_BLOCK
+END_MASK
+
+//---------------------------------------------------------------------
+//---------------------------------------------------------------------
+DEFINE_MASK ROWDATA SDDP_v10.2_dclink
+
+DEFINE_HEADER
+FROM.TO...cap1.-> loss1-> cap2.<- loss2<- .Num ....Name.... Type cape1-> cape2<-
+END_HEADER
+
+DEFINE_DATA
+Bfr					INTEGER		1,5
+Bto					INTEGER		6,10
+Capacity->			REAL		11,17	AUTOSET
+LossFactor->		REAL		19,25	AUTOSET
+Capacity<-			REAL		27,33	AUTOSET
+LossFactor<-		REAL		35,41	AUTOSET
+Num					INTEGER		43,46
+Name				STRING		48,59
+Existing			INTEGER		61,64   AUTOSET
+CapacityEmergency-> REAL 		66,72 	AUTOSET
+CapacityEmergency<- REAL 		74,80 	AUTOSET
+
+END_DATA
+
+END_MASK
+//---------------------------------------------------------------------
+//---------------------------------------------------------------------
+DEFINE_MASK MIXROWDATA SDDP_v10.2_mdclink
+
+TOTAL_BLOCK	2
+
+//-------------------------------------------------------------
+//-- PRIMEIRO BLOCO -> Identificacao da Data de Modificacao ---
+//-------------------------------------------------------------
+DEFINE_BLOCK
+BLOCK_IDENT	MOD
+BLOCK_LENGTH 1
+NEXT_BLOCK 2
+
+
+DEFINE_DATA
+IdentBloco	STRING		1,5	MOD:_
+Data		DATE		6,15	DD/MM/YYYY
+END_DATA
+
+END_BLOCK
+
+//-------------------------------------------------------------
+//-- SEGUNDO BLOCO -> Dados do link DC                      ---
+//-------------------------------------------------------------
+DEFINE_BLOCK
+DEFINE_HEADER
+FROM.TO...cap1.-> loss1-> cap2.<- loss2<- .Num ....Name.... Type cape1-> cape2<-
+END_HEADER
+
+DEFINE_DATA
+Bfr					INTEGER		1,5
+Bto					INTEGER		6,10
+Capacity->			REAL	 	11,17	AUTOSET
+LossFactor->		REAL		19,25	AUTOSET
+Capacity<-			REAL	 	27,33	AUTOSET
+LossFactor<-		REAL	 	35,41	AUTOSET
+Num					INTEGER		43,46
+Name				STRING		48,59
+Existing			INTEGER		61,64   AUTOSET
+CapacityEmergency->	REAL 		66,72	AUTOSET
+CapacityEmergency<- REAL 		74,80	AUTOSET
+END_DATA
+END_BLOCK
+
+END_MASK
+
+//---------------------------------------------------------------------
+//---------------------------------------------------------------------
+DEFINE_MASK MIXROWDATA SDDP_v10.2_Deme05
+
+TOTAL_BLOCK	2
+
+//-------------------------------------------------------------
+//-- PRIMEIRO BLOCO -> Duracao dos Patamares                ---
+//-------------------------------------------------------------
+DEFINE_BLOCK
+BLOCK_IDENT	BLOCK
+BLOCK_LENGTH 2
+NEXT_BLOCK 2
+
+
+DEFINE_HEADER
+BLOCK        1     2     3     4     5
+END_HEADER
+DEFINE_MACRO
+VAR	Bl	1,5
+END_MACRO
+DEFINE_DATA
+IdentBloco	STRING		1,8	DURAT(%)
+Duracao$(Bl)	REAL		9+6*($(Bl)-1),14+6*($(Bl)-1)
+END_DATA
+
+END_BLOCK
+
+//-------------------------------------------------------------
+//-- SEGUNDO BLOCO -> Dados da Demanda                      ---
+//-------------------------------------------------------------
+DEFINE_BLOCK
+BLOCK_IDENT	YEAR
+
+DEFINE_HEADER
+YEAR BLK     1     2     3     4     5     6     7     8     9    10    11    12
+END_HEADER
+
+DEFINE_MACRO
+VAR	N	1,12
+END_MACRO
+
+DEFINE_DATA
+Ano		INTEGER		1,4
+Bloco		INTEGER		6,8
+Demanda$(N)	REAL		9+6*($(N)-1),14+6*($(N)-1)
+END_DATA
+
+END_BLOCK
+
+END_MASK
+//---------------------------------------------------------------------
+//---------------------------------------------------------------------
+DEFINE_MASK MIXROWDATA SDDP_v10.2_Deme21
+
+TOTAL_BLOCK	2
+
+//-------------------------------------------------------------
+//-- PRIMEIRO BLOCO -> Duracao dos Patamares                ---
+//-------------------------------------------------------------
+DEFINE_BLOCK
+BLOCK_IDENT	BLOCK
+BLOCK_LENGTH 2
+NEXT_BLOCK 2
+
+
+DEFINE_HEADER
+BLOCK        1     2     3     4     5     6     7     8     9    10    11    12    13    14    15    16    17    18    19    20    21
+END_HEADER
+DEFINE_MACRO
+VAR	Bl	1,21
+END_MACRO
+DEFINE_DATA
+IdentBloco	STRING		1,8	DURAT(%)
+Duracao$(Bl)	REAL		9+6*($(Bl)-1),14+6*($(Bl)-1)
+END_DATA
+
+END_BLOCK
+
+//-------------------------------------------------------------
+//-- SEGUNDO BLOCO -> Dados da Demanda                      ---
+//-------------------------------------------------------------
+DEFINE_BLOCK
+BLOCK_IDENT	YEAR
+
+DEFINE_HEADER
+YEAR BLK     1     2     3     4     5     6     7     8     9    10    11    12
+END_HEADER
+
+DEFINE_MACRO
+VAR	N	1,12
+END_MACRO
+
+DEFINE_DATA
+Ano		INTEGER		1,4
+Bloco		INTEGER		6,8
+Demanda$(N)	REAL		9+6*($(N)-1),14+6*($(N)-1)
+END_DATA
+
+END_BLOCK
+
+END_MASK
+
+//---------------------------------------------------------------------
+//---------------------------------------------------------------------
+DEFINE_MASK MIXROWDATA SDDP_v10.2_Dese05
+
+TOTAL_BLOCK	2
+
+//-------------------------------------------------------------
+//-- PRIMEIRO BLOCO -> Duracao dos Patamares                ---
+//-------------------------------------------------------------
+DEFINE_BLOCK
+BLOCK_IDENT	BLOCK
+BLOCK_LENGTH 2
+NEXT_BLOCK 2
+
+
+DEFINE_HEADER
+BLOCK        1     2     3     4     5
+END_HEADER
+
+DEFINE_DATA
+IdentBloco	STRING		1,8	DURAT(%)
+Duracao1	REAL		 9,14
+Duracao2	REAL		15,20
+Duracao3	REAL		21,26
+Duracao4	REAL		27,32
+Duracao5	REAL		33,38
+END_DATA
+
+END_BLOCK
+
+//-------------------------------------------------------------
+//-- SEGUNDO BLOCO -> Dados de Demanda                     ---
+//-------------------------------------------------------------
+DEFINE_BLOCK
+BLOCK_IDENT	YEAR
+
+DEFINE_HEADER
+YEAR BLK     1     2     3     4     5     6     7     8     9    10    11    12    13    14    15    16    17    18    19    20    21    22    23    24    25    26    27    28    29    30    31    32    33    34    35    36    37    38    39    40    41    42    43    44    45    46    47    48    49    50    51    52
+END_HEADER
+
+DEFINE_MACRO
+VAR	N	1,52
+END_MACRO
+
+DEFINE_DATA
+Ano		INTEGER		1,4
+Bloco		INTEGER		6,8
+Demanda$(N)	REAL		9+6*($(N)-1),14+6*($(N)-1)
+END_DATA
+
+END_BLOCK
+
+END_MASK
+//---------------------------------------------------------------------
+//---------------------------------------------------------------------
+DEFINE_MASK MIXROWDATA SDDP_v10.2_Dese21
+
+TOTAL_BLOCK	2
+
+//-------------------------------------------------------------
+//-- PRIMEIRO BLOCO -> Duracao dos Patamares                ---
+//-------------------------------------------------------------
+DEFINE_BLOCK
+BLOCK_IDENT	BLOCK
+BLOCK_LENGTH 2
+NEXT_BLOCK 2
+
+DEFINE_HEADER
+BLOCK        1     2     3     4     5     6     7     8     9    10    11    12    13    14    15    16    17    18    19    20    21
+END_HEADER
+DEFINE_MACRO
+VAR	Bl	1,21
+END_MACRO
+DEFINE_DATA
+IdentBloco	STRING		1,8	DURAT(%)
+Duracao$(Bl)	REAL		9+6*($(Bl)-1),14+6*($(Bl)-1)
+END_DATA
+
+END_BLOCK
+
+//-------------------------------------------------------------
+//-- SEGUNDO BLOCO -> Dados de Demanda                     ---
+//-------------------------------------------------------------
+DEFINE_BLOCK
+BLOCK_IDENT	YEAR
+
+DEFINE_HEADER
+YEAR BLK     1     2     3     4     5     6     7     8     9    10    11    12    13    14    15    16    17    18    19    20    21    22    23    24    25    26    27    28    29    30    31    32    33    34    35    36    37    38    39    40    41    42    43    44    45    46    47    48    49    50    51    52
+END_HEADER
+
+DEFINE_MACRO
+VAR	N	1,52
+END_MACRO
+
+DEFINE_DATA
+Ano		INTEGER		1,4
+Bloco		INTEGER		6,8
+Demanda$(N)	REAL		9+6*($(N)-1),14+6*($(N)-1)
+END_DATA
+
+END_BLOCK
+
+END_MASK
+//---------------------------------------------------------------------
+//---------------------------------------------------------------------
+DEFINE_MASK MIXROWDATA SDDP_v10.2_Dvme05
+
+TOTAL_BLOCK	2
+
+//-------------------------------------------------------------
+//-- PRIMEIRO BLOCO -> Duracao dos Patamares                ---
+//-------------------------------------------------------------
+DEFINE_BLOCK
+BLOCK_IDENT	**** Load :
+BLOCK_LENGTH 1
+NEXT_BLOCK 2
+DEFINE_DATA
+IdentBloco	STRING		1,12	****_Load__:
+Codigo		INTEGER		14,17
+Nome		STRING          19,30
+END_DATA
+
+END_BLOCK
+
+//-------------------------------------------------------------
+//-- SEGUNDO BLOCO -> Dados de Demanda                      ---
+//-------------------------------------------------------------
+DEFINE_BLOCK
+BLOCK_IDENT	YEAR
+
+DEFINE_HEADER
+YEAR BLK     1     2     3     4     5     6     7     8     9    10    11    12
+END_HEADER
+
+DEFINE_MACRO
+VAR	N	1,12
+END_MACRO
+
+DEFINE_DATA
+Ano		INTEGER		1,4
+Bloco		INTEGER		6,8
+CoefVariation$(N)	REAL		9+6*($(N)-1),14+6*($(N)-1)
+END_DATA
+
+END_BLOCK
+
+END_MASK
+//---------------------------------------------------------------------
+//---------------------------------------------------------------------
+DEFINE_MASK MIXROWDATA SDDP_v10.2_Dvse05
+
+TOTAL_BLOCK	2
+
+//-------------------------------------------------------------
+//-- PRIMEIRO BLOCO -> Dados de Identificacao               ---
+//-------------------------------------------------------------
+DEFINE_BLOCK
+BLOCK_IDENT	**** Load :
+BLOCK_LENGTH 1
+NEXT_BLOCK 2
+DEFINE_DATA
+IdentBloco	STRING		1,12	****_Load__:
+Codigo		INTEGER		14,17
+Nome		STRING          19,30
+END_DATA
+
+END_BLOCK
+
+
+//-------------------------------------------------------------
+//-- SEFUNDO BLOCO -> Dados de Demanda                      ---
+//-------------------------------------------------------------
+DEFINE_BLOCK
+BLOCK_IDENT	YEAR
+
+DEFINE_HEADER
+YEAR BLK     1     2     3     4     5     6     7     8     9    10    11    12    13    14    15    16    17    18    19    20    21    22    23    24    25    26    27    28    29    30    31    32    33    34    35    36    37    38    39    40    41    42    43    44    45    46    47    48    49    50    51    52
+END_HEADER
+
+DEFINE_MACRO
+VAR	N	1,52
+END_MACRO
+
+DEFINE_DATA
+Ano		INTEGER		1,4
+Bloco		INTEGER		6,8
+CoefVariation$(N)	REAL		9+6*($(N)-1),14+6*($(N)-1)
+END_DATA
+
+END_BLOCK
+
+END_MASK
+
+//---------------------------------------------------------------------
+//---------------------------------------------------------------------
+DEFINE_MASK MIXROWDATA SDDP_v10.2_Demand.csv
+
+TOTAL_BLOCK	2
+
+//-------------------------------------------------------------
+//-- PRIMEIRO BLOCO -> Parametros                           ---
+//-------------------------------------------------------------
+DEFINE_BLOCK
+BLOCK_IDENT	Varia
+
+DEFINE_HEADER
+Varia por patamar?
+Varia por serie?
+# de agentes
+END_HEADER
+
+END_BLOCK
+
+//-------------------------------------------------------------
+//-- SEGUNDO BLOCO -> Dados da Demanda                      ---
+//-------------------------------------------------------------
+DEFINE_BLOCK
+BLOCK_IDENT	Estg
+
+DEFINE_HEADER
+Estg,Ser.,Pat.,
+END_HEADER
+
+DEFINE_DATA
+Estagio		INTEGER		1,4
+Serie		INTEGER		6,9
+Patamar		INTEGER		11,14
+Valor		REAL		16,23
+END_DATA
+
+END_BLOCK
+
+END_MASK
+
+//---------------------------------------------------------------------
+//---------------------------------------------------------------------
+DEFINE_MASK ROWDATA SDDP_v10.2_ccombu
+
+DEFINE_HEADER
+!Num Nome........ UComb.. Custo... EmiCO2 PC.... UE.....
+END_HEADER
+
+DEFINE_DATA
+Num		INTEGER		1,4
+Nome		STRING		6,17
+UComb		STRING		19,25	AUTOSET(model.parm("UComb"))
+Custo		REAL		27,34	AUTOSET
+EmiCO2		REAL		36,41	AUTOSET(model.parm("EmiCO2"))
+UE		INTEGER		50,56	AUTOSET(model.parm("UE"))
+END_DATA
+
+END_MASK
+//---------------------------------------------------------------------
+//---------------------------------------------------------------------
+DEFINE_MASK MIXROWDATA SDDP_v10.2_combme
+
+TOTAL_BLOCK	2
+
+//-------------------------------------------------------------
+//-- PRIMEIRO BLOCO -> Identificacao do Combustivel         ---
+//-------------------------------------------------------------
+DEFINE_BLOCK
+BLOCK_IDENT	****
+BLOCK_LENGTH 1
+NEXT_BLOCK 2
+
+DEFINE_DATA
+IdentBloco	STRING		1,10	****_Fuel:
+Num		INTEGER		14,17
+Nome		STRING		19,30
+END_DATA
+
+END_BLOCK
+//-------------------------------------------------------------
+//-- SEGUNDO BLOCO -> Dados do custo                        ---
+//-------------------------------------------------------------
+DEFINE_BLOCK
+BLOCK_IDENT	Year
+
+DEFINE_HEADER
+Year .....01 .....02 .....03 .....04 .....05 .....06 .....07 .....08 .....09 .....10 .....11 .....12
+END_HEADER
+
+DEFINE_MACRO
+VAR	N	1,12
+END_MACRO
+
+DEFINE_DATA
+Ano		INTEGER		1,4
+Custo$(N)	REAL		5+8*($(N)-1),12+8*($(N)-1)
+END_DATA
+
+END_BLOCK
+
+END_MASK
+//---------------------------------------------------------------------
+//---------------------------------------------------------------------
+DEFINE_MASK MIXROWDATA SDDP_v10.2_combse
+
+TOTAL_BLOCK	2
+
+//-------------------------------------------------------------
+//-- PRIMEIRO BLOCO -> Identificacao do Combustivel         ---
+//-------------------------------------------------------------
+DEFINE_BLOCK
+BLOCK_IDENT	****
+BLOCK_LENGTH 1
+NEXT_BLOCK 2
+
+DEFINE_DATA
+IdentBloco	STRING		1,10	****_Fuel:
+Num		INTEGER		14,17
+Nome		STRING		19,30
+END_DATA
+
+END_BLOCK
+//-------------------------------------------------------------
+//-- SEGUNDO BLOCO -> Dados do custo                        ---
+//-------------------------------------------------------------
+DEFINE_BLOCK
+BLOCK_IDENT	Year
+
+DEFINE_HEADER
+Year ......1 ......2 ......3 ......4 ......5 ......6 ......7 ......8 ......9 .....10 .....11 .....12 .....13 .....14 .....15 .....16 .....17 .....18 .....19 .....20 .....21 .....22 .....23 .....24 .....25 .....26 .....27 .....28 .....29 .....30 .....31 .....32 .....33 .....34 .....35 .....36 .....37 .....38 .....39 .....40 .....41 .....42 .....43 .....44 .....45 .....46 .....47 .....48 .....49 .....50 .....51 .....52
+END_HEADER
+
+DEFINE_MACRO
+VAR	N	1,52
+END_MACRO
+
+DEFINE_DATA
+Ano		INTEGER		1,4
+Custo$(N)	REAL		5+8*($(N)-1),12+8*($(N)-1)
+END_DATA
+
+END_BLOCK
+
+END_MASK
+//---------------------------------------------------------------------
+//---------------------------------------------------------------------
+DEFINE_MASK MIXROWDATA SDDP_v10.2_fuelme
+
+TOTAL_BLOCK	2
+
+//-------------------------------------------------------------
+//-- PRIMEIRO BLOCO -> Identificacao do combustivel         ---
+//-------------------------------------------------------------
+DEFINE_BLOCK
+BLOCK_IDENT	****
+BLOCK_LENGTH 1
+NEXT_BLOCK 2
+
+DEFINE_DATA
+IdentBloco	STRING		1,10	**** Fuel:
+Num		INTEGER		14,17
+Nome		STRING		19,30
+END_DATA
+
+END_BLOCK
+//-------------------------------------------------------------
+//-- SEGUNDO BLOCO -> Dados do custo                        ---
+//-------------------------------------------------------------
+DEFINE_BLOCK
+BLOCK_IDENT	Year
+
+DEFINE_HEADER
+A~NO ......1 ......2 ......3 ......4 ......5 ......6 ......7 ......8 ......9 .....10 .....11 .....12
+END_HEADER
+
+DEFINE_MACRO
+VAR	N	1,12
+END_MACRO
+
+DEFINE_DATA
+Ano		INTEGER		1,4
+Dado$(N)	REAL		5+8*($(N)-1),12+8*($(N)-1)
+END_DATA
+
+END_BLOCK
+
+END_MASK
+//---------------------------------------------------------------------
+//---------------------------------------------------------------------
+DEFINE_MASK MIXROWDATA SDDP_v10.2_fuelse
+
+TOTAL_BLOCK	2
+
+//-------------------------------------------------------------
+//-- PRIMEIRO BLOCO -> Identificacao do combustivel         ---
+//-------------------------------------------------------------
+DEFINE_BLOCK
+BLOCK_IDENT	****
+BLOCK_LENGTH 1
+NEXT_BLOCK 2
+
+DEFINE_DATA
+IdentBloco	STRING		1,10	**** Fuel:
+Num		INTEGER		14,17
+Nome		STRING		19,30
+END_DATA
+
+END_BLOCK
+//-------------------------------------------------------------
+//-- SEGUNDO BLOCO -> Dados do custo                        ---
+//-------------------------------------------------------------
+DEFINE_BLOCK
+BLOCK_IDENT	Year
+
+DEFINE_HEADER
+A~NO ......1 ......2 ......3 ......4 ......5 ......6 ......7 ......8 ......9 .....10 .....11 .....12 .....13 .....14 .....15 .....16 .....17 .....18 .....19 .....20 .....21 .....22 .....23 .....24 .....25 .....26 .....27 .....28 .....29 .....30 .....31 .....32 .....33 .....34 .....35 .....36 .....37 .....38 .....39 .....40 .....41 .....42 .....43 .....44 .....45 .....46 .....47 .....48 .....49 .....50 .....51 .....52
+END_HEADER
+
+DEFINE_MACRO
+VAR	N	1,52
+END_MACRO
+
+DEFINE_DATA
+Ano		INTEGER		1,4
+Dado$(N)	REAL		5+8*($(N)-1),12+8*($(N)-1)
+END_DATA
+
+END_BLOCK
+
+END_MASK
+
+//---------------------------------------------------------------------
+//---------------------------------------------------------------------
+DEFINE_MASK MIXROWDATA SDDP_v10.2_pmhime
+TOTAL_BLOCK	3
+
+//-------------------------------------------------------------
+//-- PRIMEIRO BLOCO -> Atributos da Manutenção              ---
+//-------------------------------------------------------------
+DEFINE_BLOCK
+BLOCK_IDENT	Tipo_Info
+BLOCK_LENGTH 2
+NEXT_BLOCK 2
+
+DEFINE_DATA
+DescInfo	STRING		1,12
+Info		INTEGER		16,17
+END_DATA
+
+END_BLOCK
+//-------------------------------------------------------------
+//-- SEGUNDO BLOCO -> Identificacao da Usina                ---
+//-------------------------------------------------------------
+DEFINE_BLOCK
+BLOCK_IDENT	****
+BLOCK_LENGTH 1
+NEXT_BLOCK 3
+
+DEFINE_DATA
+IdentBloco	STRING		1,12	****_Planta:
+Num		INTEGER		13,17
+Nome		STRING		19,30
+END_DATA
+
+END_BLOCK
+//-------------------------------------------------------------
+//-- TERCEIRO BLOCO -> Dados do da Manutencao               ---
+//-------------------------------------------------------------
+DEFINE_BLOCK
+BLOCK_IDENT	A~NO
+
+DEFINE_HEADER
+A~NO .....01 .....02 .....03 .....04 .....05 .....06 .....07 .....08 .....09 .....10 .....11 .....12
+END_HEADER
+
+DEFINE_MACRO
+VAR	N	1,12
+END_MACRO
+
+DEFINE_DATA
+Ano		INTEGER		1,4
+Manutencao$(N)	REAL		5+8*($(N)-1),12+8*($(N)-1)
+END_DATA
+
+END_BLOCK
+
+END_MASK
+//---------------------------------------------------------------------
+//---------------------------------------------------------------------
+DEFINE_MASK MIXROWDATA SDDP_v10.2_pmhise
+TOTAL_BLOCK	3
+
+//-------------------------------------------------------------
+//-- PRIMEIRO BLOCO -> Atributos da Manutenção              ---
+//-------------------------------------------------------------
+DEFINE_BLOCK
+BLOCK_IDENT	Tipo_Info
+BLOCK_LENGTH 2
+NEXT_BLOCK 2
+
+DEFINE_DATA
+DescInfo	STRING		1,12
+Info		INTEGER		16,17
+END_DATA
+
+END_BLOCK
+//-------------------------------------------------------------
+//-- SEGUNDO BLOCO -> Identificacao da Usina                ---
+//-------------------------------------------------------------
+DEFINE_BLOCK
+BLOCK_IDENT	****
+BLOCK_LENGTH 1
+NEXT_BLOCK 3
+
+DEFINE_DATA
+IdentBloco	STRING		1,12	****_Planta:
+Num		INTEGER		13,17
+Nome		STRING		19,30
+END_DATA
+
+END_BLOCK
+//-------------------------------------------------------------
+//-- TERCEIRO BLOCO -> Dados do da Manutencao               ---
+//-------------------------------------------------------------
+DEFINE_BLOCK
+BLOCK_IDENT	A~NO
+
+DEFINE_HEADER
+A~NO ......1 ......2 ......3 ......4 ......5 ......6 ......7 ......8 ......9 .....10 .....11 .....12 .....13 .....14 .....15 .....16 .....17 .....18 .....19 .....20 .....21 .....22 .....23 .....24 .....25 .....26 .....27 .....28 .....29 .....30 .....31 .....32 .....33 .....34 .....35 .....36 .....37 .....38 .....39 .....40 .....41 .....42 .....43 .....44 .....45 .....46 .....47 .....48 .....49 .....50 .....51 .....52
+END_HEADER
+
+DEFINE_MACRO
+VAR	N	1,52
+END_MACRO
+
+DEFINE_DATA
+Ano		INTEGER		1,4
+Manutencao$(N)	REAL		5+8*($(N)-1),12+8*($(N)-1)
+END_DATA
+
+END_BLOCK
+
+END_MASK
+//---------------------------------------------------------------------
+//---------------------------------------------------------------------
+DEFINE_MASK MIXROWDATA SDDP_v10.2_rgme
+TOTAL_BLOCK	2
+
+//-------------------------------------------------------------
+//-- PRIMEIRO BLOCO -> Atributos da Restricao               ---
+//-------------------------------------------------------------
+DEFINE_BLOCK
+BLOCK_IDENT	****
+BLOCK_LENGTH 1
+NEXT_BLOCK 2
+
+DEFINE_DATA
+IdentBloco	STRING		1,4	****
+Penalty		REAL            5,13	AUTOSET(model.parm("Penalty"))
+Num		INTEGER		14,17
+Nome		STRING		19,30
+Sign		STRING		32,34	AUTOSET(model.parm("sign"))
+IdentUsinas	STRING		36,1060
+END_DATA
+
+END_BLOCK
+//-------------------------------------------------------------
+//-- SEGUNDO  BLOCO -> Dados da Restricao                   ---
+//-------------------------------------------------------------
+DEFINE_BLOCK
+BLOCK_IDENT	A~NO
+
+DEFINE_HEADER
+A~no Blk ......1 ......2 ......3 ......4 ......5 ......6 ......7 ......8 ......9 .....10 .....11 .....12
+END_HEADER
+
+DEFINE_MACRO
+VAR	N	1,12
+END_MACRO
+
+DEFINE_DATA
+Ano		INTEGER		1,4
+Patamar		INTEGER		6,8
+Restricao$(N)	REAL		9+8*($(N)-1),16+8*($(N)-1)
+END_DATA
+
+END_BLOCK
+
+END_MASK
+//---------------------------------------------------------------------
+//---------------------------------------------------------------------
+DEFINE_MASK MIXROWDATA SDDP_v10.2_rgse
+TOTAL_BLOCK	2
+
+//-------------------------------------------------------------
+//-- PRIMEIRO BLOCO -> Atributos da Restricao               ---
+//-------------------------------------------------------------
+DEFINE_BLOCK
+BLOCK_IDENT	****
+BLOCK_LENGTH 1
+NEXT_BLOCK 2
+
+DEFINE_DATA
+IdentBloco	STRING		1,4	****
+Penalty		REAL            5,13	AUTOSET(model.parm("Penalty"))
+Num		INTEGER		14,17
+Nome		STRING		19,30
+Sign		STRING		32,34		AUTOSET(model.parm("sign"))
+IdentUsinas	STRING		36,1060
+END_DATA
+
+END_BLOCK
+//-------------------------------------------------------------
+//-- SEGUNDO  BLOCO -> Dados da Restricao                   ---
+//-------------------------------------------------------------
+DEFINE_BLOCK
+BLOCK_IDENT	A~NO
+
+DEFINE_HEADER
+A~no Blk ......1 ......2 ......3 ......4 ......5 ......6 ......7 ......8 ......9 .....10 .....11 .....12 .....13 .....14 .....15 .....16 .....17 .....18 .....19 .....20 .....21 .....22 .....23 .....24 .....25 .....26 .....27 .....28 .....29 .....30 .....31 .....32 .....33 .....34 .....35 .....36 .....37 .....38 .....39 .....40 .....41 .....42 .....43 .....44 .....45 .....46 .....47 .....48 .....49 .....50 .....51 .....52
+END_HEADER
+
+DEFINE_MACRO
+VAR	N	1,52
+END_MACRO
+
+DEFINE_DATA
+Ano		INTEGER		1,4
+Patamar		INTEGER		6,8
+Restricao$(N)	REAL		9+8*($(N)-1),16+8*($(N)-1)
+END_DATA
+
+END_BLOCK
+
+END_MASK
+//---------------------------------------------------------------------
+//---------------------------------------------------------------------
+DEFINE_MASK MIXROWDATA SDDP_v10.2_resger
+TOTAL_BLOCK	4
+
+//-------------------------------------------------------------
+//-- PRIMEIRO BLOCO -> Identifica da Restricao              ---
+//-------------------------------------------------------------
+DEFINE_BLOCK
+BLOCK_IDENT	NUM:
+BLOCK_LENGTH 1
+NEXT_BLOCK 2
+
+DEFINE_DATA
+Info 	STRING		1,5
+Num		INTEGER		5,8
+Nome		STRING		14,26
+Penalty		REAL            39,50	AUTOSET(model.parm("Penalty"))
+END_DATA
+
+END_BLOCK
+//-------------------------------------------------------------
+//-- SEGUNDO BLOCO -> Parametros adicionais                 ---
+//-------------------------------------------------------------
+DEFINE_BLOCK
+BLOCK_LENGTH 1
+NEXT_BLOCK 3
+
+DEFINE_DATA
+Type		INTEGER		16,19	AUTOSET(model.parm("Type"))
+CompensateNoSel	INTEGER		22,25	AUTOSET(model.parm("CompensateNoSel"))
+CompensateSel   INTEGER         28,31	AUTOSET(model.parm("CompensateSel"))
+DCLinkFlowLimit	INTEGER         50,50	AUTOSET(model.parm("DCLinkFlowLimit"))
+Unit		INTEGER         60,60	AUTOSET(model.parm("Unit"))
+END_DATA
+
+END_BLOCK
+
+//-------------------------------------------------------------
+//-- TERCEIRO BLOCO -> Numero de usinas                     ---
+//-------------------------------------------------------------
+DEFINE_BLOCK
+BLOCK_LENGTH 1
+NEXT_BLOCK 4
+
+DEFINE_DATA
+NumeroUsinas	INTEGER		15,19
+END_DATA
+
+END_BLOCK
+
+//-------------------------------------------------------------
+//-- QUARTO BLOCO -> Lista de usinas                        ---
+//-------------------------------------------------------------
+DEFINE_BLOCK
+DEFINE_DATA
+NumeroSequencia	INTEGER		1,3
+CodigoUsina	INTEGER		5,8
+TipoUsina	STRING		10,10
+END_DATA
+END_BLOCK
+
+END_MASK
+
+//---------------------------------------------------------------------
+//---------------------------------------------------------------------
+DEFINE_MASK MIXROWDATA SDDP_rgbckd
+TOTAL_BLOCK	3
+//-------------------------------------------------------------
+//-- PRIMEIRO BLOCO -> Identifica da Restricao              ---
+//-------------------------------------------------------------
+DEFINE_BLOCK
+BLOCK_IDENT	NUM:
+BLOCK_LENGTH 1
+NEXT_BLOCK 2
+
+DEFINE_DATA
+Info 	STRING		1,5
+Num		INTEGER		5,8
+Nome		STRING		14,26
+END_DATA
+
+END_BLOCK
+
+//-------------------------------------------------------------
+//-- SEGUNDO BLOCO -> Numero de usinas                      ---
+//-------------------------------------------------------------
+DEFINE_BLOCK
+BLOCK_LENGTH 1
+NEXT_BLOCK 3
+
+DEFINE_DATA
+NumeroUsinas	INTEGER		15,19
+END_DATA
+
+END_BLOCK
+
+//-------------------------------------------------------------
+//-- TERCEIRO BLOCO -> Lista de usinas                      ---
+//-------------------------------------------------------------
+DEFINE_BLOCK
+DEFINE_DATA
+NumeroSequencia	INTEGER		1,3
+CodigoUsina	INTEGER		5,8
+TipoUsina	STRING		10,10
+END_DATA
+END_BLOCK
+
+END_MASK
+//---------------------------------------------------------------------
+//---------------------------------------------------------------------
+DEFINE_MASK MIXROWDATA SDDP_v10.2_rsme
+TOTAL_BLOCK	3
+
+//-------------------------------------------------------------
+//-- PRIMEIRO BLOCO -> Atributos da Restricao                 ---
+//-------------------------------------------------------------
+DEFINE_BLOCK
+BLOCK_IDENT	Tipo_Info
+BLOCK_LENGTH 2
+NEXT_BLOCK 2
+
+DEFINE_DATA
+DescInfo	STRING		1,12
+Info		INTEGER		16,17
+END_DATA
+
+END_BLOCK
+//-------------------------------------------------------------
+//-- SEGUNDO BLOCO -> Identificacao da Restricao            ---
+//-------------------------------------------------------------
+DEFINE_BLOCK
+BLOCK_IDENT	****
+BLOCK_LENGTH 1
+NEXT_BLOCK 3
+
+DEFINE_DATA
+IdentBloco	STRING		1,12	****_Res_ger
+Num		INTEGER		13,17
+Nome		STRING		19,30
+END_DATA
+
+END_BLOCK
+//----------------------------------------------------------
+//-- TERCEIRO BLOCO -> Dados da Restricao               ---
+//---------------------------------------------------------
+DEFINE_BLOCK
+BLOCK_IDENT	A~no
+
+DEFINE_HEADER
+A~no Blk ......1 ......2 ......3 ......4 ......5 ......6 ......7 ......8 ......9 .....10 .....11 .....12
+END_HEADER
+
+DEFINE_MACRO
+VAR	N	1,12
+END_MACRO
+
+DEFINE_DATA
+Ano		INTEGER		1,4
+Bloco		INTEGER		6,8
+Dado$(N)	REAL		9+8*($(N)-1),16+8*($(N)-1)
+END_DATA
+
+END_BLOCK
+
+END_MASK
+
+
+//---------------------------------------------------------------------
+//---------------------------------------------------------------------
+DEFINE_MASK MIXROWDATA SDDP_v10.2_rsse
+TOTAL_BLOCK	3
+
+//-------------------------------------------------------------
+//-- PRIMEIRO BLOCO -> Atributos da Restricao                 ---
+//-------------------------------------------------------------
+DEFINE_BLOCK
+BLOCK_IDENT	Tipo_Info
+BLOCK_LENGTH 2
+NEXT_BLOCK 2
+
+DEFINE_DATA
+DescInfo	STRING		1,12
+Info		INTEGER		16,17
+END_DATA
+
+END_BLOCK
+//-------------------------------------------------------------
+//-- SEGUNDO BLOCO -> Identificacao da Restricao            ---
+//-------------------------------------------------------------
+DEFINE_BLOCK
+BLOCK_IDENT	****
+BLOCK_LENGTH 1
+NEXT_BLOCK 3
+
+DEFINE_DATA
+IdentBloco	STRING		1,12	****_Res_ger
+Num		INTEGER		13,17
+Nome		STRING		19,30
+END_DATA
+
+END_BLOCK
+//----------------------------------------------------------
+//-- TERCEIRO BLOCO -> Dados da Restricao               ---
+//---------------------------------------------------------
+DEFINE_BLOCK
+BLOCK_IDENT	A~no
+
+DEFINE_HEADER
+A~no Blk ......1 ......2 ......3 ......4 ......5 ......6 ......7 ......8 ......9 .....10 .....11 .....12 .....13 .....14 .....15 .....16 .....17 .....18 .....19 .....20 .....21 .....22 .....23 .....24 .....25 .....26 .....27 .....28 .....29 .....30 .....31 .....32 .....33 .....34 .....35 .....36 .....37 .....38 .....39 .....40 .....41 .....42 .....43 .....44 .....45 .....46 .....47 .....48 .....49 .....50 .....51 .....52
+END_HEADER
+
+DEFINE_MACRO
+VAR	N	1,52
+END_MACRO
+
+DEFINE_DATA
+Ano		INTEGER		1,4
+Bloco		INTEGER		6,8
+Dado$(N)	REAL		9+8*($(N)-1),16+8*($(N)-1)
+END_DATA
+
+END_BLOCK
+
+END_MASK
+
+
+
+//---------------------------------------------------------------------
+//---------------------------------------------------------------------
+DEFINE_MASK MIXROWDATA SDDP_v10.2_cintme
+
+TOTAL_BLOCK	2
+
+//-------------------------------------------------------------
+//-- PRIMEIRO BLOCO -> Identificacao da Interconexao        ---
+//-------------------------------------------------------------
+DEFINE_BLOCK
+BLOCK_IDENT	****
+BLOCK_LENGTH 1
+NEXT_BLOCK 2
+
+DEFINE_DATA
+IdentBloco	STRING		1,12	****_Planta:
+Num		INTEGER		14,17
+Nome		STRING		19,30
+Sense		STRING		41,43
+END_DATA
+
+END_BLOCK
+//-------------------------------------------------------------
+//-- SEGUNDO BLOCO -> Dados do custo                        ---
+//-------------------------------------------------------------
+DEFINE_BLOCK
+BLOCK_IDENT	Year
+
+DEFINE_HEADER
+A~no Blk ......1 ......2 ......3 ......4 ......5 ......6 ......7 ......8 ......9 .....10 .....11 .....12
+END_HEADER
+
+DEFINE_MACRO
+VAR	N	1,12
+END_MACRO
+
+DEFINE_DATA
+Ano		INTEGER		1,4
+Bloco		INTEGER		6,8
+Dado$(N)	REAL		9+8*($(N)-1),16+8*($(N)-1)
+END_DATA
+
+END_BLOCK
+
+END_MASK
+//---------------------------------------------------------------------
+//---------------------------------------------------------------------
+DEFINE_MASK MIXROWDATA SDDP_v10.2_cintse
+
+TOTAL_BLOCK	2
+
+//-------------------------------------------------------------
+//-- PRIMEIRO BLOCO -> Identificacao da Interconexao        ---
+//-------------------------------------------------------------
+DEFINE_BLOCK
+BLOCK_IDENT	****
+BLOCK_LENGTH 1
+NEXT_BLOCK 2
+
+DEFINE_DATA
+IdentBloco	STRING		1,12	****_Planta:
+Num		INTEGER		14,17
+Nome		STRING		19,30
+Sense		STRING		41,43
+END_DATA
+
+END_BLOCK
+//-------------------------------------------------------------
+//-- SEGUNDO BLOCO -> Dados do custo                        ---
+//-------------------------------------------------------------
+DEFINE_BLOCK
+BLOCK_IDENT	Year
+
+DEFINE_HEADER
+A~no Blk ......1 ......2 ......3 ......4 ......5 ......6 ......7 ......8 ......9 .....10 .....11 .....12 .....13 .....14 .....15 .....16 .....17 .....18 .....19 .....20 .....21 .....22 .....23 .....24 .....25 .....26 .....27 .....28 .....29 .....30 .....31 .....32 .....33 .....34 .....35 .....36 .....37 .....38 .....39 .....40 .....41 .....42 .....43 .....44 .....45 .....46 .....47 .....48 .....49 .....50 .....51 .....52
+END_HEADER
+
+DEFINE_MACRO
+VAR	N	1,52
+END_MACRO
+
+DEFINE_DATA
+Ano		INTEGER		1,4
+Bloco		INTEGER		6,8
+Dado$(N)	REAL		9+8*($(N)-1),16+8*($(N)-1)
+END_DATA
+
+END_BLOCK
+
+END_MASK
+
+//---------------------------------------------------------------------
+//---------------------------------------------------------------------
+DEFINE_MASK ROWDATA SDDP_v10.2_htopol
+DEFINE_DATA
+Contador	INTEGER		1,5
+Num		INTEGER		7,15
+Nome            STRING          21,48
+NumJus		INTEGER		52,55
+END_DATA
+
+END_MASK
+
+//---------------------------------------------------------------------
+//---------------------------------------------------------------------
+//--- Mascaras CSV - Importação/Exportação em planilhas
+//---------------------------------------------------------------------
+//---------------------------------------------------------------------
+DEFINE_MASK CSVDATA SDDP_v10.2_csvtermi
+
+DEFINE_MACRO
+VAR	P	1,5
+VAR	S	1,3
+END_MACRO
+
+DEFINE_DATA
+Num		INTEGER,1
+Nome		STRING,2
+Data		DATE,4 DD/MM/YYYY AUTOSET
+Unidades	INTEGER,3 AUTOSET
+GerMin		REAL,5 AUTOSET
+GerMax		REAL,6 AUTOSET
+Teif		REAL,7 AUTOSET
+Ih		REAL,8 AUTOSET
+CVaria		REAL,9 AUTOSET
+CTransp		REAL,10 AUTOSET
+CoefE		REAL,11 AUTOSET
+G(1)		REAL,12 AUTOSET
+G(2)		REAL,13 AUTOSET
+G(3)		REAL,14 AUTOSET
+CEsp($(S),$(P))	REAL,15+($(S)-1)*5+($(P)-1), AUTOSET
+END_DATA
+END_MASK
+//---------------------------------------------------------------------
+//---------------------------------------------------------------------
+DEFINE_MASK CSVDATA SDDP_v10.2_csvhidro
+
+DEFINE_MACRO
+VAR	P	1,5
+END_MACRO
+
+DEFINE_DATA
+Num		INTEGER,1
+Nome		STRING,2
+Data		DATE,4 DD/MM/YYYY AUTOSET
+Unidades	INTEGER,3 AUTOSET
+PotInst		REAL,5 AUTOSET
+FPMed		REAL,6 AUTOSET
+Qmin		REAL,7 AUTOSET
+Qmax		REAL,8 AUTOSET
+Vmax		REAL,9 AUTOSET
+DfTotMin	REAL,10 AUTOSET
+ICP		REAL,11 AUTOSET
+IH		REAL,12 AUTOSET
+Indicador	INTEGER,13	AUTOSET
+TurIn($(P))	REAL,14+$(P), AUTOSET
+TotIn($(P))	REAL,19+$(P), AUTOSET
+E		INTEGER	25, AUTOSET
+END_DATA
+END_MASK
+//---------------------------------------------------------------------
+//---------------------------------------------------------------------
+DEFINE_MASK CSVDATA SDDP_v10.2_csvcombme
+DEFINE_DATA
+Num		INTEGER,1
+Nome		STRING,2
+Data		DATE,4 DD/MM/YYYY AUTOSET
+Custo		REAL,5 AUTOSET
+END_DATA
+END_MASK
+//---------------------------------------------------------------------
+//---------------------------------------------------------------------
+DEFINE_MASK CSVDATA SDDP_v10.2_csvdeme
+DEFINE_MACRO
+VAR	N	1,5
+END_MACRO
+DEFINE_DATA
+Num             INTEGER,1
+Nome            STRING,2
+Data		DATE,3 DD/MM/YYYY AUTOSET
+Demanda($(N))	REAL,3+$(N)	AUTOSET
+END_DATA
+END_MASK
+//---------------------------------------------------------------------
+//---------------------------------------------------------------------
+DEFINE_MASK CSVDATA SDDP_v10.2_csvpmhime
+DEFINE_DATA
+Num		INTEGER,1
+Nome		STRING,2
+Data		DATE,4 DD/MM/YYYY AUTOSET
+Manutencao	REAL,5 AUTOSET
+END_DATA
+END_MASK
+//---------------------------------------------------------------------
+//---------------------------------------------------------------------
+DEFINE_MASK MIXROWDATA SDDP_v10.2_mhidro
+
+TOTAL_BLOCK	2
+
+//-------------------------------------------------------------
+//-- PRIMEIRO BLOCO -> Identificacao da Data de Modificacao ---
+//-------------------------------------------------------------
+DEFINE_BLOCK
+BLOCK_IDENT	MOD
+BLOCK_LENGTH 1
+NEXT_BLOCK 2
+
+
+DEFINE_DATA
+IdentBloco	STRING		1,5	MOD:_
+Data		DATE		6,15	DD/MM/YYYY
+END_DATA
+
+END_BLOCK
+
+//-------------------------------------------------------------
+//-- SEGUNDO BLOCO -> Dados de Hidro                      ---
+//-------------------------------------------------------------
+DEFINE_BLOCK
+BLOCK_IDENT	 Num
+
+DEFINE_HEADER
+ NUM ...Nombre... .PV. .VAA .TAA #Uni Tipo ....Pot .FPMed. .QMin.. .QMax.. .VMin.. .VMax.. .VInic. Min.V+T ..VNC.. ..ICP.. ...IH.. ..FP1.. ..Vol1. ..FP2.. ..Vol2. ..FP3.. ..Vol3. ..FP4.. ..Vol4. ..FP5.. ..Vol5. .Area1. ..Vol1. .Area2. ..Vol2. .Area3. ..Vol3. .Area4. ..Vol4. .Area5. ..Vol5. .Filt1. ..Vol1. .Filt2. ..Vol2. .Filt3. ..Vol3. .Filt4. ..Vol4. .Filt5. ..Vol5. .Cota1. .Vol1.. .Cota2. .Vol2.. .Cota3. .Vol3.. .Cota4. .Vol4.. .Cota5. .Vol5.. .Ev1 .Ev2 .Ev3 .Ev4 .Ev5 .Ev6 .Ev7 .Ev8 .Ev9 Ev10 Ev11 Ev12 tini tfil .faa tare .varea. tfil .vfiltr F.Reg.. pVar .ICV C.Vert. sfal Cos.O&M Irxh RendT&G .EA. Niv.Jus I JuAr I .TurIn1 .TotIn1 .TurIn2 .TotIn2 .TurIn3 .TotIn3 .TurIn4 .TotIn4 .TurIn5 .TotIn5 H V .CFuga1 ..Def1. .CFuga2 ..Def2. .CFuga3 ..Def3. .CFuga4 ..Def4. .CFuga5 ..Def5. E
+END_HEADER
+
+DEFINE_MACRO
+VAR	P	1,5
+END_MACRO
+
+DEFINE_DATA
+Num		INTEGER	1	4
+Nome		STRING	6	17
+Unidades	INTEGER	34	37	AUTOSET
+Existing	INTEGER 39	42	AUTOSET
+PotInst		REAL	44	50	AUTOSET
+FPMed		REAL	51	58	AUTOSET
+Qmin		REAL	60	66	AUTOSET
+Qmax		REAL	68	74	AUTOSET
+Vmin		REAL	76	82	AUTOSET
+Vmax		REAL	84	90	AUTOSET
+DfTotMin	REAL	100	106	AUTOSET
+ICP		REAL	116	122	AUTOSET
+IH		REAL	124	130	AUTOSET
+Indicador	INTEGER	625	625	AUTOSET
+TurIn($(P))	REAL	611+(16*$(P)),617+(16*$(P))	AUTOSET
+TotIn($(P))	REAL	619+(16*$(P)),626+(16*$(P))	AUTOSET
+OxT_Tail($(P))        REAL          695+(16*$(P))  701+(16*$(P))  AUTOSET
+OxT_Outflow($(P))     REAL          703+(16*$(P))  709+(16*$(P))  AUTOSET
+Eaflu		INTEGER	791	791	AUTOSET
+END_DATA
+
+END_BLOCK
+
+END_MASK
+//---------------------------------------------------------------------
+//---------------------------------------------------------------------
+DEFINE_MASK MIXROWDATA SDDP_mhidro_v1.0
+
+TOTAL_BLOCK	3
+
+//-------------------------------------------------------------
+//-- PRIMEIRO BLOCO -> Versao ---
+//-------------------------------------------------------------
+DEFINE_BLOCK
+BLOCK_IDENT	$version=1
+BLOCK_LENGTH 1
+NEXT_BLOCK 2
+
+DEFINE_DATA
+IdentBloco	STRING		1,10	$version=1
+END_DATA
+
+//-------------------------------------------------------------
+//-- SEGUNDO BLOCO -> Identificacao da Data de Modificacao ---
+//-------------------------------------------------------------
+DEFINE_BLOCK
+BLOCK_IDENT	MOD
+BLOCK_LENGTH 1
+NEXT_BLOCK 3
+
+
+DEFINE_DATA
+IdentBloco	STRING		1,5	MOD:_
+Data		DATE		6,15	DD/MM/YYYY
+END_DATA
+
+END_BLOCK
+
+//-------------------------------------------------------------
+//-- TERCEIRO BLOCO -> Dados de Hidro                       ---
+//-------------------------------------------------------------
+DEFINE_BLOCK
+BLOCK_IDENT	 Num
+
+DEFINE_HEADER
+ NUM ...Nombre... .PV. .VAA .TAA #Uni Tipo ....Pot .FPMed. .QMin.. .QMax.. .VMin.. .VMax.. .VInic. Min.V+T ..VNC.. ..ICP.. ...IH.. ..FP1.. ..Vol1. ..FP2.. ..Vol2. ..FP3.. ..Vol3. ..FP4.. ..Vol4. ..FP5.. ..Vol5. .Area1. ..Vol1. .Area2. ..Vol2. .Area3. ..Vol3. .Area4. ..Vol4. .Area5. ..Vol5. .Filt1. ..Vol1. .Filt2. ..Vol2. .Filt3. ..Vol3. .Filt4. ..Vol4. .Filt5. ..Vol5. .Cota1. .Vol1.. .Cota2. .Vol2.. .Cota3. .Vol3.. .Cota4. .Vol4.. .Cota5. .Vol5.. .Ev1 .Ev2 .Ev3 .Ev4 .Ev5 .Ev6 .Ev7 .Ev8 .Ev9 Ev10 Ev11 Ev12 tini tfil .faa tare .varea. tfil .vfiltr F.Reg.. pVar .ICV C.Vert. sfal Cos.O&M Irxh RendT&G .EA. Niv.Jus I JuAr I .TurIn1 .TotIn1 .TurIn2 .TotIn2 .TurIn3 .TotIn3 .TurIn4 .TotIn4 .TurIn5 .TotIn5 H V .CFuga1 ..Def1. .CFuga2 ..Def2. .CFuga3 ..Def3. .CFuga4 ..Def4. .CFuga5 ..Def5. E
+END_HEADER
+
+DEFINE_MACRO
+VAR	P	1,5
+END_MACRO
+
+DEFINE_DATA
+Num		INTEGER	1	4
+Nome		STRING	6	17
+Unidades	INTEGER	34	37	AUTOSET
+Existing	INTEGER 39	42	AUTOSET
+PotInst		REAL	44	50	AUTOSET
+FPMed		REAL	51	58	AUTOSET
+Qmin		REAL	60	66	AUTOSET
+Qmax		REAL	68	74	AUTOSET
+Vmin		REAL	76	82	AUTOSET
+Vmax		REAL	84	90	AUTOSET
+DfTotMin	REAL	100	106	AUTOSET
+ICP		REAL	116	122	AUTOSET
+IH		REAL	124	130	AUTOSET
+Indicador	INTEGER	625	625	AUTOSET
+TurIn($(P))	REAL	611+(16*$(P)),617+(16*$(P))	AUTOSET
+TotIn($(P))	REAL	619+(16*$(P)),626+(16*$(P))	AUTOSET
+OxT_Tail($(P))        REAL          695+(16*$(P))  701+(16*$(P))  AUTOSET
+OxT_Outflow($(P))     REAL          703+(16*$(P))  709+(16*$(P))  AUTOSET
+Eaflu		INTEGER	791	791	AUTOSET
+END_DATA
+
+END_BLOCK
+
+END_MASK
+
+//---------------------------------------------------------------------
+//---------------------------------------------------------------------
+DEFINE_MASK MIXROWDATA SDDP_v10.2_mtermi
+
+TOTAL_BLOCK	2
+
+//-------------------------------------------------------------
+//-- PRIMEIRO BLOCO -> Identificacao da Data de Modificacao ---
+//-------------------------------------------------------------
+DEFINE_BLOCK
+BLOCK_IDENT	MOD
+BLOCK_LENGTH 1
+NEXT_BLOCK 2
+
+DEFINE_DATA
+IdentBloco	STRING		1,5	MOD:_
+Data		DATE		6,15	DD/MM/YYYY
+END_DATA
+
+END_BLOCK
+
+//-------------------------------------------------------------
+//-- SEGUNDO BLOCO -> Dados de Termica                      ---
+//-------------------------------------------------------------
+DEFINE_BLOCK
+BLOCK_IDENT	!Num
+
+
+DEFINE_HEADER
+!Num ...Nombre... #Uni Tipo .PotIns .GerMin .GerMax ..Teif. ..Ih... .CVaria .MR. Comb ...G1.. .CEsp.1 ...G2.. .CEsp.2 ...G3.. .CEsp.3 NAdF ...1 ...2 ...3 ComT CTransp StartUp sfal CEsp1-2 CEsp2-2 CEsp3-2 CEsp1-3 CEsp2-3 CEsp3-3 CEsp1-4 CEsp2-4 CEsp3-4 CEsp1-5 CEsp2-5 CEsp3-5 NGas NuCC ..NombreCC.. CoefE.
+END_HEADER
+
+DEFINE_MACRO
+VAR	P	2,5
+VAR	S	1,3
+END_MACRO
+
+DEFINE_DATA
+Num		INTEGER	1	4
+Nome		STRING	6	17
+Unidades	INTEGER	19	22	AUTOSET
+Existing	INTEGER 24	27	AUTOSET
+GerMin		REAL	37	43	AUTOSET
+GerMax		REAL	45	51	AUTOSET
+ICP		REAL	53	59	AUTOSET
+IH		REAL	61	67	AUTOSET
+O&MCost		REAL	69	75	AUTOSET
+G(1)		REAL	87	93	AUTOSET
+G(2)		REAL	103	109	AUTOSET
+G(3)		REAL	119	125	AUTOSET
+CEsp(1,1)	REAL	95	101	AUTOSET
+CEsp(2,1)	REAL	111	117	AUTOSET
+CEsp(3,1)	REAL	127	133	AUTOSET
+CTransp		REAL	160	166	AUTOSET
+CEsp($(S),$(P))	REAL	181+24*($(P)-2)+8*($(S)-1),187+24*($(P)-2)+8*($(S)-1)	AUTOSET
+CoefE		REAL	300	305 	AUTOSET
+END_DATA
+
+END_BLOCK
+
+END_MASK
+//---------------------------------------------------------------------
+//---------------------------------------------------------------------
+DEFINE_MASK MIXROWDATA SDDP_v10.2_mtermi21
+
+TOTAL_BLOCK	2
+
+//-------------------------------------------------------------
+//-- PRIMEIRO BLOCO -> Identificacao da Data de Modificacao ---
+//-------------------------------------------------------------
+DEFINE_BLOCK
+BLOCK_IDENT	MOD
+BLOCK_LENGTH 1
+NEXT_BLOCK 2
+
+DEFINE_DATA
+IdentBloco	STRING		1,5	MOD:_
+Data		DATE		6,15	DD/MM/YYYY
+END_DATA
+
+END_BLOCK
+
+//-------------------------------------------------------------
+//-- SEGUNDO BLOCO -> Dados de Termica                      ---
+//-------------------------------------------------------------
+DEFINE_BLOCK
+BLOCK_IDENT	!Num
+
+
+DEFINE_HEADER
+!Num ...Nombre... #Uni Tipo .PotIns .GerMin .GerMax ..Teif. ..Ih... .CVaria .MR. Comb ...G1.. .CEsp.1 ...G2.. .CEsp.2 ...G3.. .CEsp.3 NAdF ...1 ...2 ...3 ComT CTransp StartUp sfal CEsp1-2 CEsp2-2 CEsp3-2 CEsp1-3 CEsp2-3 CEsp3-3 CEsp1-4 CEsp2-4 CEsp3-4 CEsp1-5 CEsp2-5 CEsp3-5 NGas NuCC ..NombreCC.. CoefE.
+END_HEADER
+
+DEFINE_MACRO
+VAR	P	2,5
+VAR	S	1,3
+VAR	P2	6,21
+END_MACRO
+
+DEFINE_DATA
+Num		INTEGER	1	4
+Nome		STRING	6	17
+Unidades	INTEGER	19	22	AUTOSET
+Existing	INTEGER 24	27	AUTOSET
+GerMin		REAL	37	43	AUTOSET
+GerMax		REAL	45	51	AUTOSET
+ICP		REAL	53	59	AUTOSET
+IH		REAL	61	67	AUTOSET
+O&MCost		REAL	69	75	AUTOSET
+G(1)		REAL	87	93	AUTOSET
+G(2)		REAL	103	109	AUTOSET
+G(3)		REAL	119	125	AUTOSET
+CEsp(1,1)	REAL	95	101	AUTOSET
+CEsp(2,1)	REAL	111	117	AUTOSET
+CEsp(3,1)	REAL	127	133	AUTOSET
+CTransp		REAL	160	166	AUTOSET
+CEsp($(S),$(P))	REAL	181+24*($(P)-2)+8*($(S)-1),187+24*($(P)-2)+8*($(S)-1)	AUTOSET
+CEsp(1,$(P2)) REAL	95	101	AUTOSET
+CEsp(2,$(P2)) REAL	111	117	AUTOSET
+CEsp(3,$(P2)) REAL	127	133	AUTOSET
+CoefE		REAL	300	305 	AUTOSET
+END_DATA
+
+END_BLOCK
+
+END_MASK
+//---------------------------------------------------------------------
+//---------------------------------------------------------------------
+DEFINE_MASK MIXROWDATA SDDP_v10.2_gmme
+
+TOTAL_BLOCK	2
+
+//-------------------------------------------------------------
+//-- PRIMEIRO BLOCO -> Identificacao da Usina               ---
+//-------------------------------------------------------------
+DEFINE_BLOCK
+BLOCK_IDENT	****
+BLOCK_LENGTH 1
+NEXT_BLOCK 2
+
+DEFINE_DATA
+IdentBloco	STRING		1,12	****_Planta:
+Num		INTEGER		14,17
+END_DATA
+
+END_BLOCK
+//-------------------------------------------------------------
+//-- SEGUNDO BLOCO -> Dados da geracao                      ---
+//-------------------------------------------------------------
+DEFINE_BLOCK
+BLOCK_IDENT	Year
+
+DEFINE_HEADER
+A~no Blk ......1 ......2 ......3 ......4 ......5 ......6 ......7 ......8 ......9 .....10 .....11 .....12
+END_HEADER
+
+DEFINE_MACRO
+VAR	N	1,12
+END_MACRO
+
+DEFINE_DATA
+Ano		INTEGER		1,4
+Bloco		INTEGER		6,8
+Dado$(N)	REAL		9+8*($(N)-1),16+8*($(N)-1)
+END_DATA
+
+END_BLOCK
+
+END_MASK
+//---------------------------------------------------------------------
+//---------------------------------------------------------------------
+DEFINE_MASK MIXROWDATA SDDP_v10.2_gmse
+
+TOTAL_BLOCK	2
+
+//-------------------------------------------------------------
+//-- PRIMEIRO BLOCO -> Identificacao da Usina               ---
+//-------------------------------------------------------------
+DEFINE_BLOCK
+BLOCK_IDENT	****
+BLOCK_LENGTH 1
+NEXT_BLOCK 2
+
+DEFINE_DATA
+IdentBloco	STRING		1,12	****_Planta:
+Num		INTEGER		14,17
+END_DATA
+
+END_BLOCK
+//-------------------------------------------------------------
+//-- SEGUNDO BLOCO -> Dados da geracao                      ---
+//-------------------------------------------------------------
+DEFINE_BLOCK
+BLOCK_IDENT	YEAR
+
+DEFINE_HEADER
+YEAR BLK     1     2     3     4     5     6     7     8     9    10    11    12    13    14    15    16    17    18    19    20    21    22    23    24    25    26    27    28    29    30    31    32    33    34    35    36    37    38    39    40    41    42    43    44    45    46    47    48    49    50    51    52
+END_HEADER
+
+DEFINE_MACRO
+VAR	N	1,52
+END_MACRO
+
+DEFINE_DATA
+Ano		INTEGER		1,4
+Bloco		INTEGER		6,8
+Dado$(N)	REAL		9+8*($(N)-1),16+8*($(N)-1)
+END_DATA
+
+END_BLOCK
+
+END_MASK
+//---------------------------------------------------------------------
+//---------------------------------------------------------------------
+DEFINE_MASK MIXROWDATA SDDP_v10.2_vespme
+
+TOTAL_BLOCK	2
+
+//-------------------------------------------------------------
+//-- PRIMEIRO BLOCO -> Identificacao da Usina               ---
+//-------------------------------------------------------------
+DEFINE_BLOCK
+BLOCK_IDENT	****
+BLOCK_LENGTH 1
+NEXT_BLOCK 2
+
+DEFINE_DATA
+IdentBloco	STRING		1,12	****_Planta:
+Num		INTEGER		14,17
+Nome		STRING		19,30
+END_DATA
+
+END_BLOCK
+//-------------------------------------------------------------
+//-- SEGUNDO BLOCO -> Dados da geracao                      ---
+//-------------------------------------------------------------
+DEFINE_BLOCK
+BLOCK_IDENT	Year
+
+DEFINE_HEADER
+A~no ......1 ......2 ......3 ......4 ......5 ......6 ......7 ......8 ......9 .....10 .....11 .....12
+END_HEADER
+
+DEFINE_MACRO
+VAR	N	1,12
+END_MACRO
+
+DEFINE_DATA
+Ano		INTEGER		1,4
+Dado$(N)	REAL		5+8*($(N)-1),12+8*($(N)-1)
+END_DATA
+
+END_BLOCK
+
+END_MASK
+//---------------------------------------------------------------------
+//---------------------------------------------------------------------
+DEFINE_MASK MIXROWDATA SDDP_v10.2_vespse
+
+TOTAL_BLOCK	2
+
+//-------------------------------------------------------------
+//-- PRIMEIRO BLOCO -> Identificacao da Usina               ---
+//-------------------------------------------------------------
+DEFINE_BLOCK
+BLOCK_IDENT	****
+BLOCK_LENGTH 1
+NEXT_BLOCK 2
+
+DEFINE_DATA
+IdentBloco	STRING		1,12	****_Planta:
+Num		INTEGER		14,17
+Nome		STRING		19,30
+END_DATA
+
+END_BLOCK
+//-------------------------------------------------------------
+//-- SEGUNDO BLOCO -> Dados da geracao                      ---
+//-------------------------------------------------------------
+DEFINE_BLOCK
+BLOCK_IDENT	Year
+
+DEFINE_HEADER
+A~no ......1 ......2 ......3 ......4 ......5 ......6 ......7 ......8 ......9 .....10 .....11 .....12 .....13 .....14 .....15 .....16 .....17 .....18 .....19 .....20 .....21 .....22 .....23 .....24 .....25 .....26 .....27 .....28 .....29 .....30 .....31 .....32 .....33 .....34 .....35 .....36 .....37 .....38 .....39 .....40 .....41 .....42 .....43 .....44 .....45 .....46 .....47 .....48 .....49 .....50 .....51 .....52
+END_HEADER
+
+DEFINE_MACRO
+VAR	N	1,52
+END_MACRO
+
+DEFINE_DATA
+Ano		INTEGER		1,4
+Dado$(N)	REAL		5+8*($(N)-1),12+8*($(N)-1)
+END_DATA
+
+END_BLOCK
+
+END_MASK
+
+//---------------------------------------------------------------------
+//---------------------------------------------------------------------
+DEFINE_MASK MIXROWDATA SDDP_v10.2_vminme
+
+TOTAL_BLOCK	2
+
+//-------------------------------------------------------------
+//-- PRIMEIRO BLOCO -> Identificacao da Usina               ---
+//-------------------------------------------------------------
+DEFINE_BLOCK
+BLOCK_IDENT	****
+BLOCK_LENGTH 1
+NEXT_BLOCK 2
+
+DEFINE_DATA
+IdentBloco		STRING		1,12	****_Planta:
+Num			INTEGER		14,17
+Nome			STRING		19,30
+IdentPenal		STRING		32,37	Penal:
+VolMinPenalty		REAL		38,50	AUTOSET(model.parm("VolMinPenalty"))
+END_DATA
+
+END_BLOCK
+//-------------------------------------------------------------
+//-- SEGUNDO BLOCO -> Dados da geracao                      ---
+//-------------------------------------------------------------
+DEFINE_BLOCK
+BLOCK_IDENT	Year
+
+DEFINE_HEADER
+A~no ......1 ......2 ......3 ......4 ......5 ......6 ......7 ......8 ......9 .....10 .....11 .....12
+END_HEADER
+
+DEFINE_MACRO
+VAR	N	1,12
+END_MACRO
+
+DEFINE_DATA
+Ano		INTEGER		1,4
+Dado$(N)	REAL		5+8*($(N)-1),12+8*($(N)-1)
+END_DATA
+
+END_BLOCK
+
+END_MASK
+//---------------------------------------------------------------------
+//---------------------------------------------------------------------
+DEFINE_MASK MIXROWDATA SDDP_v10.2_vminse
+
+TOTAL_BLOCK	2
+
+//-------------------------------------------------------------
+//-- PRIMEIRO BLOCO -> Identificacao da Usina               ---
+//-------------------------------------------------------------
+DEFINE_BLOCK
+BLOCK_IDENT	****
+BLOCK_LENGTH 1
+NEXT_BLOCK 2
+
+DEFINE_DATA
+IdentBloco		STRING		1,12	****_Planta:
+Num			INTEGER		14,17
+Nome			STRING		19,30
+IdentPenal		STRING		32,37	Penal:
+VolMinPenalty		REAL		38,50	AUTOSET(model.parm("VolMinPenalty"))
+END_DATA
+
+END_BLOCK
+//-------------------------------------------------------------
+//-- SEGUNDO BLOCO -> Dados da geracao                      ---
+//-------------------------------------------------------------
+DEFINE_BLOCK
+BLOCK_IDENT	Year
+
+DEFINE_HEADER
+A~no ......1 ......2 ......3 ......4 ......5 ......6 ......7 ......8 ......9 .....10 .....11 .....12 .....13 .....14 .....15 .....16 .....17 .....18 .....19 .....20 .....21 .....22 .....23 .....24 .....25 .....26 .....27 .....28 .....29 .....30 .....31 .....32 .....33 .....34 .....35 .....36 .....37 .....38 .....39 .....40 .....41 .....42 .....43 .....44 .....45 .....46 .....47 .....48 .....49 .....50 .....51 .....52
+END_HEADER
+
+DEFINE_MACRO
+VAR	N	1,52
+END_MACRO
+
+DEFINE_DATA
+Ano		INTEGER		1,4
+Dado$(N)	REAL		5+8*($(N)-1),12+8*($(N)-1)
+END_DATA
+
+END_BLOCK
+
+END_MASK
+//---------------------------------------------------------------------
+//---------------------------------------------------------------------
+DEFINE_MASK MIXROWDATA SDDP_v10.2_vmxome
+
+TOTAL_BLOCK	2
+
+//-------------------------------------------------------------
+//-- PRIMEIRO BLOCO -> Identificacao da Usina               ---
+//-------------------------------------------------------------
+DEFINE_BLOCK
+BLOCK_IDENT	****
+BLOCK_LENGTH 1
+NEXT_BLOCK 2
+
+DEFINE_DATA
+IdentBloco		STRING		1,12	****_Planta:
+Num			INTEGER		14,17
+Nome			STRING		19,30
+IdentPenal		STRING		32,37	Penal:
+VolMinPenalty		REAL		38,50	AUTOSET(model.parm("VolMaxPenalty"))
+END_DATA
+
+END_BLOCK
+//-------------------------------------------------------------
+//-- SEGUNDO BLOCO -> Dados da geracao                      ---
+//-------------------------------------------------------------
+DEFINE_BLOCK
+BLOCK_IDENT	Year
+
+DEFINE_HEADER
+A~no ......1 ......2 ......3 ......4 ......5 ......6 ......7 ......8 ......9 .....10 .....11 .....12
+END_HEADER
+
+DEFINE_MACRO
+VAR	N	1,12
+END_MACRO
+
+DEFINE_DATA
+Ano		INTEGER		1,4
+Dado$(N)	REAL		5+8*($(N)-1),12+8*($(N)-1)
+END_DATA
+
+END_BLOCK
+
+END_MASK
+//---------------------------------------------------------------------
+//---------------------------------------------------------------------
+DEFINE_MASK MIXROWDATA SDDP_v10.2_vmxose
+
+TOTAL_BLOCK	2
+
+//-------------------------------------------------------------
+//-- PRIMEIRO BLOCO -> Identificacao da Usina               ---
+//-------------------------------------------------------------
+DEFINE_BLOCK
+BLOCK_IDENT	****
+BLOCK_LENGTH 1
+NEXT_BLOCK 2
+
+DEFINE_DATA
+IdentBloco		STRING		1,12	****_Planta:
+Num			INTEGER		14,17
+Nome			STRING		19,30
+IdentPenal		STRING		32,37	Penal:
+VolMinPenalty		REAL		38,50	AUTOSET(model.parm("VolMaxPenalty"))
+END_DATA
+
+END_BLOCK
+//-------------------------------------------------------------
+//-- SEGUNDO BLOCO -> Dados da geracao                      ---
+//-------------------------------------------------------------
+DEFINE_BLOCK
+BLOCK_IDENT	Year
+
+DEFINE_HEADER
+A~no ......1 ......2 ......3 ......4 ......5 ......6 ......7 ......8 ......9 .....10 .....11 .....12 .....13 .....14 .....15 .....16 .....17 .....18 .....19 .....20 .....21 .....22 .....23 .....24 .....25 .....26 .....27 .....28 .....29 .....30 .....31 .....32 .....33 .....34 .....35 .....36 .....37 .....38 .....39 .....40 .....41 .....42 .....43 .....44 .....45 .....46 .....47 .....48 .....49 .....50 .....51 .....52
+END_HEADER
+
+DEFINE_MACRO
+VAR	N	1,52
+END_MACRO
+
+DEFINE_DATA
+Ano		INTEGER		1,4
+Dado$(N)	REAL		5+8*($(N)-1),12+8*($(N)-1)
+END_DATA
+
+END_BLOCK
+
+END_MASK
+//---------------------------------------------------------------------
+//---------------------------------------------------------------------
+DEFINE_MASK MIXROWDATA SDDP_v10.2_valeme
+
+TOTAL_BLOCK	2
+
+//-------------------------------------------------------------
+//-- PRIMEIRO BLOCO -> Identificacao da Usina               ---
+//-------------------------------------------------------------
+DEFINE_BLOCK
+BLOCK_IDENT	****
+BLOCK_LENGTH 1
+NEXT_BLOCK 2
+
+DEFINE_DATA
+IdentBloco		STRING		1,12	****_Planta:
+Num			INTEGER		14,17
+Nome			STRING		19,30
+IdentPenal		STRING		32,37	Penal:
+AlertStoragePenalty	REAL		38,50	AUTOSET(model.parm("AlertStoragePenalty"))
+END_DATA
+
+END_BLOCK
+//-------------------------------------------------------------
+//-- SEGUNDO BLOCO -> Dados da geracao                      ---
+//-------------------------------------------------------------
+DEFINE_BLOCK
+BLOCK_IDENT	Year
+
+DEFINE_HEADER
+A~no ......1 ......2 ......3 ......4 ......5 ......6 ......7 ......8 ......9 .....10 .....11 .....12
+END_HEADER
+
+DEFINE_MACRO
+VAR	N	1,12
+END_MACRO
+
+DEFINE_DATA
+Ano		INTEGER		1,4
+Dado$(N)	REAL		5+8*($(N)-1),12+8*($(N)-1)
+END_DATA
+
+END_BLOCK
+
+END_MASK
+//---------------------------------------------------------------------
+//---------------------------------------------------------------------
+DEFINE_MASK MIXROWDATA SDDP_v10.2_valese
+
+TOTAL_BLOCK	2
+
+//-------------------------------------------------------------
+//-- PRIMEIRO BLOCO -> Identificacao da Usina               ---
+//-------------------------------------------------------------
+DEFINE_BLOCK
+BLOCK_IDENT	****
+BLOCK_LENGTH 1
+NEXT_BLOCK 2
+
+DEFINE_DATA
+IdentBloco		STRING		1,12	****_Planta:
+Num			INTEGER		14,17
+Nome			STRING		19,30
+IdentPenal		STRING		32,37	Penal:
+AlertStoragePenalty	REAL		38,50	AUTOSET(model.parm("AlertStoragePenalty"))
+END_DATA
+
+END_BLOCK
+//-------------------------------------------------------------
+//-- SEGUNDO BLOCO -> Dados da geracao                      ---
+//-------------------------------------------------------------
+DEFINE_BLOCK
+BLOCK_IDENT	Year
+
+DEFINE_HEADER
+A~no ......1 ......2 ......3 ......4 ......5 ......6 ......7 ......8 ......9 .....10 .....11 .....12 .....13 .....14 .....15 .....16 .....17 .....18 .....19 .....20 .....21 .....22 .....23 .....24 .....25 .....26 .....27 .....28 .....29 .....30 .....31 .....32 .....33 .....34 .....35 .....36 .....37 .....38 .....39 .....40 .....41 .....42 .....43 .....44 .....45 .....46 .....47 .....48 .....49 .....50 .....51 .....52
+END_HEADER
+
+DEFINE_MACRO
+VAR	N	1,52
+END_MACRO
+
+DEFINE_DATA
+Ano		INTEGER		1,4
+Dado$(N)	REAL		5+8*($(N)-1),12+8*($(N)-1)
+END_DATA
+
+END_BLOCK
+END_MASK
+//---------------------------------------------------------------------
+DEFINE_MASK MIXROWDATA SDDP_v10.2_rrme
+
+TOTAL_BLOCK	3
+
+//-------------------------------------------------------------
+//-- PRIMEIRO BLOCO -> Atributos da Reserva de geracao      ---
+//-------------------------------------------------------------
+DEFINE_BLOCK
+BLOCK_IDENT	Tipo_Info
+BLOCK_LENGTH 2
+NEXT_BLOCK 2
+
+DEFINE_DATA
+Info		INTEGER		14,18
+END_DATA
+
+END_BLOCK
+
+
+//-------------------------------------------------------------
+//-- SEGUNDO BLOCO -> Identificacao da Usina               ---
+//-------------------------------------------------------------
+DEFINE_BLOCK
+BLOCK_IDENT	****
+BLOCK_LENGTH 1
+NEXT_BLOCK 3
+
+DEFINE_DATA
+IdentBloco		STRING		1,12	****_Planta:
+Num			INTEGER		14,17
+Nome			STRING		19,30
+TipoUsina		STRING		38,38
+END_DATA
+END_BLOCK
+//-------------------------------------------------------------
+//-- TERCEIRO BLOCO -> Dados da geracao                      ---
+//-------------------------------------------------------------
+DEFINE_BLOCK
+BLOCK_IDENT	Year
+
+DEFINE_HEADER
+A~no Blk ......1 ......2 ......3 ......4 ......5 ......6 ......7 ......8 ......9 .....10 .....11 .....12
+END_HEADER
+
+DEFINE_MACRO
+VAR	N	1,12
+END_MACRO
+
+DEFINE_DATA
+Ano		INTEGER		1,4
+Bloco		INTEGER		6,8
+Dado$(N)	REAL		9+8*($(N)-1),16+8*($(N)-1)
+END_DATA
+
+END_BLOCK
+
+END_MASK
+//---------------------------------------------------------------------
+DEFINE_MASK MIXROWDATA SDDP_v10.2_rrse
+
+TOTAL_BLOCK	3
+
+//-------------------------------------------------------------
+//-- PRIMEIRO BLOCO -> Atributos da Reserva de geracao      ---
+//-------------------------------------------------------------
+DEFINE_BLOCK
+BLOCK_IDENT	Tipo_Info
+BLOCK_LENGTH 2
+NEXT_BLOCK 2
+
+DEFINE_DATA
+Info		INTEGER		14,18
+END_DATA
+
+END_BLOCK
+
+
+//-------------------------------------------------------------
+//-- SEGUNDO BLOCO -> Identificacao da Usina               ---
+//-------------------------------------------------------------
+DEFINE_BLOCK
+BLOCK_IDENT	****
+BLOCK_LENGTH 1
+NEXT_BLOCK 3
+
+DEFINE_DATA
+IdentBloco		STRING		1,12	****_Planta:
+Num			INTEGER		14,17
+Nome			STRING		19,30
+TipoUsina		STRING		38,38
+END_DATA
+END_BLOCK
+//-------------------------------------------------------------
+//-- TERCEIRO BLOCO -> Dados da geracao                      ---
+//-------------------------------------------------------------
+DEFINE_BLOCK
+BLOCK_IDENT	Year
+
+DEFINE_HEADER
+A~no Blk ......1 ......2 ......3 ......4 ......5 ......6 ......7 ......8 ......9 .....10 .....11 .....12 .....13 .....14 .....15 .....16 .....17 .....18 .....19 .....20 .....21 .....22 .....23 .....24 .....25 .....26 .....27 .....28 .....29 .....30 .....31 .....32 .....33 .....34 .....35 .....36 .....37 .....38 .....39 .....40 .....41 .....42 .....43 .....44 .....45 .....46 .....47 .....48 .....49 .....50 .....51 .....52
+END_HEADER
+
+DEFINE_MACRO
+VAR	N	1,52
+END_MACRO
+
+DEFINE_DATA
+Ano		INTEGER		1,4
+Bloco		INTEGER		6,8
+Dado$(N)	REAL		9+8*($(N)-1),16+8*($(N)-1)
+END_DATA
+
+END_BLOCK
+
+END_MASK
+
+
+//---------------------------------------------------------------------
+//---------------------------------------------------------------------
+DEFINE_MASK MIXROWDATA SDDP_v10.2_mntome
+
+TOTAL_BLOCK	2
+
+//-------------------------------------------------------------
+//-- PRIMEIRO BLOCO -> Identificacao da Usina               ---
+//-------------------------------------------------------------
+DEFINE_BLOCK
+BLOCK_IDENT	****
+BLOCK_LENGTH 1
+NEXT_BLOCK 2
+
+DEFINE_DATA
+IdentBloco		STRING		1,12	****_Planta:
+Num			INTEGER		14,17
+Nome			STRING		19,30
+IdentPenal		STRING		32,37	Penal:
+MinTOPenalty		REAL		38,50	AUTOSET(model.parm("MinTOPenalty"))
+END_DATA
+
+END_BLOCK
+//-------------------------------------------------------------
+//-- SEGUNDO BLOCO -> Dados                                 ---
+//-------------------------------------------------------------
+DEFINE_BLOCK
+BLOCK_IDENT	Year
+
+DEFINE_HEADER
+A~no ......1 ......2 ......3 ......4 ......5 ......6 ......7 ......8 ......9 .....10 .....11 .....12
+END_HEADER
+
+DEFINE_MACRO
+VAR	N	1,12
+END_MACRO
+
+DEFINE_DATA
+Ano		INTEGER		1,4
+Dado$(N)	REAL		5+8*($(N)-1),12+8*($(N)-1)
+END_DATA
+
+END_BLOCK
+
+END_MASK
+//---------------------------------------------------------------------
+//---------------------------------------------------------------------
+DEFINE_MASK MIXROWDATA SDDP_v10.2_mntose
+
+TOTAL_BLOCK	2
+
+//-------------------------------------------------------------
+//-- PRIMEIRO BLOCO -> Identificacao da Usina               ---
+//-------------------------------------------------------------
+DEFINE_BLOCK
+BLOCK_IDENT	****
+BLOCK_LENGTH 1
+NEXT_BLOCK 2
+
+DEFINE_DATA
+IdentBloco		STRING		1,12	****_Planta:
+Num			INTEGER		14,17
+Nome			STRING		19,30
+IdentPenal		STRING		32,37	Penal:
+MinTOPenalty		REAL		38,50	AUTOSET(model.parm("MinTOPenalty"))
+END_DATA
+
+END_BLOCK
+//-------------------------------------------------------------
+//-- SEGUNDO BLOCO -> Dados                                 ---
+//-------------------------------------------------------------
+DEFINE_BLOCK
+BLOCK_IDENT	Year
+
+DEFINE_HEADER
+A~no ......1 ......2 ......3 ......4 ......5 ......6 ......7 ......8 ......9 .....10 .....11 .....12 .....13 .....14 .....15 .....16 .....17 .....18 .....19 .....20 .....21 .....22 .....23 .....24 .....25 .....26 .....27 .....28 .....29 .....30 .....31 .....32 .....33 .....34 .....35 .....36 .....37 .....38 .....39 .....40 .....41 .....42 .....43 .....44 .....45 .....46 .....47 .....48 .....49 .....50 .....51 .....52
+END_HEADER
+
+DEFINE_MACRO
+VAR	N	1,52
+END_MACRO
+
+DEFINE_DATA
+Ano		INTEGER		1,4
+Dado$(N)	REAL		5+8*($(N)-1),12+8*($(N)-1)
+END_DATA
+
+END_BLOCK
+
+END_MASK
+//---------------------------------------------------------------------
+//---------------------------------------------------------------------
+DEFINE_MASK MIXROWDATA SDDP_v10.2_mxtome
+
+TOTAL_BLOCK	2
+
+//-------------------------------------------------------------
+//-- PRIMEIRO BLOCO -> Identificacao da Usina               ---
+//-------------------------------------------------------------
+DEFINE_BLOCK
+BLOCK_IDENT	****
+BLOCK_LENGTH 1
+NEXT_BLOCK 2
+
+DEFINE_DATA
+IdentBloco		STRING		1,12	****_Planta:
+Num			INTEGER		14,17
+Nome			STRING		19,30
+IdentPenal		STRING		32,37	Penal:
+MaxTOPenalty		REAL		38,50	AUTOSET(model.parm("MaxTOPenalty"))
+END_DATA
+
+END_BLOCK
+//-------------------------------------------------------------
+//-- SEGUNDO BLOCO -> Dados                                 ---
+//-------------------------------------------------------------
+DEFINE_BLOCK
+BLOCK_IDENT	Year
+
+DEFINE_HEADER
+A~no ......1 ......2 ......3 ......4 ......5 ......6 ......7 ......8 ......9 .....10 .....11 .....12
+END_HEADER
+
+DEFINE_MACRO
+VAR	N	1,12
+END_MACRO
+
+DEFINE_DATA
+Ano		INTEGER		1,4
+Dado$(N)	REAL		5+8*($(N)-1),12+8*($(N)-1)
+END_DATA
+
+END_BLOCK
+
+END_MASK
+
+//---------------------------------------------------------------------
+//---------------------------------------------------------------------
+DEFINE_MASK MIXROWDATA SDDP_v10.2_mxtose
+
+TOTAL_BLOCK	2
+
+//-------------------------------------------------------------
+//-- PRIMEIRO BLOCO -> Identificacao da Usina               ---
+//-------------------------------------------------------------
+DEFINE_BLOCK
+BLOCK_IDENT	****
+BLOCK_LENGTH 1
+NEXT_BLOCK 2
+
+DEFINE_DATA
+IdentBloco		STRING		1,12	****_Planta:
+Num			INTEGER		14,17
+Nome			STRING		19,30
+IdentPenal		STRING		32,37	Penal:
+MaxTOPenalty		REAL		38,50	AUTOSET(model.parm("MaxTOPenalty"))
+END_DATA
+
+END_BLOCK
+//-------------------------------------------------------------
+//-- SEGUNDO BLOCO -> Dados                                 ---
+//-------------------------------------------------------------
+DEFINE_BLOCK
+BLOCK_IDENT	Year
+
+DEFINE_HEADER
+A~no ......1 ......2 ......3 ......4 ......5 ......6 ......7 ......8 ......9 .....10 .....11 .....12 .....13 .....14 .....15 .....16 .....17 .....18 .....19 .....20 .....21 .....22 .....23 .....24 .....25 .....26 .....27 .....28 .....29 .....30 .....31 .....32 .....33 .....34 .....35 .....36 .....37 .....38 .....39 .....40 .....41 .....42 .....43 .....44 .....45 .....46 .....47 .....48 .....49 .....50 .....51 .....52
+END_HEADER
+
+DEFINE_MACRO
+VAR	N	1,52
+END_MACRO
+
+DEFINE_DATA
+Ano		INTEGER		1,4
+Dado$(N)	REAL		5+8*($(N)-1),12+8*($(N)-1)
+END_DATA
+
+END_BLOCK
+
+END_MASK
+
+//---------------------------------------------------------------------
+//---------------------------------------------------------------------
+DEFINE_MASK MIXROWDATA SDDP_v10.2_mnspme
+
+TOTAL_BLOCK	2
+
+//-------------------------------------------------------------
+//-- PRIMEIRO BLOCO -> Identificacao da Usina               ---
+//-------------------------------------------------------------
+DEFINE_BLOCK
+BLOCK_IDENT	****
+BLOCK_LENGTH 1
+NEXT_BLOCK 2
+
+DEFINE_DATA
+IdentBloco		STRING		1,12	****_Planta:
+Num			INTEGER		14,17
+Nome			STRING		19,30
+IdentPenal		STRING		32,37	Penal:
+MinSpillagePenalty	REAL		38,50	AUTOSET(model.parm("MinSpillagePenalty"))
+END_DATA
+
+END_BLOCK
+//-------------------------------------------------------------
+//-- SEGUNDO BLOCO -> Dados                                 ---
+//-------------------------------------------------------------
+DEFINE_BLOCK
+BLOCK_IDENT	Year
+
+DEFINE_HEADER
+A~no ......1 ......2 ......3 ......4 ......5 ......6 ......7 ......8 ......9 .....10 .....11 .....12
+END_HEADER
+
+DEFINE_MACRO
+VAR	N	1,12
+END_MACRO
+
+DEFINE_DATA
+Ano		INTEGER		1,4
+Dado$(N)	REAL		5+8*($(N)-1),12+8*($(N)-1)
+END_DATA
+
+END_BLOCK
+
+END_MASK
+
+//---------------------------------------------------------------------
+//---------------------------------------------------------------------
+DEFINE_MASK MIXROWDATA SDDP_v10.2_mnspse
+
+TOTAL_BLOCK	2
+
+//-------------------------------------------------------------
+//-- PRIMEIRO BLOCO -> Identificacao da Usina               ---
+//-------------------------------------------------------------
+DEFINE_BLOCK
+BLOCK_IDENT	****
+BLOCK_LENGTH 1
+NEXT_BLOCK 2
+
+DEFINE_DATA
+IdentBloco		STRING		1,12	****_Planta:
+Num				INTEGER		14,17
+Nome			STRING		19,30
+IdentPenal		STRING		32,37	Penal:
+MinSpillagePenalty	REAL		38,50	AUTOSET(model.parm("MinSpillagePenalty"))
+END_DATA
+
+END_BLOCK
+//-------------------------------------------------------------
+//-- SEGUNDO BLOCO -> Dados                                 ---
+//-------------------------------------------------------------
+DEFINE_BLOCK
+BLOCK_IDENT	Year
+
+DEFINE_HEADER
+A~no ......1 ......2 ......3 ......4 ......5 ......6 ......7 ......8 ......9 .....10 .....11 .....12 .....13 .....14 .....15 .....16 .....17 .....18 .....19 .....20 .....21 .....22 .....23 .....24 .....25 .....26 .....27 .....28 .....29 .....30 .....31 .....32 .....33 .....34 .....35 .....36 .....37 .....38 .....39 .....40 .....41 .....42 .....43 .....44 .....45 .....46 .....47 .....48 .....49 .....50 .....51 .....52
+END_HEADER
+
+DEFINE_MACRO
+VAR	N	1,52
+END_MACRO
+
+DEFINE_DATA
+Ano		INTEGER		1,4
+Dado$(N)	REAL		5+8*($(N)-1),12+8*($(N)-1)
+END_DATA
+
+END_BLOCK
+
+END_MASK
+//---------------------------------------------------------------------
+//---------------------------------------------------------------------
+DEFINE_MASK MIXROWDATA SDDP_v10.2_mxtbme
+
+TOTAL_BLOCK	2
+
+//-------------------------------------------------------------
+//-- PRIMEIRO BLOCO -> Identificacao da Usina               ---
+//-------------------------------------------------------------
+DEFINE_BLOCK
+BLOCK_IDENT	****
+BLOCK_LENGTH 1
+NEXT_BLOCK 2
+
+DEFINE_DATA
+IdentBloco				STRING		1,12	****_Planta:
+Num						INTEGER		14,17
+Nome					STRING		19,30
+IdentPenal				STRING		32,37	Penal:
+MaxTurbiningPenalty		REAL		38,50	AUTOSET(model.parm("MaxTurbiningPenalty"))
+END_DATA
+
+END_BLOCK
+//-------------------------------------------------------------
+//-- SEGUNDO BLOCO -> Dados                                 ---
+//-------------------------------------------------------------
+DEFINE_BLOCK
+BLOCK_IDENT	Year
+
+DEFINE_HEADER
+A~no ......1 ......2 ......3 ......4 ......5 ......6 ......7 ......8 ......9 .....10 .....11 .....12
+END_HEADER
+
+DEFINE_MACRO
+VAR	N	1,12
+END_MACRO
+
+DEFINE_DATA
+Ano		INTEGER		1,4
+Dado$(N)	REAL		5+8*($(N)-1),12+8*($(N)-1)
+END_DATA
+
+END_BLOCK
+
+END_MASK
+
+//---------------------------------------------------------------------
+//---------------------------------------------------------------------
+DEFINE_MASK MIXROWDATA SDDP_v10.2_mxtbse
+
+TOTAL_BLOCK	2
+
+//-------------------------------------------------------------
+//-- PRIMEIRO BLOCO -> Identificacao da Usina               ---
+//-------------------------------------------------------------
+DEFINE_BLOCK
+BLOCK_IDENT	****
+BLOCK_LENGTH 1
+NEXT_BLOCK 2
+
+DEFINE_DATA
+IdentBloco				STRING		1,12	****_Planta:
+Num						INTEGER		14,17
+Nome					STRING		19,30
+IdentPenal				STRING		32,37	Penal:
+MaxTurbiningPenalty		REAL		38,50	AUTOSET(model.parm("MaxTurbiningPenalty"))
+END_DATA
+
+END_BLOCK
+//-------------------------------------------------------------
+//-- SEGUNDO BLOCO -> Dados                                 ---
+//-------------------------------------------------------------
+DEFINE_BLOCK
+BLOCK_IDENT	Year
+
+DEFINE_HEADER
+A~no ......1 ......2 ......3 ......4 ......5 ......6 ......7 ......8 ......9 .....10 .....11 .....12 .....13 .....14 .....15 .....16 .....17 .....18 .....19 .....20 .....21 .....22 .....23 .....24 .....25 .....26 .....27 .....28 .....29 .....30 .....31 .....32 .....33 .....34 .....35 .....36 .....37 .....38 .....39 .....40 .....41 .....42 .....43 .....44 .....45 .....46 .....47 .....48 .....49 .....50 .....51 .....52
+END_HEADER
+
+DEFINE_MACRO
+VAR	N	1,52
+END_MACRO
+
+DEFINE_DATA
+Ano		INTEGER		1,4
+Dado$(N)	REAL		5+8*($(N)-1),12+8*($(N)-1)
+END_DATA
+
+END_BLOCK
+
+END_MASK
+
+//---------------------------------------------------------------------
+//---------------------------------------------------------------------
+DEFINE_MASK MIXROWDATA SDDP_v10.2_riegme
+
+TOTAL_BLOCK	2
+
+//-------------------------------------------------------------
+//-- PRIMEIRO BLOCO -> Identificacao da Usina               ---
+//-------------------------------------------------------------
+DEFINE_BLOCK
+BLOCK_IDENT	NUM:
+BLOCK_LENGTH 1
+NEXT_BLOCK 2
+DEFINE_DATA
+IdentBloco		STRING		1,4	NUM:
+Num			INTEGER		5,8
+Nome			STRING		10,30
+IdentPenal		STRING		32,37	Penal:
+RiegPenalty		INTEGER		38,39	AUTOSET(model.parm("RiegPenalty"))
+RiegPenaltyValue	REAL		41,50	AUTOSET(model.parm("RiegPenaltyValue"))
+END_DATA
+
+END_BLOCK
+//-------------------------------------------------------------
+//-- SEGUNDO BLOCO -> Dados da geracao                      ---
+//-------------------------------------------------------------
+DEFINE_BLOCK
+BLOCK_IDENT	Year
+
+DEFINE_HEADER
+A~NO ....1 ....2 ....3 ....4 ....5 ....6 ....7 ....8 ....9 ...10 ...11 ...12
+END_HEADER
+
+DEFINE_MACRO
+VAR	N	1,12
+END_MACRO
+
+DEFINE_DATA
+Ano		INTEGER		1,4
+Dado$(N)	REAL		5+6*($(N)-1),10+6*($(N)-1)
+END_DATA
+
+END_BLOCK
+
+END_MASK
+//---------------------------------------------------------------------
+//---------------------------------------------------------------------
+DEFINE_MASK MIXROWDATA SDDP_v10.2_riegse
+
+TOTAL_BLOCK	2
+
+//-------------------------------------------------------------
+//-- PRIMEIRO BLOCO -> Identificacao da Usina               ---
+//-------------------------------------------------------------
+DEFINE_BLOCK
+BLOCK_IDENT	NUM:
+BLOCK_LENGTH 1
+NEXT_BLOCK 2
+DEFINE_DATA
+IdentBloco		STRING		1,4	NUM:
+Num			INTEGER		5,8
+Nome			STRING		10,30
+IdentPenal		STRING		32,37	Penal:
+RiegPenalty		INTEGER		38,39	AUTOSET(model.parm("RiegPenalty"))
+RiegPenaltyValue	REAL		41,50	AUTOSET(model.parm("RiegPenaltyValue"))
+END_DATA
+
+END_BLOCK
+//-------------------------------------------------------------
+//-- SEGUNDO BLOCO -> Dados da geracao                      ---
+//-------------------------------------------------------------
+DEFINE_BLOCK
+BLOCK_IDENT	Year
+
+DEFINE_HEADER
+A~NO ....1 ....2 ....3 ....4 ....5 ....6 ....7 ....8 ....9 ...10 ...11 ...12 ...13 ...14 ...15 ...16 ...17 ...18 ...19 ...20 ...21 ...22 ...23 ...24 ...25 ...26 ...27 ...28 ...29 ...30 ...31 ...32 ...33 ...34 ...35 ...36 ...37 ...38 ...39 ...40 ...41 ...42 ...43 ...44 ...45 ...46 ...47 ...48 ...49 ...50 ...51 ...52
+END_HEADER
+
+DEFINE_MACRO
+VAR	N	1,52
+END_MACRO
+
+DEFINE_DATA
+Ano		INTEGER		1,4
+Dado$(N)	REAL		5+6*($(N)-1),10+6*($(N)-1)
+END_DATA
+
+END_BLOCK
+
+END_MASK
+
+//---------------------------------------------------------------------
+//---------------------------------------------------------------------
+DEFINE_MASK ROWDATA SDDP_v10.2_csumcirc
+
+DEFINE_HEADER
+#Res (...Nome...) L.b.p1 U.b.p1 L.b.p2 U.b.p2 L.b.p3 U.b.p3 L.b.p4 U.b.p4 L.b.p5 U.b.p5 alfa01 c.01 alfa02 c.02 alfa03 c.03 alfa04 c.04 alfa05 c.05 alfa06 c.06 alfa07 c.07 alfa08 c.08 alfa09 c.09 alfa10 c.10 alfa11 c.11 alfa12 c.12 alfa13 c.13 alfa14 c.14 alfa15 c.15 alfa16 c.16 alfa17 c.17 alfa18 c.18 alfa19 c.19 alfa20 c.20
+END_HEADER
+
+DEFINE_MACRO
+VAR	N	1,25
+VAR	P	1,5
+END_MACRO
+
+
+DEFINE_DATA
+Num		INTEGER		1,4
+Nome		STRING		6,17
+Coef$(N)	REAL	        77+12*$(N),82+12*$(N)
+Code$(N)	INTEGER	        84+12*$(N),87+12*$(N)
+LB($(P))	REAL		5+14*$(P),10+14*$(P)	AUTOSET
+UB($(P))	REAL		12+14*$(P),17+14*$(P)	AUTOSET
+END_DATA
+
+END_MASK
+//---------------------------------------------------------------------
+//---------------------------------------------------------------------
+DEFINE_MASK ROWDATA SDDP_v10.2_csumcirc21
+
+DEFINE_HEADER
+#Res (...Nome...) L.b.p1 U.b.p1 L.b.p2 U.b.p2 L.b.p3 U.b.p3 L.b.p4 U.b.p4 L.b.p5 U.b.p5 alfa01 c.01 alfa02 c.02 alfa03 c.03 alfa04 c.04 alfa05 c.05 alfa06 c.06 alfa07 c.07 alfa08 c.08 alfa09 c.09 alfa10 c.10 alfa11 c.11 alfa12 c.12 alfa13 c.13 alfa14 c.14 alfa15 c.15 alfa16 c.16 alfa17 c.17 alfa18 c.18 alfa19 c.19 alfa20 c.20
+END_HEADER
+
+DEFINE_MACRO
+VAR	N	1,25
+VAR	P	1,5
+VAR	P2	6,21
+END_MACRO
+
+
+DEFINE_DATA
+Num		INTEGER		1,4
+Nome		STRING		6,17
+Coef$(N)	REAL	        77+12*$(N),82+12*$(N)
+Code$(N)	INTEGER	        84+12*$(N),87+12*$(N)
+LB($(P))	REAL		5+14*$(P),10+14*$(P)	AUTOSET
+UB($(P))	REAL		12+14*$(P),17+14*$(P)	AUTOSET
+LB($(P2))	REAL		19,24	AUTOSET
+UB($(P2))	REAL		26,31	AUTOSET
+END_DATA
+
+END_MASK
+
+//---------------------------------------------------------------------
+//---------------------------------------------------------------------
+DEFINE_MASK MIXROWDATA SDDP_v10.2_msumcirc
+
+TOTAL_BLOCK	2
+
+//-------------------------------------------------------------
+//-- PRIMEIRO BLOCO -> Identificacao da Data de Modificacao ---
+//-------------------------------------------------------------
+DEFINE_BLOCK
+BLOCK_IDENT	MOD
+BLOCK_LENGTH 1
+NEXT_BLOCK 2
+
+
+DEFINE_DATA
+IdentBloco	STRING		1,5	MOD:_
+Data		DATE		6,15	DD/MM/YYYY
+END_DATA
+
+END_BLOCK
+
+//-------------------------------------------------------------
+//-- SEGUNDO BLOCO -> Dados de Restricao                    ---
+//-------------------------------------------------------------
+DEFINE_BLOCK
+BLOCK_IDENT	#Res
+
+DEFINE_HEADER
+#Res (...Nome...) L.b.p1 U.b.p1 L.b.p2 U.b.p2 L.b.p3 U.b.p3 L.b.p4 U.b.p4 L.b.p5 U.b.p5
+END_HEADER
+
+DEFINE_MACRO
+VAR	P	1,5
+END_MACRO
+
+DEFINE_DATA
+Num		INTEGER		1,4
+Nome		STRING		6,17
+LB($(P))	REAL		5+14*$(P),10+14*$(P)	AUTOSET
+UB($(P))	REAL		12+14*$(P),17+14*$(P)	AUTOSET
+END_DATA
+
+END_BLOCK
+
+END_MASK
+//---------------------------------------------------------------------
+//---------------------------------------------------------------------
+DEFINE_MASK ROWDATA SDDP_v10.2_sisgas
+
+DEFINE_HEADER
+Code Name........ Id MVU/day MVU/day ...$/VU Type
+END_HEADER
+
+DEFINE_DATA
+Code		INTEGER	1	4
+Name		STRING	6	17
+SysId		STRING	51	52
+MinProd		REAL	22	28	AUTOSET
+MaxProd		REAL	30	36	AUTOSET
+ProdCost	REAL	38	44	AUTOSET
+Existing	INTEGER	46	49	AUTOSET
+END_DATA
+END_MASK
+//---------------------------------------------------------------------
+//---------------------------------------------------------------------
+DEFINE_MASK ROWDATA SDDP_v10.2_msisgas
+
+DEFINE_HEADER
+DD/MM/YYYY Code Name........ Id MVU/day MVU/day ...$/UV Type
+END_HEADER
+
+DEFINE_DATA
+Data		DATE	1	10	DD/MM/YYYY AUTOSET
+Code		INTEGER	12	15
+Name		STRING	17	28
+MinProd		REAL	33	39	AUTOSET
+MaxProd		REAL	41	47	AUTOSET
+ProdCost	REAL	49	55	AUTOSET
+Existing	INTEGER	57	60	AUTOSET
+END_DATA
+END_MASK
+//---------------------------------------------------------------------
+//---------------------------------------------------------------------
+DEFINE_MASK ROWDATA SDDP_v10.2_intgas
+
+DEFINE_HEADER
+.Num NomeGasoduto SisO SisD MUV/d-> MUV/d<- Fper.-> Fper.<- ...$/UV Tipo        UnM
+END_HEADER
+
+DEFINE_DATA
+Code		INTEGER	1	4
+Name		STRING	6	17
+GasFrom		INTEGER	19	22
+GasTo		INTEGER	24	27
+Capacity->	REAL	29	35	AUTOSET
+Capacity<-	REAL	37	43	AUTOSET
+LossFactor->	REAL	45	51	AUTOSET
+LossFactor<-	REAL	53	59	AUTOSET
+TranspCost	REAL	61	67	AUTOSET
+Existing	INTEGER	69	72	AUTOSET
+UnM		STRING	81	83	AUTOSET(model.parm("UnM"))
+END_DATA
+END_MASK
+//---------------------------------------------------------------------
+//---------------------------------------------------------------------
+DEFINE_MASK ROWDATA SDDP_v10.2_mintgas
+
+DEFINE_HEADER
+DD/MM/AAAA .Num NomeGasoduto SisO SisD MUV/d-> MUV/d<- Fper.-> Fper.<- ...$/UV
+END_HEADER
+
+DEFINE_DATA
+Data		DATE	1	10	DD/MM/YYYY AUTOSET
+Code		INTEGER	12	15
+Name		STRING	17	28
+GasFrom		INTEGER	30	33
+GasTo		INTEGER	35	38
+Capacity->	REAL	40	46	AUTOSET
+Capacity<-	REAL	48	54	AUTOSET
+LossFactor->	REAL	56	62	AUTOSET
+LossFactor<-	REAL	64	70	AUTOSET
+TranspCost	REAL	72	78	AUTOSET
+Existing	INTEGER	80	80	AUTOSET
+END_DATA
+END_MASK
+
+//---------------------------------------------------------------------
+//---------------------------------------------------------------------
+
+DEFINE_MASK CSVDATA SDDP_v14.0_hrbmap
+
+DEFINE_HEADER
+!Year,Week,Hour,LoadLevel
+END_HEADER
+DEFINE_DATA
+Year		INTEGER,1
+Stage		INTEGER,2
+Hour		INTEGER,3
+LoadLevel	INTEGER,4
+END_DATA
+END_MASK
+
+//---------------------------------------------------------------------
+//---------------------------------------------------------------------
+DEFINE_MASK ROWDATA SDDP_dbusF
+
+DEFINE_HEADER
+SF CodBF ...NomeBF... .....ST..... ...NomeBT...
+END_HEADER
+
+DEFINE_DATA
+SystemIdFrom	STRING		1,2
+BusCodFrom	INTEGER		4,8
+SystemNameTo	STRING		23,34
+BusNameTo	STRING		36,47
+END_DATA
+
+END_MASK
+//---------------------------------------------------------------------
+//---------------------------------------------------------------------
+DEFINE_MASK ROWDATA SDDP_chidroTopol
+
+DEFINE_HEADER
+SF CodF ...NomeF.... T .....ST..... ...NomeT....
+END_HEADER
+
+DEFINE_DATA
+SystemIdFrom	STRING		1,2
+HydroCodFrom	INTEGER		4,7
+CnxType		STRING		22,22
+SystemNameTo	STRING		24,35
+HydroNameTo	STRING		37,48
+
+END_DATA
+
+END_MASK
+DEFINE_MASK ROWDATA GEOREFERENCE:Bus
+
+DEFINE_HEADER
+ .NUM ...........Latidude ..........Longitude
+END_HEADER
+
+DEFINE_DATA
+Num		INTEGER		1,5
+Latitude	REAL		7,25	AUTOSET
+Longitude	REAL	        27,45	AUTOSET
+END_DATA
+
+END_MASK
+
+DEFINE_MASK ROWDATA GEOREFERENCE:Circuit
+
+DEFINE_HEADER
+COD #BOR.   #BDE. ...........Latidude ..........Longitude
+END_HEADER
+
+DEFINE_DATA
+Cod		INTEGER		1,4
+From		INTEGER		6,11
+To		INTEGER		12,16
+Latitude	REAL		18,36	AUTOSET
+Longitude	REAL	        38,56	AUTOSET
+END_DATA
+
+END_MASK
+//---------------------------------------------------------------------
+//---------------------------------------------------------------------
+DEFINE_MASK CSVDATA SDDP_v14.0_cbattery
+
+DEFINE_HEADER
+$version 1
+!Num,Name,Bus,Type,Amin,Amax,Ainic,Pot,RC,RD,STR,Flg,ChargeRamp,DischargeRamp
+END_HEADER
+
+DEFINE_DATA
+Code		INTEGER,1
+Nome		STRING,2
+Bus		INTEGER,3
+Existing	INTEGER,4 AUTOSET
+Emin		REAL,5 AUTOSET
+Emax		REAL,6 AUTOSET
+Einic		REAL,7 AUTOSET(model.parm("Einic"))
+Pmax		REAL,8 AUTOSET
+ChargeEffic	REAL,9 AUTOSET
+DischargeEffic	REAL,10 AUTOSET
+RegTime		INTEGER,11 AUTOSET(model.parm("RegTime"))
+FlagInterStage	INTEGER,12 AUTOSET(model.parm("FlagInterStage"))
+ChargeRamp	REAL,13 AUTOSET(model.parm("ChargeRamp"))
+DischargeRamp	REAL,14 AUTOSET(model.parm("DischargeRamp"))
+END_DATA
+
+END_MASK
+
+//---------------------------------------------------------------------
+//---------------------------------------------------------------------
+DEFINE_MASK CSVDATA SDDP_v14.0_mbattery
+
+DEFINE_HEADER
+$version 1
+!Year,Month,Day,Num,Name,Bus,Type,Amin,Amax,Ainic,Pot,RC,RD,STR,Flg
+END_HEADER
+
+DEFINE_DATA
+Ano		INTEGER,1
+Mes		INTEGER,2
+Dia		INTEGER,3
+Code		INTEGER,4
+Nome		STRING,5
+Bus		INTEGER,6
+Existing	INTEGER,7 AUTOSET
+Emin		REAL,8 AUTOSET
+Emax		REAL,9 AUTOSET
+Einic		REAL,10
+Pmax		REAL,11 AUTOSET
+ChargeEffic	REAL,12 AUTOSET
+DischargeEffic	REAL,13 AUTOSET
+RegTime		INTEGER,14
+FlagInterStage	INTEGER,15
+END_DATA
+
+END_MASK
+//---------------------------------------------------------------------
+//---------------------------------------------------------------------
+DEFINE_MASK CSVDATA SDDP_v14.0_opectr
+
+DEFINE_HEADER
+$version=1
+!Code,Name........,RampUp,RampDown,MinUptime,MinDowntime,MaxStartUps,MaxShutDowns, TdR
+END_HEADER
+
+DEFINE_DATA
+Code		INTEGER,1
+Name		STRING,2
+RampUp		REAL,3 AUTOSET(model.parm("RampUp"))
+RampDown	REAL,4 AUTOSET(model.parm("RampDown"))
+MinUptime	REAL,5 AUTOSET(model.parm("MinUptime"))
+MinDowntime	REAL,6 AUTOSET(model.parm("MinDowntime"))
+MaxStartUps	INTEGER,7 AUTOSET(model.parm("MaxStartUps"))
+MaxShutDowns	INTEGER,8 AUTOSET(model.parm("MaxShutDowns"))
+ShutDownCost	REAL,9 AUTOSET(model.parm("ShutDownCost"))
+
+END_DATA
+
+END_MASK
+//---------------------------------------------------------------------
+//---------------------------------------------------------------------
+DEFINE_MASK CSVDATA SDDP_v14.0_cpinj
+
+DEFINE_HEADER
+$version=1
+!code,name,bus
+END_HEADER
+
+DEFINE_DATA
+Code		INTEGER,1
+Nome		STRING,2
+Bus		INTEGER,3
+END_DATA
+
+END_MASK
+//---------------------------------------------------------------------
+//---------------------------------------------------------------------
+DEFINE_MASK CSVDATA SDDP_gndsite_v1.0
+
+DEFINE_HEADER
+$version=1
+!Code,Name
+END_HEADER
+
+DEFINE_DATA
+Code		INTEGER,1
+Name		STRING,2
+END_DATA
+
+END_MASK
+//---------------------------------------------------------------------
+//---------------------------------------------------------------------
+DEFINE_MASK ROWDATA SDDP_fuecnt
+
+DEFINE_HEADER
+!Num Nome........ Comb Custo... Tipo d1/m1/yy01 d2/m2/yy02 nrep cnt.min. cnt.max. cnt.ini. disp.max traf.max CustoToP
+END_HEADER
+DEFINE_DATA
+Num			INTEGER	1,4
+Nome			STRING	6,17
+Comb			INTEGER	19,22
+ExtraTakeOrPayCost	REAL  24,31 AUTOSET(model.parm("ExtraTakeOrPayCost"))
+Type			INTEGER	33,36 AUTOSET(model.parm("Type"))
+InitialDate		DATE 38,47 DD/MM/YYYY AUTOSET(model.parm("InitialDate"))
+FinalDate		DATE 49,58 DD/MM/YYYY AUTOSET(model.parm("FinalDate"))
+NumberRenewals  	INTEGER 60,63 AUTOSET(model.parm("NumberRenewals"))
+TakeOrPayAmount  	REAL 65,72 AUTOSET(model.parm("TakeOrPayAmount"))
+ContractedAmount  	REAL 74,81 AUTOSET(model.parm("ContractedAmount"))
+ConsumedAmount  	REAL 83,90 AUTOSET(model.parm("ConsumedAmount"))
+MaxOfftakeRate		REAL  92,99 AUTOSET(model.parm("MaxOfftakeRate"))
+MaxTransferRenewal	REAL  101,108 AUTOSET(model.parm("MaxTransferRenewal"))
+TakeOrPayCost		REAL  110,117 AUTOSET(model.parm("TakeOrPayCost"))
+END_DATA
+
+END_MASK
+
+//---------------------------------------------------------------------
+//---------------------------------------------------------------------
+DEFINE_MASK ROWDATA SDDP_fcterm
+
+DEFINE_HEADER
+!CC. UTE.
+END_HEADER
+DEFINE_DATA
+NumContract	INTEGER	1,4
+NumPlant	INTEGER	5,9
+END_DATA
+
+END_MASK
+
+//---------------------------------------------------------------------
+//---------------------------------------------------------------------
+DEFINE_MASK ROWDATA SDDP_cfuere
+
+DEFINE_HEADER
+!Num Nome........ Comb Rcmax... Rcini... Inj.max. Ret.max.
+END_HEADER
+DEFINE_DATA
+Num			INTEGER	1,4
+Nome			STRING	6,17
+Comb			INTEGER	19,22
+MaxCapacity		REAL  24,31 AUTOSET
+InitialCondition	REAL  33,40 AUTOSET(model.parm("InitialCondition"))
+MaxInjection		REAL  42,49 AUTOSET(model.parm("MaxInjection"))
+MaxWithdrawal		REAL  51,58 AUTOSET(model.parm("MaxWithdrawal"))
+END_DATA
+
+END_MASK
+
+//---------------------------------------------------------------------
+//---------------------------------------------------------------------
+DEFINE_MASK MIXROWDATA SDDP_mfuere
+TOTAL_BLOCK	2
+
+//-------------------------------------------------------------
+//-- PRIMEIRO BLOCO -> Identificacao da Data de Modificacao ---
+//-------------------------------------------------------------
+DEFINE_BLOCK
+BLOCK_IDENT	MOD
+BLOCK_LENGTH 1
+NEXT_BLOCK 2
+
+
+DEFINE_DATA
+IdentBloco	STRING		1,5	MOD:_
+Data		DATE		6,15	DD/MM/YYYY
+END_DATA
+
+END_BLOCK
+
+//-------------------------------------------------------------
+//-- SEGUNDO BLOCO -> Dados do reservatorio                 ---
+//-------------------------------------------------------------
+DEFINE_BLOCK
+BLOCK_IDENT	!Num
+
+DEFINE_HEADER
+!Num Nome........ Comb Rcmax... Rcini... Inj.max. Ret.max.
+END_HEADER
+DEFINE_DATA
+Num			INTEGER	1,4
+Nome			STRING	6,17
+Comb			INTEGER	19,22
+MaxCapacity		REAL  24,31 AUTOSET
+END_DATA
+
+END_BLOCK
+
+END_MASK
+//---------------------------------------------------------------------
+//---------------------------------------------------------------------
+DEFINE_MASK ROWDATA SDDP_frterm
+
+DEFINE_HEADER
+!RC. UTE.
+END_HEADER
+DEFINE_DATA
+NumReservoir	INTEGER	1,4
+NumPlant	INTEGER	5,9
+END_DATA
+
+END_MASK
+//---------------------------------------------------------------------
+//---------------------------------------------------------------------
+DEFINE_MASK ROWDATA SDDP_fcfres
+
+DEFINE_HEADER
+!CC. .RC.
+END_HEADER
+DEFINE_DATA
+NumContract	INTEGER	1,4
+NumReservoir	INTEGER	6,9
+END_DATA
+
+END_MASK
+//---------------------------------------------------------------------
+//---------------------------------------------------------------------
+DEFINE_MASK MIXROWDATA SDDP_fccsme
+
+TOTAL_BLOCK	2
+
+//-------------------------------------------------------------
+//-- PRIMEIRO BLOCO -> Identificacao da Fuel                ---
+//-------------------------------------------------------------
+DEFINE_BLOCK
+BLOCK_IDENT	****
+BLOCK_LENGTH 1
+NEXT_BLOCK 2
+
+DEFINE_DATA
+IdentBloco		STRING		1,12	**** Fuel:
+Num			INTEGER		14,17
+Nome			STRING		19,30
+END_DATA
+
+END_BLOCK
+//-------------------------------------------------------------
+//-- SEGUNDO BLOCO -> Dados                                 ---
+//-------------------------------------------------------------
+DEFINE_BLOCK
+BLOCK_IDENT	Year
+
+DEFINE_HEADER
+A~no ......1 ......2 ......3 ......4 ......5 ......6 ......7 ......8 ......9 .....10 .....11 .....12
+END_HEADER
+
+DEFINE_MACRO
+VAR	N	1,12
+END_MACRO
+
+DEFINE_DATA
+Ano		INTEGER		1,4
+Dado$(N)	REAL		5+8*($(N)-1),12+8*($(N)-1)
+END_DATA
+
+END_BLOCK
+
+END_MASK
+//---------------------------------------------------------------------
+//---------------------------------------------------------------------
+DEFINE_MASK MIXROWDATA SDDP_fccsse
+
+TOTAL_BLOCK	2
+
+//-------------------------------------------------------------
+//-- PRIMEIRO BLOCO -> Identificacao da Fuel                ---
+//-------------------------------------------------------------
+DEFINE_BLOCK
+BLOCK_IDENT	****
+BLOCK_LENGTH 1
+NEXT_BLOCK 2
+
+DEFINE_DATA
+IdentBloco		STRING		1,12	**** Fuel:
+Num			INTEGER		14,17
+Nome			STRING		19,30
+END_DATA
+
+END_BLOCK
+//-------------------------------------------------------------
+//-- SEGUNDO BLOCO -> Dados                                 ---
+//-------------------------------------------------------------
+DEFINE_BLOCK
+BLOCK_IDENT	Year
+
+DEFINE_HEADER
+A~no ......1 ......2 ......3 ......4 ......5 ......6 ......7 ......8 ......9 .....10 .....11 .....12 .....13 .....14 .....15 .....16 .....17 .....18 .....19 .....20 .....21 .....22 .....23 .....24 .....25 .....26 .....27 .....28 .....29 .....30 .....31 .....32 .....33 .....34 .....35 .....36 .....37 .....38 .....39 .....40 .....41 .....42 .....43 .....44 .....45 .....46 .....47 .....48 .....49 .....50 .....51 .....52
+END_HEADER
+
+DEFINE_MACRO
+VAR	N	1,52
+END_MACRO
+
+DEFINE_DATA
+Ano		INTEGER		1,4
+Dado$(N)	REAL		5+8*($(N)-1),12+8*($(N)-1)
+END_DATA
+
+END_BLOCK
+
+END_MASK
+//---------------------------------------------------------------------
+//---------------------------------------------------------------------
+DEFINE_MASK MIXROWDATA SDDP_ccme
+
+TOTAL_BLOCK	2
+
+//-------------------------------------------------------------
+//-- PRIMEIRO BLOCO -> Identificacao da Fuel                ---
+//-------------------------------------------------------------
+DEFINE_BLOCK
+BLOCK_IDENT	****
+BLOCK_LENGTH 1
+NEXT_BLOCK 2
+
+DEFINE_DATA
+IdentBloco	STRING		1,12	**** Fuel:
+Num		INTEGER		14,17
+Nome			STRING		19,30
+END_DATA
+
+END_BLOCK
+//-------------------------------------------------------------
+//-- SEGUNDO BLOCO -> Dados da geracao                      ---
+//-------------------------------------------------------------
+DEFINE_BLOCK
+BLOCK_IDENT	Year
+
+DEFINE_HEADER
+A~no Blk ......1 ......2 ......3 ......4 ......5 ......6 ......7 ......8 ......9 .....10 .....11 .....12
+END_HEADER
+
+DEFINE_MACRO
+VAR	N	1,12
+END_MACRO
+
+DEFINE_DATA
+Ano		INTEGER		1,4
+Bloco		INTEGER		6,8
+Dado$(N)	REAL		9+8*($(N)-1),16+8*($(N)-1)
+END_DATA
+
+END_BLOCK
+
+END_MASK
+//---------------------------------------------------------------------
+//---------------------------------------------------------------------
+DEFINE_MASK MIXROWDATA SDDP_ccse
+
+TOTAL_BLOCK	2
+
+//-------------------------------------------------------------
+//-- PRIMEIRO BLOCO -> Identificacao da Fuel                ---
+//-------------------------------------------------------------
+DEFINE_BLOCK
+BLOCK_IDENT	****
+BLOCK_LENGTH 1
+NEXT_BLOCK 2
+
+DEFINE_DATA
+IdentBloco	STRING		1,12	**** Fuel:
+Num		INTEGER		14,17
+Nome			STRING		19,30
+END_DATA
+
+END_BLOCK
+//-------------------------------------------------------------
+//-- SEGUNDO BLOCO -> Dados da geracao                      ---
+//-------------------------------------------------------------
+DEFINE_BLOCK
+BLOCK_IDENT	YEAR
+
+DEFINE_HEADER
+YEAR BLK     1     2     3     4     5     6     7     8     9    10    11    12    13    14    15    16    17    18    19    20    21    22    23    24    25    26    27    28    29    30    31    32    33    34    35    36    37    38    39    40    41    42    43    44    45    46    47    48    49    50    51    52
+END_HEADER
+
+DEFINE_MACRO
+VAR	N	1,52
+END_MACRO
+
+DEFINE_DATA
+Ano		INTEGER		1,4
+Bloco		INTEGER		6,8
+Dado$(N)	REAL		9+8*($(N)-1),16+8*($(N)-1)
+END_DATA
+
+END_BLOCK
+
+END_MASK
+//---------------------------------------------------------------------
+//---------------------------------------------------------------------
+DEFINE_MASK MIXROWDATA SDDP_rime
+
+TOTAL_BLOCK	2
+
+//-------------------------------------------------------------
+//-- PRIMEIRO BLOCO -> Identificacao da Fuel                ---
+//-------------------------------------------------------------
+DEFINE_BLOCK
+BLOCK_IDENT	****
+BLOCK_LENGTH 1
+NEXT_BLOCK 2
+
+DEFINE_DATA
+IdentBloco	STRING		1,12	**** Fuel:
+Num		INTEGER		14,17
+Nome			STRING		19,30
+END_DATA
+
+END_BLOCK
+//-------------------------------------------------------------
+//-- SEGUNDO BLOCO -> Dados da geracao                      ---
+//-------------------------------------------------------------
+DEFINE_BLOCK
+BLOCK_IDENT	Year
+
+DEFINE_HEADER
+A~no Blk ......1 ......2 ......3 ......4 ......5 ......6 ......7 ......8 ......9 .....10 .....11 .....12
+END_HEADER
+
+DEFINE_MACRO
+VAR	N	1,12
+END_MACRO
+
+DEFINE_DATA
+Ano		INTEGER		1,4
+Bloco		INTEGER		6,8
+Dado$(N)	REAL		9+8*($(N)-1),16+8*($(N)-1)
+END_DATA
+
+END_BLOCK
+
+END_MASK
+//---------------------------------------------------------------------
+//---------------------------------------------------------------------
+DEFINE_MASK MIXROWDATA SDDP_rise
+
+TOTAL_BLOCK	2
+
+//-------------------------------------------------------------
+//-- PRIMEIRO BLOCO -> Identificacao da Fuel                ---
+//-------------------------------------------------------------
+DEFINE_BLOCK
+BLOCK_IDENT	****
+BLOCK_LENGTH 1
+NEXT_BLOCK 2
+
+DEFINE_DATA
+IdentBloco	STRING		1,12	**** Fuel:
+Num		INTEGER		14,17
+Nome			STRING		19,30
+END_DATA
+
+END_BLOCK
+//-------------------------------------------------------------
+//-- SEGUNDO BLOCO -> Dados da geracao                      ---
+//-------------------------------------------------------------
+DEFINE_BLOCK
+BLOCK_IDENT	YEAR
+
+DEFINE_HEADER
+YEAR BLK     1     2     3     4     5     6     7     8     9    10    11    12    13    14    15    16    17    18    19    20    21    22    23    24    25    26    27    28    29    30    31    32    33    34    35    36    37    38    39    40    41    42    43    44    45    46    47    48    49    50    51    52
+END_HEADER
+
+DEFINE_MACRO
+VAR	N	1,52
+END_MACRO
+
+DEFINE_DATA
+Ano		INTEGER		1,4
+Bloco		INTEGER		6,8
+Dado$(N)	REAL		9+8*($(N)-1),16+8*($(N)-1)
+END_DATA
+
+END_BLOCK
+
+END_MASK
+//---------------------------------------------------------------------
+//---------------------------------------------------------------------
+DEFINE_MASK MIXROWDATA SDDP_rome
+
+TOTAL_BLOCK	2
+
+//-------------------------------------------------------------
+//-- PRIMEIRO BLOCO -> Identificacao da Fuel                ---
+//-------------------------------------------------------------
+DEFINE_BLOCK
+BLOCK_IDENT	****
+BLOCK_LENGTH 1
+NEXT_BLOCK 2
+
+DEFINE_DATA
+IdentBloco	STRING		1,12	**** Fuel:
+Num		INTEGER		14,17
+Nome			STRING		19,30
+END_DATA
+
+END_BLOCK
+//-------------------------------------------------------------
+//-- SEGUNDO BLOCO -> Dados da geracao                      ---
+//-------------------------------------------------------------
+DEFINE_BLOCK
+BLOCK_IDENT	Year
+
+DEFINE_HEADER
+A~no Blk ......1 ......2 ......3 ......4 ......5 ......6 ......7 ......8 ......9 .....10 .....11 .....12
+END_HEADER
+
+DEFINE_MACRO
+VAR	N	1,12
+END_MACRO
+
+DEFINE_DATA
+Ano		INTEGER		1,4
+Bloco		INTEGER		6,8
+Dado$(N)	REAL		9+8*($(N)-1),16+8*($(N)-1)
+END_DATA
+
+END_BLOCK
+
+END_MASK
+//---------------------------------------------------------------------
+//---------------------------------------------------------------------
+DEFINE_MASK MIXROWDATA SDDP_rose
+
+TOTAL_BLOCK	2
+
+//-------------------------------------------------------------
+//-- PRIMEIRO BLOCO -> Identificacao da Fuel                ---
+//-------------------------------------------------------------
+DEFINE_BLOCK
+BLOCK_IDENT	****
+BLOCK_LENGTH 1
+NEXT_BLOCK 2
+
+DEFINE_DATA
+IdentBloco	STRING		1,12	**** Fuel:
+Num		INTEGER		14,17
+Nome			STRING		19,30
+END_DATA
+
+END_BLOCK
+//-------------------------------------------------------------
+//-- SEGUNDO BLOCO -> Dados da geracao                      ---
+//-------------------------------------------------------------
+DEFINE_BLOCK
+BLOCK_IDENT	YEAR
+
+DEFINE_HEADER
+YEAR BLK     1     2     3     4     5     6     7     8     9    10    11    12    13    14    15    16    17    18    19    20    21    22    23    24    25    26    27    28    29    30    31    32    33    34    35    36    37    38    39    40    41    42    43    44    45    46    47    48    49    50    51    52
+END_HEADER
+
+DEFINE_MACRO
+VAR	N	1,52
+END_MACRO
+
+DEFINE_DATA
+Ano		INTEGER		1,4
+Bloco		INTEGER		6,8
+Dado$(N)	REAL		9+8*($(N)-1),16+8*($(N)-1)
+END_DATA
+
+END_BLOCK
+
+END_MASK
+//---------------------------------------------------------------------
+//---------------------------------------------------------------------
+DEFINE_MASK MIXROWDATA SDDP_ccstme
+
+TOTAL_BLOCK	2
+
+//-------------------------------------------------------------
+//-- PRIMEIRO BLOCO -> Identificacao do ciclo                ---
+//-------------------------------------------------------------
+DEFINE_BLOCK
+BLOCK_IDENT	****
+BLOCK_LENGTH 1
+NEXT_BLOCK 2
+
+DEFINE_DATA
+IdentBloco	STRING		1,12	****  Ciclo:
+Num		INTEGER		14,17
+Nome		STRING		19,30
+END_DATA
+
+END_BLOCK
+//-------------------------------------------------------------
+//-- SEGUNDO BLOCO -> Dados da geracao                      ---
+//-------------------------------------------------------------
+DEFINE_BLOCK
+BLOCK_IDENT	Year
+
+DEFINE_HEADER
+A~no ......1 ......2 ......3 ......4 ......5 ......6 ......7 ......8 ......9 .....10 .....11 .....12
+END_HEADER
+
+DEFINE_MACRO
+VAR	N	1,12
+END_MACRO
+
+DEFINE_DATA
+Ano		INTEGER		1,4
+Dado$(N)	REAL		5+8*($(N)-1),12+8*($(N)-1)
+END_DATA
+
+END_BLOCK
+
+END_MASK
+//---------------------------------------------------------------------
+//---------------------------------------------------------------------
+DEFINE_MASK MIXROWDATA SDDP_ccstse
+
+TOTAL_BLOCK	2
+
+//-------------------------------------------------------------
+//-- PRIMEIRO BLOCO -> Identificacao do ciclo               ---
+//-------------------------------------------------------------
+DEFINE_BLOCK
+BLOCK_IDENT	****
+BLOCK_LENGTH 1
+NEXT_BLOCK 2
+
+DEFINE_DATA
+IdentBloco	STRING		1,12	****  Ciclo:
+Num		INTEGER		14,17
+Nome			STRING		19,30
+END_DATA
+
+END_BLOCK
+//-------------------------------------------------------------
+//-- SEGUNDO BLOCO -> Dados da geracao                      ---
+//-------------------------------------------------------------
+DEFINE_BLOCK
+BLOCK_IDENT	YEAR
+
+DEFINE_HEADER
+A~no ......1 ......2 ......3 ......4 ......5 ......6 ......7 ......8 ......9 .....10 .....11 .....12 .....13 .....14 .....15 .....16 .....17 .....18 .....19 .....20 .....21 .....22 .....23 .....24 .....25 .....26 .....27 .....28 .....29 .....30 .....31 .....32 .....33 .....34 .....35 .....36 .....37 .....38 .....39 .....40 .....41 .....42 .....43 .....44 .....45 .....46 .....47 .....48 .....49 .....50 .....51 .....52
+END_HEADER
+
+DEFINE_MACRO
+VAR	N	1,52
+END_MACRO
+
+DEFINE_DATA
+Ano		INTEGER		1,4
+Bloco		INTEGER		6,8
+Dado$(N)	REAL		5+8*($(N)-1),12+8*($(N)-1)
+END_DATA
+
+END_BLOCK
+
+END_MASK

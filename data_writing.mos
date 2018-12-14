@@ -1,0 +1,1545 @@
+procedure set_graphs(A: integer, B: integer, C: set of integer, D: string, E: string, G: set of string, H: array(range,range) of real, I: integer, J: integer, K: integer, L: integer, M: string, N: string, O: integer, P: integer)
+
+	if ((FIRST_RUN = 1 or (PARALLEL_WRITE = 1 and IPER = 1 and B > 0)) and L = 1 and OUTO(I) <> 1) then
+
+		if (AWSF = 0) then
+			if (CASSANDRA_WRITE = 1) then
+				iograf(I):= PSRIOGrafResultCassandra_create(0)
+			else
+				if (PARL = 0 or O = 0 or PARALLEL_WRITE = 1) then
+					if (BINF = 0) then
+						iograf(I):= PSRIOGrafResult_create(0)
+					else
+						iograf(I):= PSRIOGrafResultBinary_create(0)
+					end-if
+				else
+					iograf(I):= PSRIOGrafResultSDDPParallel_create(0,COMM)
+				end-if
+			end-if
+		else
+			iograf(I):= PSRIOGrafResultS3_create(0, AWS)
+		end-if
+
+		if (CORE = 1) then
+			PSRIOGrafResultBase_setNameLength(iograf(I), 24)
+		end-if
+
+		PSRIOGrafResultBase_setStageType(iograf(I), TSTG)
+		PSRIOGrafResultBase_setInitialStage(iograf(I), IMTH)
+		PSRIOGrafResultBase_setInitialYear(iograf(I), IYER)
+		PSRIOGrafResultBase_setTotalStages(iograf(I), NPER)
+		PSRIOGrafResultBase_setTotalBlocks(iograf(I), 1)
+
+		if (PARALLEL_WRITE = 1) then
+			PSRIOGrafResultBase_setTotalSeries(iograf(I), 1)
+		else
+			if (NGAM > 0) then
+				PSRIOGrafResultBase_setTotalSeries(iograf(I), maxlist(B*NGAM,1))
+			else
+				PSRIOGrafResultBase_setTotalSeries(iograf(I), maxlist(B*NSSL,1))
+			end-if
+		end-if
+
+		if (A >= 1) then
+			PSRIOGrafResultBase_setVariableByHour(iograf(I), 1)
+		else
+			PSRIOGrafResultBase_setVariableByHour(iograf(I), 0)
+		end-if
+
+		PSRIOGrafResultBase_setVariableByBlock(iograf(I), A)
+		PSRIOGrafResultBase_setVariableBySerie(iograf(I), B)
+		PSRIOGrafResultBase_setUnit(iograf(I), D)
+
+		if (A >= 1) then
+			PSRIOGrafResultBase_useHourlyDurationFrom(iograf(I), study)
+		end-if
+
+		forall(m in G) PSRIOGrafResultBase_addAgent(iograf(I), m)
+
+		if (AWSF = 0) then
+			if (CASSANDRA_WRITE = 1) then
+				ret:= PSRIOGrafResultCassandra_initSave(iograf(I), study, E)
+				if (ret = 0) then
+					OUTO(I):= -1
+				end-if
+			else
+				if (PARL = 0 or O = 0 or PARALLEL_WRITE = 1) then
+					if (BINF = 0) then
+						ret:= PSRIOGrafResult_initSave(iograf(I), PATH + E + '.csv', PSRIO_GRAF_FORMAT_DEFAULT)
+					else
+						HDR_EXT:= '.hdr'
+						BIN_EXT:= '.bin'
+						if (PARALLEL_WRITE = 1) then
+							HDR_EXT:= '.part-hdr'
+							BIN_EXT:= '.part-bin'
+						end-if
+						ret:= PSRIOGrafResultBinary_initSave(iograf(I), PATH + E + HDR_EXT, PATH + E + BIN_EXT)
+						if (PARALLEL_REOPEN = 1) then
+							ret:= PSRIOGrafResultBinary_closeSave(iograf(I))
+						end-if
+					end-if
+				else
+					ret:= PSRIOGrafResultSDDPParallel_initSave(iograf(I),PATH + E + '.hdr', O)
+				end-if
+			end-if
+		else
+			ret:= PSRIOGrafResultS3_initSave(iograf(I), E + '.csv', PSRIO_GRAF_FORMAT_DEFAULT)
+		end-if
+
+		putPSRType('PTR_GRAPH' + strfmt(I,-3),iograf(I))
+
+		if (ISIN = 1 and OUTG(I) <> 1 and SDDP2 = 0) then
+			OUTG(I):= 1
+			index_file(E,M,D,N)
+		end-if
+
+	else
+
+		iograf(I):= getPSRType('PTR_GRAPH' + strfmt(I,-3))
+
+	end-if
+
+	if (OUTO(I) <> -1) then
+		OUTO(I):= 1
+	end-if
+
+	if (AWSF <> 0) then
+		PSRIOGrafResultS3_setRevision(iograf(I), IREP)
+	end-if
+
+	if ((P = ISIN and NGAM = 0) or (P = GAME and NGAM > 0) or SDDP2 = 0) then
+
+		if (CASSANDRA_WRITE = 0 and PARALLEL_REOPEN = 1) then
+			iograf(I):= PSRIOGrafResultBinary_create(0)
+			HDR_EXT:= '.hdr'
+			BIN_EXT:= '.bin'
+			if (PARALLEL_WRITE = 1) then
+				HDR_EXT:= '.part-hdr'
+				BIN_EXT:= '.part-bin'
+			end-if
+			ret:= PSRIOGrafResultBinary_initUpdate(iograf(I), PATH + E + HDR_EXT, PATH + E + BIN_EXT)
+		end-if
+
+		forall(t in J..K) do
+
+	   		if (IEMP = 0) then
+	   			forall(m in C) PSRIOGrafResultBase_setData(iograf(I), m - 1, H(t,m))
+	   		else
+	   			forall(m in C) PSRIOGrafResultBase_setData(iograf(I), m - 1, 0.0)
+	   		end-if
+
+	    	PSRIOGrafResultBase_setCurrentStage(iograf(I), IPER)
+	    	PSRIOGrafResultBase_setCurrentBlock(iograf(I), t)
+
+	    	if (PARALLEL_WRITE = 1) then
+				PSRIOGrafResultBase_setCurrentSerie(iograf(I), 1)
+			else
+				if (NGAM > 0) then
+					PSRIOGrafResultBase_setCurrentSerie(iograf(I), maxlist(B*GAME,1))
+				else
+					PSRIOGrafResultBase_setCurrentSerie(iograf(I), maxlist(B*ISIN,1))
+				end-if
+			end-if
+
+			if (B <> 0) then
+				ret:= PSRIOGrafResultBase_writeRegistry(iograf(I))
+			else
+				if (NGAM > 0 and GAME = 1) then
+					ret:= PSRIOGrafResultBase_writeRegistry(iograf(I))
+				elif (NGAM = 0 and ISIN = 1) then
+					ret:= PSRIOGrafResultBase_writeRegistry(iograf(I))
+				end-if
+			end-if
+
+		end-do
+
+		if (CASSANDRA_WRITE = 0 and PARALLEL_REOPEN = 1) then
+			ret:= PSRIOGrafResultBinary_closeSave(iograf(I))
+		end-if
+
+	end-if
+
+	clean_data(J,K,C,H)
+
+end-procedure
+
+!***********************************************************************************************************************
+
+procedure out_result(A: integer, B: integer, C: integer)
+
+	ETPI:= A
+	ETPF:= B
+	ISLC:= C
+
+	forall(IGRF in 1..NGRF) do
+
+		case OUTI(IGRF) of
+
+			! Thermal Secondary Reserve [MW]
+
+			-150:if (getsize(STRM) > 0) then
+
+					forall(t in ETPI..ETPF,m in STRM) GRAPH_AUX(t,m):= sum(k in STER|FCTP(k) = m) adju_value(getsol(RSCT(k,t))) / DURT(t)
+					set_graphs(OUTH(IGRF), OUTS(IGRF), STRM, OUTU(IGRF), OUTN(IGRF), SNM5, GRAPH_AUX, IGRF, ETPI, ETPF, ISLC, OUTD(IGRF), OUTK(IGRF), OUTI(IGRF), OUTW(IGRF))
+
+				end-if
+
+			! Thermal Marginal Cost [k$/MW]
+
+			-49:if (getsize(STRM) > 0) then
+
+					forall(t in ETPI..ETPF,m in STRM) GRAPH_AUX(t,m):= sum(k in STER|FCTP(k) = m) adju_value(getdual(Thermal_Max_Gen(k,t)))
+					set_graphs(OUTH(IGRF), OUTS(IGRF), STRM, OUTU(IGRF), OUTN(IGRF), SNM5, GRAPH_AUX, IGRF, ETPI, ETPF, ISLC, OUTD(IGRF), OUTK(IGRF), OUTI(IGRF), OUTW(IGRF))
+
+				end-if
+
+			! Thermal Generation [GWh]
+
+			-37:if (getsize(STRM) > 0) then
+
+					forall(t in ETPI..ETPF,m in STRM) GRAPH_AUX(t,m):= sum(k in STER,i in 1..NSEG(m)|FCTP(k) = m) adju_value(getsol(GTER(k,t,i))) / NMIL
+					set_graphs(OUTH(IGRF), OUTS(IGRF), STRM, OUTU(IGRF), OUTN(IGRF), SNM5, GRAPH_AUX, IGRF, ETPI, ETPF, ISLC, OUTD(IGRF), OUTK(IGRF), OUTI(IGRF), OUTW(IGRF))
+
+				end-if
+
+			! Thermal Operative Cost [k$]
+
+			-20:if (getsize(STRM) > 0) then
+
+					forall(t in ETPI..ETPF,m in STRM) GRAPH_AUX(t,m):= sum(k in STER|FCTP(k) = m) (sum(i in 1..NSEG(m)) OMCT(k)*adju_value(getsol(GTER(k,t,i))) / NMIL + (FCOS(FULT(k)) + CTRS(k))*adju_value(getsol(CNSM(k,t))) / NMIL)
+					set_graphs(OUTH(IGRF), OUTS(IGRF), STRM, OUTU(IGRF), OUTN(IGRF), SNM5, GRAPH_AUX, IGRF, ETPI, ETPF, ISLC, OUTD(IGRF), OUTK(IGRF), OUTI(IGRF), OUTW(IGRF))
+
+				end-if
+
+			! System Demand [GWh]
+
+			6: 	if (getsize(SSYS) > 0) then
+
+					forall(t in ETPI..ETPF,m in SSYS) GRAPH_AUX(t,m):= (DEMS(m,t) / FLOS(m,MAPH(t)))*DURT(t) / NMIL
+					set_graphs(OUTH(IGRF), OUTS(IGRF), SSYS, OUTU(IGRF), OUTN(IGRF), SNMS, GRAPH_AUX, IGRF, ETPI, ETPF, ISLC, OUTD(IGRF), OUTK(IGRF), OUTI(IGRF), OUTW(IGRF))
+
+				end-if
+
+			! Bus Demand [GWh]
+
+			7:	if (NETW > 0 and getsize(SBUS) > 0) then
+
+					forall(t in ETPI..ETPF,m in SBUS) GRAPH_AUX(t,m):= DEBX(m,t)*DURT(t) / NMIL
+					set_graphs(OUTH(IGRF), OUTS(IGRF), SBUS, OUTU(IGRF), OUTN(IGRF), SNMB, GRAPH_AUX, IGRF, ETPI, ETPF, ISLC, OUTD(IGRF), OUTK(IGRF), OUTI(IGRF), OUTW(IGRF))
+
+				end-if
+
+			! System Deficit Cost [k$]
+
+			15:	if (getsize(SSYS) > 0) then
+
+					if (NETW = 0) then
+						forall(t in ETPI..ETPF,m in SSYS|DEMS(m,t) > 0.0) GRAPH_AUX(t,m):= sum(k in SDEF) adju_value(getsol(DEFS(m,k,t)))*DEFC(k) / NMIL
+					else
+						forall(t in ETPI..ETPF,m in SSYS) GRAPH_AUX(t,m):= sum(b in SBUS,k in SDEF|DEMB(b,t) > 0.0 and SYSB(b) = m and IBDF(b) = 1) adju_value(getsol(DEFB(b,k,t)))*DEFC(k)*DURT(t) / NMIL
+					end-if
+
+					set_graphs(OUTH(IGRF), OUTS(IGRF), SSYS, OUTU(IGRF), OUTN(IGRF), SNMS, GRAPH_AUX, IGRF, ETPI, ETPF, ISLC, OUTD(IGRF), OUTK(IGRF), OUTI(IGRF), OUTW(IGRF))
+
+				end-if
+
+			! Hydro Spilling Penalty [k$/Hm3]
+
+			19:	if (getsize(SHID) > 0) then
+
+					forall(t in ETPI..ETPF,m in SHID|EXSH(m) <= 0 and VNOC(m) = 0 and NSPL(m) = 0 and TMAX(m) > 0) GRAPH_AUX(t,m):= SPLC(m)
+					set_graphs(OUTH(IGRF), OUTS(IGRF), SHID, OUTU(IGRF), OUTN(IGRF), SNMH, GRAPH_AUX, IGRF, ETPI, ETPF, ISLC, OUTD(IGRF), OUTK(IGRF), OUTI(IGRF), OUTW(IGRF))
+
+				end-if
+
+			! Thermal Operative Cost [k$]
+
+			20: if (getsize(STER) > 0) then
+
+					forall(t in ETPI..ETPF,m in STER) GRAPH_AUX(t,m):= sum(i in 1..NSEG(m)) OMCT(m)*adju_value(getsol(GTER(m,t,i))) / NMIL + (FCOS(FULT(m)) + CTRS(m))*adju_value(getsol(CNSM(m,t))) / NMIL
+					set_graphs(OUTH(IGRF), OUTS(IGRF), STER, OUTU(IGRF), OUTN(IGRF), SNMT, GRAPH_AUX, IGRF, ETPI, ETPF, ISLC, OUTD(IGRF), OUTK(IGRF), OUTI(IGRF), OUTW(IGRF))
+
+				end-if
+
+			! Hydro Alert Storage Slack Cost [k$]
+
+			21:	if (getsize(SHID) > 0) then
+
+					forall(m in SHID|TVAL(m) > 0) GRAPH_AUX(1,m):= adju_value(getsol(SVAL(m))) * PVAL(m)
+					set_graphs(OUTH(IGRF), OUTS(IGRF), SHID, OUTU(IGRF), OUTN(IGRF), SNMH, GRAPH_AUX, IGRF, 1, 1, 1, OUTD(IGRF), OUTK(IGRF), OUTI(IGRF), OUTW(IGRF))
+
+				end-if
+
+			! Minimum Operative Storage Slack Cost [k$]
+
+			23:if (getsize(SHID) > 0) then
+
+					forall(m in SHID|TVMN(m) > 0) GRAPH_AUX(1,m):= adju_value(getsol(SVMN(m))) * PVMN(m)
+					set_graphs(OUTH(IGRF), OUTS(IGRF), SHID, OUTU(IGRF), OUTN(IGRF), SNMH, GRAPH_AUX, IGRF, 1, 1, 1, OUTD(IGRF), OUTK(IGRF), OUTI(IGRF), OUTW(IGRF))
+
+				end-if
+
+			! Hydro Minimum Outflow Slack Cost [k$]
+
+			24:if (getsize(SHID) > 0) then
+
+					forall(t in ETPI..ETPF,m in SHID|TOMN(m) > 0) GRAPH_AUX(t,m):= adju_value(getsol(SMNT(m,t))) * PDMN(m) * CNV1(t)
+					set_graphs(OUTH(IGRF), OUTS(IGRF), SHID, OUTU(IGRF), OUTN(IGRF), SNMH, GRAPH_AUX, IGRF, ETPI, ETPF, ISLC, OUTD(IGRF), OUTK(IGRF), OUTI(IGRF), OUTW(IGRF))
+
+				end-if
+
+			! AC Circuit Flows [MW]
+
+			25:	if (NETW > 0 and getsize(SLIN) > 0) then
+
+					forall(t in ETPI..ETPF) do
+
+						forall(m in SBUS) BAUX(IBSO(m)):= (adju_value(getsol(GBUS(m,t))) / DURT(t)) - DEBX(m,t)
+
+						PSRNetwork_solveB  (dc_network, 1, BAUX)
+						PSRNetwork_getFlows(dc_network, 1, CAUX)
+
+						forall(m in SLIN) GRAPH_AUX(t,ICSO(m)):= CAUX(m)
+
+					end-do
+
+					set_graphs(OUTH(IGRF), OUTS(IGRF), SLIN, OUTU(IGRF), OUTN(IGRF), SNMC, GRAPH_AUX, IGRF, ETPI, ETPF, ISLC, OUTD(IGRF), OUTK(IGRF), OUTI(IGRF), OUTW(IGRF))
+
+				end-if
+
+			! System Deficit [GWh]
+
+			26:	if (getsize(SSYS) > 0) then
+
+					if (NETW = 0) then
+						forall(t in ETPI..ETPF,m in SSYS|DEMS(m,t) > 0.0) GRAPH_AUX(t,m):= sum(k in SDEF) adju_value(getsol(DEFS(m,k,t))) / NMIL
+					else
+						forall(t in ETPI..ETPF,m in SSYS) GRAPH_AUX(t,m):= sum(b in SBUS,k in SDEF|DEMB(b,t) > 0.0 and SYSB(b) = m and IBDF(b) = 1) adju_value(getsol(DEFB(b,k,t))) / NMIL
+					end-if
+
+					set_graphs(OUTH(IGRF), OUTS(IGRF), SSYS, OUTU(IGRF), OUTN(IGRF), SNMS, GRAPH_AUX, IGRF, ETPI, ETPF, ISLC, OUTD(IGRF), OUTK(IGRF), OUTI(IGRF), OUTW(IGRF))
+
+				end-if
+
+			! Bus Deficit [GWh]
+
+			27:	if (NETW > 0 and getsize(SBUS) > 0) then
+
+					forall(t in ETPI..ETPF,m in SBUS|IBDF(m) = 1) GRAPH_AUX(t,m):= sum(k in SDEF|DEMB(m,t) > 0.0) adju_value(getsol(DEFB(m,k,t))) / NMIL
+					set_graphs(OUTH(IGRF), OUTS(IGRF), SBUS, OUTU(IGRF), OUTN(IGRF), SNMB, GRAPH_AUX, IGRF, ETPI, ETPF, ISLC, OUTD(IGRF), OUTK(IGRF), OUTI(IGRF), OUTW(IGRF))
+
+				end-if
+
+			! Hydro Final Elevation [m.a.s.l.]
+
+			29:	if (getsize(SDAM) > 0) then
+
+					forall(t in ETPI..ETPF,m in SDAM) GRAPH_AUX(t,m):= interp_val(NUM5,VRES(m),SXHS,SXHH,adju_value(getsol(VOLM(VRES(m),t))))
+					set_graphs(OUTH(IGRF), OUTS(IGRF), SDAM, OUTU(IGRF), OUTN(IGRF), SNMR, GRAPH_AUX, IGRF, ETPI, ETPF, ISLC, OUTD(IGRF), OUTK(IGRF), OUTI(IGRF), OUTW(IGRF))
+
+				end-if
+
+			! Hydro Final Storage [Hm3]
+
+			30:	if (getsize(SHID) > 0) then
+
+					forall(t in ETPI..ETPF,m in SHID|RESV(m) <> 0) GRAPH_AUX(t,m):= adju_value(getsol(VOLM(m,t)))
+					set_graphs(OUTH(IGRF), OUTS(IGRF), SHID, OUTU(IGRF), OUTN(IGRF), SNMH, GRAPH_AUX, IGRF, ETPI, ETPF, ISLC, OUTD(IGRF), OUTK(IGRF), OUTI(IGRF), OUTW(IGRF))
+
+				end-if
+
+			! Fuel Consumption [kFuelUnit]
+
+			31: if (getsize(SFUL) > 0) then
+
+					forall(t in ETPI..ETPF,m in SFUL) GRAPH_AUX(t,m):= sum(j in STER|FULT(j) = m) adju_value(getsol(CNSM(j,t))) / NMIL
+					set_graphs(OUTH(IGRF), OUTS(IGRF), SFUL, OUTU(IGRF), OUTN(IGRF), SNML, GRAPH_AUX, IGRF, ETPI, ETPF, ISLC, OUTD(IGRF), OUTK(IGRF), OUTI(IGRF), OUTW(IGRF))
+
+				end-if
+
+			! Hydro Generation [GWh]
+
+			33: if (getsize(SHID) > 0) then
+
+					forall(t in ETPI..ETPF,m in SHID) GRAPH_AUX(t,m):= adju_value(getsol(GHID(m,t))) / NMIL
+					set_graphs(OUTH(IGRF), OUTS(IGRF), SHID, OUTU(IGRF), OUTN(IGRF), SNMH, GRAPH_AUX, IGRF, ETPI, ETPF, ISLC, OUTD(IGRF), OUTK(IGRF), OUTI(IGRF), OUTW(IGRF))
+
+				end-if
+
+			! Interconnection Flows [GWh]
+
+			34:	if (getsize(SINT) > 0 and NETW = 0) then
+
+					forall(m in SINT,k in SFLW,t in ETPI..ETPF) INTA(m,k,t):= adju_value(getsol(INTF(m,k,t))) / NMIL
+
+					forall(m in SINT,t in ETPI..ETPF|INTA(m,1,t) > 0.0 and INTA(m,2,t) > 0.0) do
+						if (INTA(m,1,t) >= INTA(m,2,t)) then
+							INTA(m,1,t):= INTA(m,1,t) - INTA(m,2,t)
+							INTA(m,2,t):= 0.0
+						else
+							INTA(m,2,t):= INTA(m,2,t) - INTA(m,1,t)
+							INTA(m,1,t):= 0.0
+						end-if
+					end-do
+
+					if (SDDP2 = 1) then
+						forall(t in ETPI..ETPF,m in SINT) GRAPH_AUX(t,m):= INTA(m,1,t) - INTA(m,2,t)
+						set_graphs(OUTH(IGRF), OUTS(IGRF), SINT, OUTU(IGRF), OUTN(IGRF), SNMI, GRAPH_AUX, IGRF, ETPI, ETPF, ISLC, OUTD(IGRF), OUTK(IGRF), OUTI(IGRF), OUTW(IGRF))
+					else
+						forall(t in ETPI..ETPF,m in SINT,k in SFLW) GRAPH_AUX(t,2*(m - 1) + k):= INTA(m,k,t)
+						set_graphs(OUTH(IGRF), OUTS(IGRF), SFIT, OUTU(IGRF), OUTN(IGRF), SNMI, GRAPH_AUX, IGRF, ETPI, ETPF, ISLC, OUTD(IGRF), OUTK(IGRF), OUTI(IGRF), OUTW(IGRF))
+					end-if
+
+				end-if
+
+			! Hydro Spilling [m3/s]
+
+			35:	if (getsize(SHID) > 0) then
+
+					forall(t in ETPI..ETPF,m in SHID) GRAPH_AUX(t,m):= adju_value(getsol(SPIL(m,t)))
+					set_graphs(OUTH(IGRF), OUTS(IGRF), SHID, OUTU(IGRF), OUTN(IGRF), SNMH, GRAPH_AUX, IGRF, ETPI, ETPF, ISLC, OUTD(IGRF), OUTK(IGRF), OUTI(IGRF), OUTW(IGRF))
+
+				end-if
+
+			! System Stored Energy [GWh]
+
+			36:	if (getsize(SDAM) > 0) then
+
+					forall(t in ETPI..ETPF,m in SSYS) GRAPH_AUX(t,m):= sum(i in SDAM|SYSH(VRES(i)) = m) adju_value(getsol(VOLM(VRES(i),t)))*CNV2(t)*FPRA(VRES(i))*DURT(t) / NMIL
+					set_graphs(OUTH(IGRF), OUTS(IGRF), SSYS, OUTU(IGRF), OUTN(IGRF), SNMS, GRAPH_AUX, IGRF, ETPI, ETPF, ISLC, OUTD(IGRF), OUTK(IGRF), OUTI(IGRF), OUTW(IGRF))
+
+			end-if
+
+			! Thermal Generation [GWh]
+
+			37: if (getsize(STER) > 0) then
+
+					forall(t in ETPI..ETPF,m in STER) GRAPH_AUX(t,m):= sum(i in 1..NSEG(m)) adju_value(getsol(GTER(m,t,i))) / NMIL
+					set_graphs(OUTH(IGRF), OUTS(IGRF), STER, OUTU(IGRF), OUTN(IGRF), SNMT, GRAPH_AUX, IGRF, ETPI, ETPF, ISLC, OUTD(IGRF), OUTK(IGRF), OUTI(IGRF), OUTW(IGRF))
+
+				end-if
+
+			! Hydro Turbining [m3/s]
+
+			38: if (getsize(SHID) > 0) then
+
+					forall(t in ETPI..ETPF,m in SHID) GRAPH_AUX(t,m):= adju_value(getsol(TURB(m,t)))
+					set_graphs(OUTH(IGRF), OUTS(IGRF), SHID, OUTU(IGRF), OUTN(IGRF), SNMH, GRAPH_AUX, IGRF, ETPI, ETPF, ISLC, OUTD(IGRF), OUTK(IGRF), OUTI(IGRF), OUTW(IGRF))
+
+				end-if
+
+			! Bus Marginal Cost [$/MWh]
+
+			39:	if (NETW > 0 and getsize(SBUS) > 0) then
+
+					forall(t in ETPI..ETPF,m in SBUS) GRAPH_AUX(t,m):= GRAPH_AUX_B(t,m)
+
+					set_graphs(OUTH(IGRF), OUTS(IGRF), SBUS, OUTU(IGRF), OUTN(IGRF), SNMB, GRAPH_AUX, IGRF, ETPI, ETPF, ISLC, OUTD(IGRF), OUTK(IGRF), OUTI(IGRF), OUTW(IGRF))
+
+				end-if
+
+			! Interconnection Marginal Cost [k$/MW]
+
+			42:	if (getsize(SINT) > 0 and NETW = 0) then
+
+					forall(m in SINT,k in SFLW,t in ETPI..ETPF) INTA(m,k,t):= adju_value(getdual(Interconnection_Maximum(m,k,t))) * DURT(t)
+
+					if (SDDP2 = 1) then
+						forall(t in ETPI..ETPF,m in SINT) GRAPH_AUX(t,m):= INTA(m,1,t) + INTA(m,2,t)
+						set_graphs(OUTH(IGRF), OUTS(IGRF), SINT, OUTU(IGRF), OUTN(IGRF), SNMI, GRAPH_AUX, IGRF, ETPI, ETPF, ISLC, OUTD(IGRF), OUTK(IGRF), OUTI(IGRF), OUTW(IGRF))
+					else
+						forall(t in ETPI..ETPF,m in SINT,k in SFLW) GRAPH_AUX(t,2*(m - 1) + k):= INTA(m,k,t)
+						set_graphs(OUTH(IGRF), OUTS(IGRF), SFIT, OUTU(IGRF), OUTN(IGRF), SNMI, GRAPH_AUX, IGRF, ETPI, ETPF, ISLC, OUTD(IGRF), OUTK(IGRF), OUTI(IGRF), OUTW(IGRF))
+					end-if
+
+				end-if
+
+			! System Marginal Cost [$/MWh]
+
+			43:	if (getsize(SSYS) > 0) then
+
+					CMG_AUX:= 0.0
+
+					if (NETW = 0) then
+
+						forall(t in ETPI..ETPF,m in SSYS) do
+							GRAPH_AUX(t,m):= maxlist(0.0,getdual(System_Demand(m,t)) * NMIL)
+							if (NSLC > 1 and IREP = 0) then
+								CMG_AUX+= GRAPH_AUX(t,m)
+							end-if
+						end-do
+
+					else
+						forall(t in ETPI..ETPF,m in SSYS) do
+
+							DEMA:= sum(k in SBUS|SYSB(k) = m) DEBX(k,t)
+
+							if (DEMA > 0.0) then
+								if (getsize(SLIN) > 0) then
+									GRAPH_AUX(t,m):= sum(k in SBUS|SYSB(k) = m) GRAPH_AUX_B(t,k) * DEBX(k,t) / DEMA
+								else
+									GRAPH_AUX(t,m):= sum(k in SBUS|SYSB(k) = m) GRAPH_AUX_B(t,k) * DEBX(k,t) / DEMA
+								end-if
+							else
+								GRAPH_AUX(t,m):= (sum(k in SBUS|SYSB(k) = m) GRAPH_AUX_B(t,k)) / maxlist(1,(sum(k in SBUS|SYSB(k) = m) 1))
+							end-if
+
+							if (NSLC > 1 and IREP = 0) then
+								CMG_AUX+= GRAPH_AUX(t,m)
+							end-if
+
+						end-do
+					end-if
+
+					set_graphs(OUTH(IGRF), OUTS(IGRF), SSYS, OUTU(IGRF), OUTN(IGRF), SNMS, GRAPH_AUX, IGRF, ETPI, ETPF, ISLC, OUTD(IGRF), OUTK(IGRF), OUTI(IGRF), OUTW(IGRF))
+
+					if (IGEN = 0 and NSLC > 1 and IREP = 0) then
+						check_cmgs(ISLC)
+					end-if
+
+				end-if
+
+			! Hydro Water Value [k$/Hm3]
+
+			46: if (getsize(SHID) > 0) then
+
+					forall(t in ETPI..ETPF,m in SHID) GRAPH_AUX(t,m):= - getdual(Hydro_Balance(m,t))
+					set_graphs(OUTH(IGRF), OUTS(IGRF), SHID, OUTU(IGRF), OUTN(IGRF), SNMH, GRAPH_AUX, IGRF, ETPI, ETPF, ISLC, OUTD(IGRF), OUTK(IGRF), OUTI(IGRF), OUTW(IGRF))
+
+				end-if
+
+			! Hydro Reservoir Marginal Cost [k$/Hm3]
+
+			47:	if (getsize(SHID) > 0) then
+
+					forall(t in ETPI..ETPF,m in SHID|RESV(m) <> 0) GRAPH_AUX(t,m):= (adju_value(getdual(Hydro_Max_Storage(m,t))) + adju_value(getdual(Hydro_Flood_Control_Storage(m))) + adju_value(getdual(Run_Of_River_Max_Storage(m,t))))
+					set_graphs(OUTH(IGRF), OUTS(IGRF), SHID, OUTU(IGRF), OUTN(IGRF), SNMH, GRAPH_AUX, IGRF, ETPI, ETPF, ISLC, OUTD(IGRF), OUTK(IGRF), OUTI(IGRF), OUTW(IGRF))
+
+				end-if
+
+			! Thermal Marginal Cost [k$/MW]
+
+			49: if (getsize(STER) > 0) then
+
+					forall(t in ETPI..ETPF,m in STER) GRAPH_AUX(t,m):= adju_value(getdual(Thermal_Max_Gen(m,t)))
+					set_graphs(OUTH(IGRF), OUTS(IGRF), STER, OUTU(IGRF), OUTN(IGRF), SNMT, GRAPH_AUX, IGRF, ETPI, ETPF, ISLC, OUTD(IGRF), OUTK(IGRF), OUTI(IGRF), OUTW(IGRF))
+
+				end-if
+
+			! Hydro Turbining Marginal Cost [k$/m3/s]
+
+			50: if (getsize(SHID) > 0) then
+
+					forall(t in ETPI..ETPF,m in SHID) GRAPH_AUX(t,m):= adju_value(getdual(Hydro_Max_Turbining(m,t)))
+					set_graphs(OUTH(IGRF), OUTS(IGRF), SHID, OUTU(IGRF), OUTN(IGRF), SNMH, GRAPH_AUX, IGRF, ETPI, ETPF, ISLC, OUTD(IGRF), OUTK(IGRF), OUTI(IGRF), OUTW(IGRF))
+
+				end-if
+
+			! Hydro Generation x Bus Marginal Cost [k$]
+
+			56:	if (NETW > 0 and getsize(SBUS) > 0 and getsize(SHID) > 0) then
+
+					forall(t in ETPI..ETPF,m in SHID) GRAPH_AUX(t,m):= GRAPH_AUX_B(t,BUSG(GENH(m))) * adju_value(getsol(GHID(m,t))) / NMIL
+
+					set_graphs(OUTH(IGRF), OUTS(IGRF), SHID, OUTU(IGRF), OUTN(IGRF), SNMH, GRAPH_AUX, IGRF, ETPI, ETPF, ISLC, OUTD(IGRF), OUTK(IGRF), OUTI(IGRF), OUTW(IGRF))
+
+				end-if
+
+			! Thermal Generation x Bus Marginal Cost [k$]
+
+			57:	if (NETW > 0 and getsize(SBUS) > 0 and getsize(STER) > 0) then
+
+					forall(t in ETPI..ETPF,m in STER) GRAPH_AUX(t,m):= GRAPH_AUX_B(t,BUSG(GENT(m))) * sum(i in 1..NSEG(m)) adju_value(getsol(GTER(m,t,i))) / NMIL
+
+					set_graphs(OUTH(IGRF), OUTS(IGRF), STER, OUTU(IGRF), OUTN(IGRF), SNMT, GRAPH_AUX, IGRF, ETPI, ETPF, ISLC, OUTD(IGRF), OUTK(IGRF), OUTI(IGRF), OUTW(IGRF))
+
+				end-if
+
+			! Step Duration [h]
+
+			66: if (getsize(SSYS) > 0) then
+
+					forall(t in ETPI..ETPF,m in SSYS) GRAPH_AUX(t,m):= DURT(t)
+
+					set_graphs(OUTH(IGRF), OUTS(IGRF), SSYS, OUTU(IGRF), OUTN(IGRF), SNMS, GRAPH_AUX, IGRF, ETPI, ETPF, ISLC, OUTD(IGRF), OUTK(IGRF), OUTI(IGRF), OUTW(IGRF))
+
+				end-if
+
+			! AC Circuit Losses [MW]
+
+			68:if (NETW > 0 and LOSS > 0 and getsize(SLIN) > 0) then
+
+					forall(t in ETPI..ETPF) do
+
+						forall(m in SBUS) BAUX(IBSO(m)):= (adju_value(getsol(GBUS(m,t))) / DURT(t)) - DEBX(m,t)
+
+						PSRNetwork_solveB  (dc_network, 1, BAUX)
+						PSRNetwork_solveLosses(dc_network, 1, LAUX)
+
+						forall(m in SLIN) GRAPH_AUX(t,ICSO(m)):= LAUX(m)
+
+					end-do
+
+					set_graphs(OUTH(IGRF), OUTS(IGRF), SLIN, OUTU(IGRF), OUTN(IGRF), SNMC, GRAPH_AUX, IGRF, ETPI, ETPF, ISLC, OUTD(IGRF), OUTK(IGRF), OUTI(IGRF), OUTW(IGRF))
+
+				end-if
+
+			! Hydro Opportunity Cost [$/MWh]
+
+			71: if (getsize(SHID) > 0) then
+
+					forall(t in ETPI..ETPF,m in SHID) do
+						if (JUST(m) > 0) then
+							AUX:= getdual(Hydro_Balance(m,t)) - getdual(Hydro_Balance(JUST(m),t))
+						else
+							AUX:= getdual(Hydro_Balance(m,t))
+						end-if
+						if (FPRM(m) <> 0.0) then
+							GRAPH_AUX(t,m):= - NMIL*AUX / (FPRM(m)*NCV2)
+						end-if
+					end-do
+
+					set_graphs(OUTH(IGRF), OUTS(IGRF), SHID, OUTU(IGRF), OUTN(IGRF), SNMH, GRAPH_AUX, IGRF, ETPI, ETPF, ISLC, OUTD(IGRF), OUTK(IGRF), OUTI(IGRF), OUTW(IGRF))
+
+				end-if
+
+			! Hydro Operative Cost [k$]
+
+			75: if (getsize(SHID) > 0) then
+
+					forall(t in ETPI..ETPF,m in SHID) GRAPH_AUX(t,m):= OMCH(m)*adju_value(getsol(GHID(m,t))) / NMIL
+					set_graphs(OUTH(IGRF), OUTS(IGRF), SHID, OUTU(IGRF), OUTN(IGRF), SNMH, GRAPH_AUX, IGRF, ETPI, ETPF, ISLC, OUTD(IGRF), OUTK(IGRF), OUTI(IGRF), OUTW(IGRF))
+
+				end-if
+
+			! System Spilled Energy [GWh]
+
+			80: if (getsize(SHID) > 0) then
+
+					forall(t in ETPI..ETPF,m in SSYS) GRAPH_AUX(t,m):= sum(i in SHID|SYSH(i) = m and FPRM(i) > 0.0) adju_value(getsol(SPIL(i,t)))*FPRM(i)*DURT(t) / NMIL
+					set_graphs(OUTH(IGRF), OUTS(IGRF), SSYS, OUTU(IGRF), OUTN(IGRF), SNMS, GRAPH_AUX, IGRF, ETPI, ETPF, ISLC, OUTD(IGRF), OUTK(IGRF), OUTI(IGRF), OUTW(IGRF))
+
+				end-if
+
+			! Hydro Turbinable Spilled Energy [GWh]
+
+			99: if (getsize(SHID) > 0) then
+
+					forall(t in ETPI..ETPF,m in SHID|TMAX(m) > 0 and FPRM(m) > 0.0) GRAPH_AUX(t,m):= adju_value(maxlist(0,minlist(getsol(SPIL(m,t)),maxlist(0,(TMAX(m) - (PRMH(m,t) / FPRM(m)))) - getsol(TURB(m,t)))))*FPRM(m)*DURT(t) / NMIL
+					set_graphs(OUTH(IGRF), OUTS(IGRF), SHID, OUTU(IGRF), OUTN(IGRF), SNMH, GRAPH_AUX, IGRF, ETPI, ETPF, ISLC, OUTD(IGRF), OUTK(IGRF), OUTI(IGRF), OUTW(IGRF))
+
+				end-if
+
+			! Secondary Reserve [MW]
+
+			102:if (getsize(SRSG) > 0) then
+
+					forall(t in ETPI..ETPF,m in SRSG) GRAPH_AUX(t,m):= VRSG(m,t) - adju_value(getsol(DRSG(m,t))) / DURT(t)
+					set_graphs(OUTH(IGRF), OUTS(IGRF), SRSG, OUTU(IGRF), OUTN(IGRF), SNM1, GRAPH_AUX, IGRF, ETPI, ETPF, ISLC, OUTD(IGRF), OUTK(IGRF), OUTI(IGRF), OUTW(IGRF))
+
+				end-if
+
+			! Secondary Reserve Marginal Cost [k$/MW]
+
+			103:if (getsize(SRSG) > 0) then
+
+					forall(t in ETPI..ETPF,m in SRSG) GRAPH_AUX(t,m):= adju_value(getdual(System_Secondary_Reserve(m,t))) * DURT(t)
+					set_graphs(OUTH(IGRF), OUTS(IGRF), SRSG, OUTU(IGRF), OUTN(IGRF), SNM1, GRAPH_AUX, IGRF, ETPI, ETPF, ISLC, OUTD(IGRF), OUTK(IGRF), OUTI(IGRF), OUTW(IGRF))
+
+				end-if
+
+			! Hydro Irrigation Slack [m3/s]
+
+			105:if (getsize(SHID) > 0) then
+
+					forall(t in ETPI..ETPF,m in SHID|TIRR(m) > 0) GRAPH_AUX(t,m):= adju_value(getsol(SIRR(m,t)))
+					set_graphs(OUTH(IGRF), OUTS(IGRF), SHID, OUTU(IGRF), OUTN(IGRF), SNMH, GRAPH_AUX, IGRF, ETPI, ETPF, ISLC, OUTD(IGRF), OUTK(IGRF), OUTI(IGRF), OUTW(IGRF))
+
+				end-if
+
+			! Minimum Operative Storage Slack [Hm3]
+
+			115:if (getsize(SHID) > 0) then
+
+					forall(m in SHID|TVMN(m) > 0) GRAPH_AUX(1,m):= adju_value(getsol(SVMN(m)))
+					set_graphs(OUTH(IGRF), OUTS(IGRF), SHID, OUTU(IGRF), OUTN(IGRF), SNMH, GRAPH_AUX, IGRF, 1, 1, 1, OUTD(IGRF), OUTK(IGRF), OUTI(IGRF), OUTW(IGRF))
+
+				end-if
+
+			! Hydro Alert Storage Slack [Hm3]
+
+			116:if (getsize(SHID) > 0) then
+
+					forall(m in SHID|TVAL(m) > 0) GRAPH_AUX(1,m):= adju_value(getsol(SVAL(m)))
+					set_graphs(OUTH(IGRF), OUTS(IGRF), SHID, OUTU(IGRF), OUTN(IGRF), SNMH, GRAPH_AUX, IGRF, 1, 1, 1, OUTD(IGRF), OUTK(IGRF), OUTI(IGRF), OUTW(IGRF))
+
+				end-if
+
+			! Generation Constraint Slack [MW]
+
+			117:if (getsize(SRTG) > 0) then
+
+					forall(t in ETPI..ETPF,m in SRTG) GRAPH_AUX(t,m):= adju_value(getsol(DRTG(m,t))) / DURT(t)
+					set_graphs(OUTH(IGRF), OUTS(IGRF), SRTG, OUTU(IGRF), OUTN(IGRF), SNM2, GRAPH_AUX, IGRF, ETPI, ETPF, ISLC, OUTD(IGRF), OUTK(IGRF), OUTI(IGRF), OUTW(IGRF))
+
+				end-if
+
+			! Hydro Maximum Outflow Slack [m3/s]
+
+			119:if (getsize(SHID) > 0) then
+
+					forall(t in ETPI..ETPF,m in SHID|DOMX(m) <> - 1) GRAPH_AUX(t,m):= adju_value(getsol(SMXT(m,t)))
+					set_graphs(OUTH(IGRF), OUTS(IGRF), SHID, OUTU(IGRF), OUTN(IGRF), SNMH, GRAPH_AUX, IGRF, ETPI, ETPF, ISLC, OUTD(IGRF), OUTK(IGRF), OUTI(IGRF), OUTW(IGRF))
+
+				end-if
+
+			! Hydro Minimum Outflow Slack [m3/s]
+
+			120:if (getsize(SHID) > 0) then
+
+					forall(t in ETPI..ETPF,m in SHID|TOMN(m) > 0) GRAPH_AUX(t,m):= adju_value(getsol(SMNT(m,t)))
+					set_graphs(OUTH(IGRF), OUTS(IGRF), SHID, OUTU(IGRF), OUTN(IGRF), SNMH, GRAPH_AUX, IGRF, ETPI, ETPF, ISLC, OUTD(IGRF), OUTK(IGRF), OUTI(IGRF), OUTW(IGRF))
+
+				end-if
+
+			! Secondary Reserve Slack [MW]
+
+			121:if (getsize(SRSG) > 0) then
+
+					forall(t in ETPI..ETPF,m in SRSG) GRAPH_AUX(t,m):= adju_value(getsol(DRSG(m,t))) / DURT(t)
+					set_graphs(OUTH(IGRF), OUTS(IGRF), SRSG, OUTU(IGRF), OUTN(IGRF), SNM1, GRAPH_AUX, IGRF, ETPI, ETPF, ISLC, OUTD(IGRF), OUTK(IGRF), OUTI(IGRF), OUTW(IGRF))
+
+				end-if
+
+			! DC Link Flows [GWh]
+
+			122:if (getsize(SLNK) > 0 and NETW > 0) then
+
+					if (SDDP2 = 1) then
+						forall(t in ETPI..ETPF,m in SLNK) GRAPH_AUX(t,m):= (adju_value(getsol(DCLF(m,1,t))) - adju_value(getsol(DCLF(m,2,t)))) / NMIL
+						set_graphs(OUTH(IGRF), OUTS(IGRF), SLNK, OUTU(IGRF), OUTN(IGRF), SNMK, GRAPH_AUX, IGRF, ETPI, ETPF, ISLC, OUTD(IGRF), OUTK(IGRF), OUTI(IGRF), OUTW(IGRF))
+					else
+						forall(t in ETPI..ETPF,m in SLNK,k in SFLW) GRAPH_AUX(t,2*(m - 1) + k):= adju_value(getsol(DCLF(m,k,t))) / NMIL
+						set_graphs(OUTH(IGRF), OUTS(IGRF), SFID, OUTU(IGRF), OUTN(IGRF), SNMD, GRAPH_AUX, IGRF, ETPI, ETPF, ISLC, OUTD(IGRF), OUTK(IGRF), OUTI(IGRF), OUTW(IGRF))
+					end-if
+
+				end-if
+
+			! Thermal - Fuel Operative Cost [k$]
+
+			124: if (getsize(STER) > 0) then
+
+					forall(t in ETPI..ETPF,m in STER) GRAPH_AUX(t,m):= (FCOS(FULT(m)) + CTRS(m))*adju_value(getsol(CNSM(m,t))) / NMIL
+					set_graphs(OUTH(IGRF), OUTS(IGRF), STER, OUTU(IGRF), OUTN(IGRF), SNMT, GRAPH_AUX, IGRF, ETPI, ETPF, ISLC, OUTD(IGRF), OUTK(IGRF), OUTI(IGRF), OUTW(IGRF))
+
+				end-if
+
+			! Thermal - O&M Cost [k$]
+
+			125: if (getsize(STER) > 0) then
+
+					forall(t in ETPI..ETPF,m in STER) GRAPH_AUX(t,m):= sum(i in 1..NSEG(m)) OMCT(m)*adju_value(getsol(GTER(m,t,i))) / NMIL
+					set_graphs(OUTH(IGRF), OUTS(IGRF), STER, OUTU(IGRF), OUTN(IGRF), SNMT, GRAPH_AUX, IGRF, ETPI, ETPF, ISLC, OUTD(IGRF), OUTK(IGRF), OUTI(IGRF), OUTW(IGRF))
+
+				end-if
+
+			! AC Circuit Quadratic Losses [MW]
+
+			126:if (NETW > 0 and LOSS > 0 and getsize(SLIN) > 0) then
+
+					forall(t in ETPI..ETPF) do
+
+						forall(m in SBUS) BAUX(IBSO(m)):= (adju_value(getsol(GBUS(m,t))) / DURT(t)) - DEBX(m,t)
+
+						PSRNetwork_solveB  (dc_network, 1, BAUX)
+						PSRNetwork_solveLosses(dc_network, 1, LAUX)
+
+						forall(m in SLIN) GRAPH_AUX(t,ICSO(m)):= LAUX(m)
+
+					end-do
+
+					set_graphs(OUTH(IGRF), OUTS(IGRF), SLIN, OUTU(IGRF), OUTN(IGRF), SNMC, GRAPH_AUX, IGRF, ETPI, ETPF, ISLC, OUTD(IGRF), OUTK(IGRF), OUTI(IGRF), OUTW(IGRF))
+
+				end-if
+
+			! Interconnection Losses [MW]
+
+			129:if (getsize(SINT) > 0 and NETW = 0) then
+
+					forall(m in SINT,t in ETPI..ETPF) INTA(m,1,t):= adju_value(getsol(INTF(m,1,t))*(INTL(m,1,t))) / DURT(t)
+					forall(m in SINT,t in ETPI..ETPF) INTA(m,2,t):= adju_value(getsol(INTF(m,2,t))*(INTL(m,2,t))) / DURT(t)
+
+					forall(m in SINT,t in ETPI..ETPF|INTA(m,1,t) > 0.0 and INTA(m,2,t) > 0.0) do
+						if (INTA(m,1,t) >= INTA(m,2,t)) then
+							INTA(m,1,t):= INTA(m,1,t) - INTA(m,2,t)
+							INTA(m,2,t):= 0.0
+						else
+							INTA(m,2,t):= INTA(m,2,t) - INTA(m,1,t)
+							INTA(m,1,t):= 0.0
+						end-if
+					end-do
+
+					if (SDDP2 = 1) then
+						forall(t in ETPI..ETPF,m in SINT) GRAPH_AUX(t,m):= INTA(m,1,t) + INTA(m,2,t)
+						set_graphs(OUTH(IGRF), OUTS(IGRF), SINT, OUTU(IGRF), OUTN(IGRF), SNMI, GRAPH_AUX, IGRF, ETPI, ETPF, ISLC, OUTD(IGRF), OUTK(IGRF), OUTI(IGRF), OUTW(IGRF))
+					else
+						forall(t in ETPI..ETPF,m in SINT,k in SFLW) GRAPH_AUX(t,2*(m - 1) + k):= INTA(m,k,t)
+						set_graphs(OUTH(IGRF), OUTS(IGRF), SFIT, OUTU(IGRF), OUTN(IGRF), SNMI, GRAPH_AUX, IGRF, ETPI, ETPF, ISLC, OUTD(IGRF), OUTK(IGRF), OUTI(IGRF), OUTW(IGRF))
+					end-if
+
+				end-if
+
+			! Gas Node Production [MUV/h]
+
+			135:if (getsize(SGNO) > 0) then
+
+					forall(t in ETPI..ETPF,m in SGNO) GRAPH_AUX(t,m):= getsol(GNOD(m,t))
+					set_graphs(OUTH(IGRF), OUTS(IGRF), SGNO, 'MUV/h', OUTN(IGRF), SNMN, GRAPH_AUX, IGRF, ETPI, ETPF, ISLC, OUTD(IGRF), OUTK(IGRF), OUTI(IGRF), OUTW(IGRF))
+
+				end-if
+
+			! Pipeline Flow From -> To [MUV/h]
+
+			140:if (getsize(SGLP) > 0) then
+
+					forall(m in SGLP,k in SFLW,t in ETPI..ETPF) GNLF(m,k,t):= getsol(GNLP(m,k,t))
+
+					forall(m in SGLP,t in ETPI..ETPF|GNLF(m,1,t) > 0.0 and GNLF(m,2,t) > 0.0) do
+						if (GNLF(m,1,t) >= GNLF(m,2,t)) then
+							GNLF(m,1,t):= GNLF(m,1,t) - GNLF(m,2,t)
+							GNLF(m,2,t):= 0.0
+						else
+							GNLF(m,2,t):= GNLF(m,2,t) - GNLF(m,1,t)
+							GNLF(m,1,t):= 0.0
+						end-if
+					end-do
+
+					forall(t in ETPI..ETPF,m in SGLP) GRAPH_AUX(t,m):= GNLF(m,1,t)
+					set_graphs(OUTH(IGRF), OUTS(IGRF), SGLP, 'MUV/h', OUTN(IGRF), SNM3, GRAPH_AUX, IGRF, ETPI, ETPF, ISLC, OUTD(IGRF), OUTK(IGRF), OUTI(IGRF), OUTW(IGRF))
+
+				end-if
+
+			! Pipeline Flow From -> To [MUV/h]
+
+			141:if (getsize(SGLP) > 0) then
+
+					forall(m in SGLP,k in SFLW,t in ETPI..ETPF) GNLF(m,k,t):= getsol(GNLP(m,k,t))
+
+					forall(m in SGLP,t in ETPI..ETPF|GNLF(m,1,t) > 0.0 and GNLF(m,2,t) > 0.0) do
+						if (GNLF(m,1,t) >= GNLF(m,2,t)) then
+							GNLF(m,1,t):= GNLF(m,1,t) - GNLF(m,2,t)
+							GNLF(m,2,t):= 0.0
+						else
+							GNLF(m,2,t):= GNLF(m,2,t) - GNLF(m,1,t)
+							GNLF(m,1,t):= 0.0
+						end-if
+					end-do
+
+					forall(t in ETPI..ETPF,m in SGLP) GRAPH_AUX(t,m):= GNLF(m,2,t)
+					set_graphs(OUTH(IGRF), OUTS(IGRF), SGLP, 'MUV/h', OUTN(IGRF), SNM4, GRAPH_AUX, IGRF, ETPI, ETPF, ISLC, OUTD(IGRF), OUTK(IGRF), OUTI(IGRF), OUTW(IGRF))
+
+				end-if
+
+			! Hydro Stored Energy [GWh]
+
+			145:if (getsize(SDAM) > 0) then
+
+					forall(t in ETPI..ETPF,m in SDAM) GRAPH_AUX(t,m):= adju_value(getsol(VOLM(VRES(m),t)))*CNV2(t)*FPRA(VRES(m))*DURT(t) / NMIL
+					set_graphs(OUTH(IGRF), OUTS(IGRF), SDAM, OUTU(IGRF), OUTN(IGRF), SNMR, GRAPH_AUX, IGRF, ETPI, ETPF, ISLC, OUTD(IGRF), OUTK(IGRF), OUTI(IGRF), OUTW(IGRF))
+
+				end-if
+
+			! Thermal Consumption [kFuelUnit]
+
+			146:if (getsize(STER) > 0) then
+
+					forall(t in ETPI..ETPF,m in STER) GRAPH_AUX(t,m):= adju_value(getsol(CNSM(m,t))) / NMIL
+					set_graphs(OUTH(IGRF), OUTS(IGRF), STER, OUTU(IGRF), OUTN(IGRF), SNMT, GRAPH_AUX, IGRF, ETPI, ETPF, ISLC, OUTD(IGRF), OUTK(IGRF), OUTI(IGRF), OUTW(IGRF))
+
+				end-if
+
+			! Thermal Secondary Reserve [MW]
+
+			150:if (getsize(STER) > 0) then
+
+					forall(t in ETPI..ETPF,m in STER) GRAPH_AUX(t,m):= adju_value(getsol(RSCT(m,t))) / DURT(t)
+					set_graphs(OUTH(IGRF), OUTS(IGRF), STER, OUTU(IGRF), OUTN(IGRF), SNMT, GRAPH_AUX, IGRF, ETPI, ETPF, ISLC, OUTD(IGRF), OUTK(IGRF), OUTI(IGRF), OUTW(IGRF))
+
+				end-if
+
+			! Hydro Secondary Reserve [MW]
+
+			152:if (getsize(SHID) > 0) then
+
+					forall(t in ETPI..ETPF,m in SHID) GRAPH_AUX(t,m):= adju_value(getsol(RSCH(m,t))) / DURT(t)
+					set_graphs(OUTH(IGRF), OUTS(IGRF), SHID, OUTU(IGRF), OUTN(IGRF), SNMH, GRAPH_AUX, IGRF, ETPI, ETPF, ISLC, OUTD(IGRF), OUTK(IGRF), OUTI(IGRF), OUTW(IGRF))
+
+				end-if
+
+			! Hydro Minimum Turbining Marginal Cost [k$/m3/s]
+
+			155: if (getsize(SHID) > 0) then
+
+					forall(t in ETPI..ETPF,m in SHID|TMIN(m) > 0.0) GRAPH_AUX(t,m):= adju_value(getdual(Hydro_Min_Turbining(m,t)))
+					set_graphs(OUTH(IGRF), OUTS(IGRF), SHID, OUTU(IGRF), OUTN(IGRF), SNMH, GRAPH_AUX, IGRF, ETPI, ETPF, ISLC, OUTD(IGRF), OUTK(IGRF), OUTI(IGRF), OUTW(IGRF))
+
+				end-if
+
+			! System Demand [MW]
+
+			161:if (getsize(SSYS) > 0) then
+
+					forall(t in ETPI..ETPF,m in SSYS) GRAPH_AUX(t,m):= (DEMS(m,t) / FLOS(m,MAPH(t))) / DURT(t)
+					set_graphs(OUTH(IGRF), OUTS(IGRF), SSYS, OUTU(IGRF), OUTN(IGRF), SNMS, GRAPH_AUX, IGRF, ETPI, ETPF, ISLC, OUTD(IGRF), OUTK(IGRF), OUTI(IGRF), OUTW(IGRF))
+
+				end-if
+
+			! Secondary Reserve Slack Cost [k$]
+
+			163:if (getsize(SRSG) > 0) then
+
+					forall(t in ETPI..ETPF,m in SRSG) GRAPH_AUX(t,m):= adju_value(getsol(DRSG(m,t))) * PRSG(m)
+					set_graphs(OUTH(IGRF), OUTS(IGRF), SRSG, OUTU(IGRF), OUTN(IGRF), SNM1, GRAPH_AUX, IGRF, ETPI, ETPF, ISLC, OUTD(IGRF), OUTK(IGRF), OUTI(IGRF), OUTW(IGRF))
+
+				end-if
+
+			! Generation Constraint Slack Cost [k$]
+
+			164:if (getsize(SRTG) > 0) then
+
+					forall(t in ETPI..ETPF,m in SRTG) GRAPH_AUX(t,m):= adju_value(getsol(DRTG(m,t))) * PRTG(m)
+					set_graphs(OUTH(IGRF), OUTS(IGRF), SRTG, OUTU(IGRF), OUTN(IGRF), SNM2, GRAPH_AUX, IGRF, ETPI, ETPF, ISLC, OUTD(IGRF), OUTK(IGRF), OUTI(IGRF), OUTW(IGRF))
+
+				end-if
+
+			! DC Link Marginal Cost [k$/MW]
+
+			167:if (getsize(SLNK) > 0 and NETW > 0) then
+
+					forall(t in ETPI..ETPF,m in SLNK) GRAPH_AUX(t,m):= getdual(DC_Link_Maximum(m,1,t)) + getdual(DC_Link_Maximum(m,2,t)) * DURT(t)
+					set_graphs(OUTH(IGRF), OUTS(IGRF), SLNK, OUTU(IGRF), OUTN(IGRF), SNMK, GRAPH_AUX, IGRF, ETPI, ETPF, ISLC, OUTD(IGRF), OUTK(IGRF), OUTI(IGRF), OUTW(IGRF))
+
+				end-if
+
+			! Thermal CO2 Emission [tCO2]
+
+			171:if (getsize(STER) > 0) then
+
+					forall(t in ETPI..ETPF,m in STER) GRAPH_AUX(t,m):= adju_value(getsol(EMIC(m,t)))
+					set_graphs(OUTH(IGRF), OUTS(IGRF), STER, OUTU(IGRF), OUTN(IGRF), SNMT, GRAPH_AUX, IGRF, ETPI, ETPF, ISLC, OUTD(IGRF), OUTK(IGRF), OUTI(IGRF), OUTW(IGRF))
+
+				end-if
+
+			! Renewable Generation [GWh]
+
+			173:if (getsize(SRNW) > 0) then
+
+					forall(t in ETPI..ETPF,m in SRNW) GRAPH_AUX(t,m):= (GRNW(m,t) - adju_value(getsol(DRNW(m,t)))) / NMIL
+					set_graphs(OUTH(IGRF), OUTS(IGRF), SRNW, OUTU(IGRF), OUTN(IGRF), SNMG, GRAPH_AUX, IGRF, ETPI, ETPF, ISLC, OUTD(IGRF), OUTK(IGRF), OUTI(IGRF), OUTW(IGRF))
+
+				end-if
+
+			! Renewable Generation x Bus Marginal Cost [k$]
+
+			174:if (NETW > 0 and getsize(SBUS) > 0 and getsize(SRNW) > 0) then
+
+					forall(t in ETPI..ETPF,m in SRNW) GRAPH_AUX(t,m):= GRAPH_AUX_B(t,BUSG(GENR(m))) * (GRNW(m,t) - adju_value(getsol(DRNW(m,t)))) / NMIL
+
+					set_graphs(OUTH(IGRF), OUTS(IGRF), SRNW, OUTU(IGRF), OUTN(IGRF), SNMG, GRAPH_AUX, IGRF, ETPI, ETPF, ISLC, OUTD(IGRF), OUTK(IGRF), OUTI(IGRF), OUTW(IGRF))
+
+				end-if
+
+			! Generation Constraint Marginal Cost [k$/MW]
+
+			177:if (getsize(SRTG) > 0) then
+
+					forall(t in ETPI..ETPF,m in SRTG|substr(TRTG(m),2,2) = '>') GRAPH_AUX(t,m):= adju_value(getdual(System_Gen_Constraint_Grt(m,t))) * DURT(t)
+					forall(t in ETPI..ETPF,m in SRTG|substr(TRTG(m),2,2) = '<') GRAPH_AUX(t,m):= adju_value(getdual(System_Gen_Constraint_Low(m,t))) * DURT(t)
+					set_graphs(OUTH(IGRF), OUTS(IGRF), SRTG, OUTU(IGRF), OUTN(IGRF), SNM2, GRAPH_AUX, IGRF, ETPI, ETPF, ISLC, OUTD(IGRF), OUTK(IGRF), OUTI(IGRF), OUTW(IGRF))
+
+				end-if
+
+			! Hydro Initial Storage [Hm3]
+
+			220:if (getsize(SDAM) > 0) then
+
+					forall(t in ETPI..ETPF,m in SDAM) GRAPH_AUX(t,m):= adju_value(getsol(VOLM(VRES(m),t - 1)))
+					set_graphs(OUTH(IGRF), OUTS(IGRF), SDAM, OUTU(IGRF), OUTN(IGRF), SNMR, GRAPH_AUX, IGRF, ETPI, ETPF, ISLC, OUTD(IGRF), OUTK(IGRF), OUTI(IGRF), OUTW(IGRF))
+
+				end-if
+
+			! Gas Node Production Marginal Cost [k$/MUV]
+
+			221:if (getsize(SGNO) > 0) then
+
+					forall(t in ETPI..ETPF,m in SGNO) GRAPH_AUX(t,m):= adju_value(getdual(Gas_Node_Maximum_Production(m,t)))
+					set_graphs(OUTH(IGRF), OUTS(IGRF), SGNO, 'k$/MUV', OUTN(IGRF), SNMN, GRAPH_AUX, IGRF, ETPI, ETPF, ISLC, OUTD(IGRF), OUTK(IGRF), OUTI(IGRF), OUTW(IGRF))
+
+				end-if
+
+			! System Supplied Demand [GWh]
+
+			229:if (NETW = 0 and getsize(SSYS) > 0 and getsize(SLVE) > 0) then
+
+					forall(t in ETPI..ETPF,m in SSYS) GRAPH_AUX(t,m):= (DEMS(m,t) / FLOS(m,MAPH(t)))*DURT(t) / NMIL + sum(l in SLVE|SEGE(l) = m) adju_value(getsol(DEME(l,t))) / NMIL
+					set_graphs(OUTH(IGRF), OUTS(IGRF), SSYS, OUTU(IGRF), OUTN(IGRF), SNMS, GRAPH_AUX, IGRF, ETPI, ETPF, ISLC, OUTD(IGRF), OUTK(IGRF), OUTI(IGRF), OUTW(IGRF))
+
+				end-if
+
+			! Bus Supplied Demand [GWh]
+
+			230:if (NETW > 0 and getsize(SBUS) > 0 and getsize(SLVE) > 0) then
+
+					forall(t in ETPI..ETPF,m in SBUS) GRAPH_AUX(t,m):= DEBX(m,t)*DURT(t) / NMIL + sum(l in SLVE) adju_value(getsol(DBME(m,l,t))) / NMIL
+					set_graphs(OUTH(IGRF), OUTS(IGRF), SBUS, OUTU(IGRF), OUTN(IGRF), SNMB, GRAPH_AUX, IGRF, ETPI, ETPF, ISLC, OUTD(IGRF), OUTK(IGRF), OUTI(IGRF), OUTW(IGRF))
+
+				end-if
+
+			! System Maximum Load [GWh]
+
+			231:if (NETW = 0 and getsize(SSYS) > 0 and getsize(SLVE) > 0) then
+
+					forall(t in ETPI..ETPF,m in SSYS) GRAPH_AUX(t,m):= (DEMS(m,t) / FLOS(m,MAPH(t)))*DURT(t) / NMIL + sum(l in SLVE|SEGE(l) = m) DMEL(l,t)*DURT(t) / NMIL
+					set_graphs(OUTH(IGRF), OUTS(IGRF), SSYS, OUTU(IGRF), OUTN(IGRF), SNMS, GRAPH_AUX, IGRF, ETPI, ETPF, ISLC, OUTD(IGRF), OUTK(IGRF), OUTI(IGRF), OUTW(IGRF))
+
+				end-if
+
+			! Hydro Spilled Energy [GWh]
+
+			238:if (getsize(SHID) > 0) then
+
+					forall(t in ETPI..ETPF,m in SHID|FPRM(m) > 0.0) GRAPH_AUX(t,m):= adju_value(getsol(SPIL(m,t)))*FPRM(m)*DURT(t) / NMIL
+					set_graphs(OUTH(IGRF), OUTS(IGRF), SHID, OUTU(IGRF), OUTN(IGRF), SNMH, GRAPH_AUX, IGRF, ETPI, ETPF, ISLC, OUTD(IGRF), OUTK(IGRF), OUTI(IGRF), OUTW(IGRF))
+
+				end-if
+
+			! Economic Benefit - Energy Sale [k$]
+
+			261:if (NETW = 0 and getsize(SLVE) > 0) then
+
+					forall(t in ETPI..ETPF,m in SDEM) GRAPH_AUX(t,m):= sum(l in SLVE|LOAE(l) = m) adju_value(getsol(DEME(l,t))) * PMEL(l,t) / NMIL
+					set_graphs(OUTH(IGRF), OUTS(IGRF), SDEM, OUTU(IGRF), OUTN(IGRF), SNM7, GRAPH_AUX, IGRF, ETPI, ETPF, ISLC, OUTD(IGRF), OUTK(IGRF), OUTI(IGRF), OUTW(IGRF))
+
+				end-if
+
+			! Hydro Final Storage [%]
+
+			269:if (getsize(SDAM) > 0) then
+
+					forall(t in ETPI..ETPF,m in SDAM|(VMXX(VRES(m)) - VMNX(VRES(m))) > 0.0) GRAPH_AUX(t,m):= (adju_value(getsol(VOLM(VRES(m),t))) / (VMXX(VRES(m)) - VMNX(VRES(m)))) *  NCEM
+					set_graphs(OUTH(IGRF), OUTS(IGRF), SDAM, OUTU(IGRF), OUTN(IGRF), SNMR, GRAPH_AUX, IGRF, ETPI, ETPF, ISLC, OUTD(IGRF), OUTK(IGRF), OUTI(IGRF), OUTW(IGRF))
+
+				end-if
+
+			! Thermal Generation x System Marginal Cost [k$]
+
+			270:if (NETW = 0 and getsize(STER) > 0) then
+
+					forall(t in ETPI..ETPF,m in SSYS) CMG_SYS_AUX(t,m):= maxlist(0.0,getdual(System_Demand(m,t)) * NMIL)
+
+					forall(t in ETPI..ETPF,m in STER) GRAPH_AUX(t,m):= maxlist(0.0,CMG_SYS_AUX(t,SYST(m)) * sum(i in 1..NSEG(m)) adju_value(getsol(GTER(m,t,i)))) / NMIL
+
+					set_graphs(OUTH(IGRF), OUTS(IGRF), STER, OUTU(IGRF), OUTN(IGRF), SNMT, GRAPH_AUX, IGRF, ETPI, ETPF, ISLC, OUTD(IGRF), OUTK(IGRF), OUTI(IGRF), OUTW(IGRF))
+
+				end-if
+
+			! Hydro Generation x System Marginal Cost [k$]
+
+			271:if (NETW = 0 and getsize(SHID) > 0) then
+
+					forall(t in ETPI..ETPF,m in SSYS) CMG_SYS_AUX(t,m):= maxlist(0.0,getdual(System_Demand(m,t)) * NMIL)
+
+					forall(t in ETPI..ETPF,m in SHID) GRAPH_AUX(t,m):= maxlist(0.0,CMG_SYS_AUX(t,SYSH(m)) * adju_value(getsol(GHID(m,t)))) / NMIL
+
+					set_graphs(OUTH(IGRF), OUTS(IGRF), SHID, OUTU(IGRF), OUTN(IGRF), SNMH, GRAPH_AUX, IGRF, ETPI, ETPF, ISLC, OUTD(IGRF), OUTK(IGRF), OUTI(IGRF), OUTW(IGRF))
+
+				end-if
+
+			! Renewable Generation x System Marginal Cost [k$]
+
+			272:if (NETW = 0 and getsize(SRNW) > 0) then
+
+					forall(t in ETPI..ETPF,m in SSYS) CMG_SYS_AUX(t,m):= maxlist(0.0,getdual(System_Demand(m,t)) * NMIL)
+
+					forall(t in ETPI..ETPF,m in SRNW) GRAPH_AUX(t,m):= maxlist(0.0,CMG_SYS_AUX(t,SYSR(m)) * (GRNW(m,t) - adju_value(getsol(DRNW(m,t))))) / NMIL
+
+					set_graphs(OUTH(IGRF), OUTS(IGRF), SRNW, OUTU(IGRF), OUTN(IGRF), SNMG, GRAPH_AUX, IGRF, ETPI, ETPF, ISLC, OUTD(IGRF), OUTK(IGRF), OUTI(IGRF), OUTW(IGRF))
+
+				end-if
+
+			! Hydro Minimum Spilling Slack [m3/s]
+
+			296:if (getsize(SHID) > 0) then
+
+					forall(t in ETPI..ETPF,m in SHID|TMNS(m) > 0) GRAPH_AUX(t,m):= adju_value(getsol(SMNS(m,t)))
+					set_graphs(OUTH(IGRF), OUTS(IGRF), SHID, OUTU(IGRF), OUTN(IGRF), SNMH, GRAPH_AUX, IGRF, ETPI, ETPF, ISLC, OUTD(IGRF), OUTK(IGRF), OUTI(IGRF), OUTW(IGRF))
+
+				end-if
+
+			! Renewable Spilling [GWh]
+
+			304:if (getsize(SRNW) > 0) then
+
+					forall(t in ETPI..ETPF,m in SRNW) GRAPH_AUX(t,m):= adju_value(getsol(DRNW(m,t))) / NMIL
+					set_graphs(OUTH(IGRF), OUTS(IGRF), SRNW, OUTU(IGRF), OUTN(IGRF), SNMG, GRAPH_AUX, IGRF, ETPI, ETPF, ISLC, OUTD(IGRF), OUTK(IGRF), OUTI(IGRF), OUTW(IGRF))
+
+				end-if
+
+			! Hydro Secondary Bid [k$]
+
+			306:if (getsize(SHID) > 0) then
+
+					forall(t in ETPI..ETPF,m in SHID) GRAPH_AUX(t,m):= adju_value(getsol(RSCH(m,t))) * PMXH(m,t) / NMIL
+					set_graphs(OUTH(IGRF), OUTS(IGRF), SHID, OUTU(IGRF), OUTN(IGRF), SNMH, GRAPH_AUX, IGRF, ETPI, ETPF, ISLC, OUTD(IGRF), OUTK(IGRF), OUTI(IGRF), OUTW(IGRF))
+
+				end-if
+
+			! Thermal Secondary Bid [k$]
+
+			307:if (getsize(STER) > 0) then
+
+					forall(t in ETPI..ETPF,m in STER) GRAPH_AUX(t,m):= adju_value(getsol(RSCT(m,t))) * PMXT(m,t) / NMIL
+					set_graphs(OUTH(IGRF), OUTS(IGRF), STER, OUTU(IGRF), OUTN(IGRF), SNMT, GRAPH_AUX, IGRF, ETPI, ETPF, ISLC, OUTD(IGRF), OUTK(IGRF), OUTI(IGRF), OUTW(IGRF))
+
+				end-if
+
+			! Thermal Commitment Decision [p.u.]
+
+			310:if (getsize(SCMM) > 0) then
+
+					forall(t in ETPI..ETPF,m in SCMM) GRAPH_AUX(t,m):= adju_value(getsol(XTER(TCOM(m),CPRT(TCOM(m),t))))
+					set_graphs(OUTH(IGRF), OUTS(IGRF), SCMM, OUTU(IGRF), OUTN(IGRF), SNMM, GRAPH_AUX, IGRF, ETPI, ETPF, ISLC, OUTD(IGRF), OUTK(IGRF), OUTI(IGRF), OUTW(IGRF))
+
+				end-if
+
+			! Battery Net Generation [MWh]
+
+			313:if (getsize(SBAT) > 0) then
+
+					forall(t in ETPI..ETPF,m in SBAT) GRAPH_AUX(t,m):= adju_value(getsol(GBAT(m,t))) - adju_value(getsol(LBAT(m,t)))
+					set_graphs(OUTH(IGRF), OUTS(IGRF), SBAT, OUTU(IGRF), OUTN(IGRF), SNMA, GRAPH_AUX, IGRF, ETPI, ETPF, ISLC, OUTD(IGRF), OUTK(IGRF), OUTI(IGRF), OUTW(IGRF))
+
+				end-if
+
+			! Battery Stored Energy [MWh]
+
+			314:if (getsize(SBAT) > 0) then
+
+					forall(t in ETPI..ETPF,m in SBAT) GRAPH_AUX(t,m):= adju_value(getsol(VBAT(m,t)))
+					set_graphs(OUTH(IGRF), OUTS(IGRF), SBAT, OUTU(IGRF), OUTN(IGRF), SNMA, GRAPH_AUX, IGRF, ETPI, ETPF, ISLC, OUTD(IGRF), OUTK(IGRF), OUTI(IGRF), OUTW(IGRF))
+
+				end-if
+
+			! Battery Storage Marginal Cost [$/MWh]
+
+			315:if (getsize(SBAT) > 0) then
+
+					forall(t in ETPI..ETPF,m in SBAT) GRAPH_AUX(t,m):= getdual(Battery_Max_Storage(m,t)) * NMIL
+					set_graphs(OUTH(IGRF), OUTS(IGRF), SBAT, OUTU(IGRF), OUTN(IGRF), SNMA, GRAPH_AUX, IGRF, ETPI, ETPF, ISLC, OUTD(IGRF), OUTK(IGRF), OUTI(IGRF), OUTW(IGRF))
+
+				end-if
+
+			! System Generation Excess [GWh]
+
+			323: if (getsize(SRNW) > 0) then
+
+					forall(t in ETPI..ETPF,m in SSYS) GRAPH_AUX(t,m):= sum(r in SRNW|SYSR(r) = m) adju_value(getsol(DRNW(m,t))) / NMIL
+					set_graphs(OUTH(IGRF), OUTS(IGRF), SSYS, OUTU(IGRF), OUTN(IGRF), SNMS, GRAPH_AUX, IGRF, ETPI, ETPF, ISLC, OUTD(IGRF), OUTK(IGRF), OUTI(IGRF), OUTW(IGRF))
+
+				end-if
+
+			! Thermal Start-Up Decision [0/1]
+
+			325:if (getsize(SCMM) > 0) then
+
+					forall(t in ETPI..ETPF,m in SCMM) GRAPH_AUX(t,m):= adju_value(getsol(YTER(TCOM(m),t)))
+					set_graphs(OUTH(IGRF), OUTS(IGRF), SCMM, OUTU(IGRF), OUTN(IGRF), SNMM, GRAPH_AUX, IGRF, ETPI, ETPF, ISLC, OUTD(IGRF), OUTK(IGRF), OUTI(IGRF), OUTW(IGRF))
+
+				end-if
+
+			! Step Duration [p.u.]
+
+			327: if (getsize(SUNI) > 0) then
+
+					forall(t in ETPI..ETPF) GRAPH_AUX(t,1):= DURT(t) / NSTG
+
+					set_graphs(OUTH(IGRF), OUTS(IGRF), SUNI, OUTU(IGRF), OUTN(IGRF), SNM0, GRAPH_AUX, IGRF, ETPI, ETPF, ISLC, OUTD(IGRF), OUTK(IGRF), OUTI(IGRF), OUTW(IGRF))
+
+				end-if
+
+			! Power Injection [GWh]
+
+			328:if (getsize(SINJ) > 0) then
+
+					forall(t in ETPI..ETPF,m in SINJ) GRAPH_AUX(t,m):= (INJW(m,t) - adju_value(getsol(DNJW(m,t)))) / NMIL
+					set_graphs(OUTH(IGRF), OUTS(IGRF), SINJ, OUTU(IGRF), OUTN(IGRF), SNMJ, GRAPH_AUX, IGRF, ETPI, ETPF, ISLC, OUTD(IGRF), OUTK(IGRF), OUTI(IGRF), OUTW(IGRF))
+
+				end-if
+
+			! Balancing Area Demand [GWh]
+
+			1007:if (getsize(SBAL) > 0) then
+
+					forall(t in ETPI..ETPF,m in SBAL) GRAPH_AUX(t,m):= sum(k in SLOA|BALD(LOAS(k),m) = 1) DEBX(BUSL(k),t)*DURT(t) / NMIL
+					set_graphs(OUTH(IGRF), OUTS(IGRF), SBAL, OUTU(IGRF), OUTN(IGRF), SNM8, GRAPH_AUX, IGRF, ETPI, ETPF, ISLC, OUTD(IGRF), OUTK(IGRF), OUTI(IGRF), OUTW(IGRF))
+
+				 end-if
+
+			! Balancing Area Regulation Up Reserve [MW]
+
+			1008:if (getsize(SBAL) > 0) then
+
+					forall(t in ETPI..ETPF,m in SBAL) GRAPH_AUX(t,m):= (sum(i in SHID|BALH(i,m) = 1) getsol(RBUH(i,m,t)) + sum(j in STER|BALT(j,m) = 1) getsol(RBUT(j,m,t))) / DURT(t)
+					set_graphs(OUTH(IGRF), OUTS(IGRF), SBAL, OUTU(IGRF), OUTN(IGRF), SNM8, GRAPH_AUX, IGRF, ETPI, ETPF, ISLC, OUTD(IGRF), OUTK(IGRF), OUTI(IGRF), OUTW(IGRF))
+
+				 end-if
+
+			! Balancing Area Regulation Down Reserve [MW]
+
+			1009:if (getsize(SBAL) > 0) then
+
+					forall(t in ETPI..ETPF,m in SBAL) GRAPH_AUX(t,m):= (sum(i in SHID|BALH(i,m) = 1) getsol(RBDH(i,m,t)) + sum(j in STER|BALT(j,m) = 1) getsol(RBDT(j,m,t))) / DURT(t)
+					set_graphs(OUTH(IGRF), OUTS(IGRF), SBAL, OUTU(IGRF), OUTN(IGRF), SNM8, GRAPH_AUX, IGRF, ETPI, ETPF, ISLC, OUTD(IGRF), OUTK(IGRF), OUTI(IGRF), OUTW(IGRF))
+
+				 end-if
+
+			! Balancing Area Contingency Reserve [MW]
+
+			1010:if (getsize(SCTG) > 0) then
+
+					forall(t in ETPI..ETPF,m in SBAL) GRAPH_AUX(t,m):= (sum(i in SHID|BALH(i,m) = 1) getsol(RCUH(i,m,t)) + sum(j in STER|BALT(j,m) = 1) getsol(RCUT(j,m,t))) / DURT(t)
+					set_graphs(OUTH(IGRF), OUTS(IGRF), SBAL, OUTU(IGRF), OUTN(IGRF), SNM8, GRAPH_AUX, IGRF, ETPI, ETPF, ISLC, OUTD(IGRF), OUTK(IGRF), OUTI(IGRF), OUTW(IGRF))
+
+				 end-if
+
+			else
+
+				if (OUTI(IGRF) <> 303 and OUTI(IGRF) <> 326 and BINF > 0) then
+					fdelete(PATH + OUTN(IGRF) + '.bin')
+					fdelete(PATH + OUTN(IGRF) + '.hdr')
+				end-if
+
+		end-case
+
+	end-do
+
+end-procedure
+
+!***********************************************************************************************************************
+
+procedure total_cost(C: integer)
+
+	if (C = NSLC) then
+		GRAPH_AUX_C(1,01):= getsol(ALFA) + sum(j in SFCF|TERF <= 0) (MRHX(j) / DESR)
+		GRAPH_AUX_C(1,06):= getsol(SVAF)
+		GRAPH_AUX_C(1,07):= getsol(SVMF)
+		GRAPH_AUX_C(1,23):= getsol(TGSF)
+		GRAPH_AUX_C(1,25):= getsol(SVXF)
+	end-if
+
+	if (NSLC > 1 and IREP = 0) then
+
+		GRAPH_AUX_C(1,02)+= getsol(OMTF) / NMIL
+		GRAPH_AUX_C(1,03)+= getsol(CDSF) / NMIL + getsol(CDBF) / NMIL
+		GRAPH_AUX_C(1,04)+= getsol(TCOF) / NMIL
+		GRAPH_AUX_C(1,05)+= getsol(STPF)
+		GRAPH_AUX_C(1,08)+= getsol(SDNF)
+		GRAPH_AUX_C(1,09)+= getsol(SDMF)
+		GRAPH_AUX_C(1,10)+= getsol(SPLF)
+		GRAPH_AUX_C(1,11)+= getsol(SMTF) / NMIL
+		GRAPH_AUX_C(1,12)+= getsol(SIRF)
+		GRAPH_AUX_C(1,13)+= getsol(SRSF)
+		GRAPH_AUX_C(1,14)+= getsol(SRTF)
+		GRAPH_AUX_C(1,15)+= getsol(SMNF)
+		GRAPH_AUX_C(1,16)+= getsol(SHDF)
+		GRAPH_AUX_C(1,17)+= getsol(SELF)*(-NUM1) / NMIL
+		GRAPH_AUX_C(1,18)+= getsol(SINF) / NMIL
+		GRAPH_AUX_C(1,19)+= getsol(OMHF) / NMIL
+		GRAPH_AUX_C(1,20)+= getsol(SMXF)
+		GRAPH_AUX_C(1,21)+= getsol(OMRF) / NMIL
+		GRAPH_AUX_C(1,22)+= getsol(CURF) / NMIL
+		GRAPH_AUX_C(1,24)+= getsol(INJF) / NMIL
+		GRAPH_AUX_C(1,26)+= getsol(RESF) / NMIL
+		GRAPH_AUX_C(1,27)+= getsol(TMNF) / NMIL
+		GRAPH_AUX_C(1,28)+= getsol(CCCF) / NMIL
+		GRAPH_AUX_C(1,29)+= getsol(GNPF) / NMIL
+		GRAPH_AUX_C(1,30)+= getsol(GPTF) / NMIL
+		GRAPH_AUX_C(1,31)+= getsol(BURF)
+		GRAPH_AUX_C(1,32)+= getsol(BDRF)
+		GRAPH_AUX_C(1,33)+= getsol(CTRF)
+		GRAPH_AUX_C(1,34)+= getsol(STHF)
+
+	else
+
+		GRAPH_AUX_C(1,02):= getsol(OMTF) / NMIL
+		GRAPH_AUX_C(1,03):= getsol(CDSF) / NMIL + getsol(CDBF) / NMIL
+		GRAPH_AUX_C(1,04):= getsol(TCOF) / NMIL
+		GRAPH_AUX_C(1,05):= getsol(STPF)
+		GRAPH_AUX_C(1,08):= getsol(SDNF)
+		GRAPH_AUX_C(1,09):= getsol(SDMF)
+		GRAPH_AUX_C(1,10):= getsol(SPLF)
+		GRAPH_AUX_C(1,11):= getsol(SMTF) / NMIL
+		GRAPH_AUX_C(1,12):= getsol(SIRF)
+		GRAPH_AUX_C(1,13):= getsol(SRSF)
+		GRAPH_AUX_C(1,14):= getsol(SRTF)
+		GRAPH_AUX_C(1,15):= getsol(SMNF)
+		GRAPH_AUX_C(1,16):= getsol(SHDF)
+		GRAPH_AUX_C(1,17):= getsol(SELF)*(-NUM1) / NMIL
+		GRAPH_AUX_C(1,18):= getsol(SINF) / NMIL
+		GRAPH_AUX_C(1,19):= getsol(OMHF) / NMIL
+		GRAPH_AUX_C(1,20):= getsol(SMXF)
+		GRAPH_AUX_C(1,21):= getsol(OMRF) / NMIL
+		GRAPH_AUX_C(1,22):= getsol(CURF) / NMIL
+		GRAPH_AUX_C(1,24):= getsol(INJF) / NMIL
+		GRAPH_AUX_C(1,26):= getsol(RESF) / NMIL
+		GRAPH_AUX_C(1,27):= getsol(TMNF) / NMIL
+		GRAPH_AUX_C(1,28):= getsol(CCCF) / NMIL
+		GRAPH_AUX_C(1,29):= getsol(GNPF) / NMIL
+		GRAPH_AUX_C(1,30):= getsol(GPTF) / NMIL
+		GRAPH_AUX_C(1,31):= getsol(BURF)
+		GRAPH_AUX_C(1,32):= getsol(BDRF)
+		GRAPH_AUX_C(1,33):= getsol(CTRF)
+		GRAPH_AUX_C(1,34):= getsol(STHF)
+
+	end-if
+
+	if (CASSANDRA_WRITE = 0 and C = NSLC) then
+
+		forall(k in SFOC|GRAPH_AUX_C(1,k) > -NM01 and GRAPH_AUX_C(1,k) < NM01) GRAPH_AUX_C(1,k):= 0.0
+
+		ALPH:= GRAPH_AUX_C(1,01)
+		CTOT:= sum(k in SFOC) GRAPH_AUX_C(1,k)
+		putHostReal('NCPL_ALPHA',ALPH)
+		putHostReal('NCPL_CTOT',CTOT)
+
+		IGRF:= NGRF + 1
+
+		if (NGAM > 0) then
+			IGXX:= GAME
+			ISXX:= GAME
+		else
+			IGXX:= ISIN
+			ISXX:= ISIM
+		end-if
+
+		if (PARALLEL_WRITE = 0) then
+
+			case LANG of
+				0:	set_graphs(0, 1, SFOC, 'k' + MONS(1), 'objcop', SNMF, GRAPH_AUX_C, IGRF, 1, 1, 1, 'Total operative costs', 'syst', 303, IGXX)
+				1:	set_graphs(0, 1, SFOC, 'k' + MONS(1), 'objcop', SNMF, GRAPH_AUX_C, IGRF, 1, 1, 1, 'Costos operativos totales', 'syst', 303, IGXX)
+				2:	set_graphs(0, 1, SFOC, 'k' + MONS(1), 'objcop', SNMF, GRAPH_AUX_C, IGRF, 1, 1, 1, 'Custos operativos totais', 'syst', 303, IGXX)
+			end-case
+
+		end-if
+
+		if (PARALLEL_WRITE = 1) then
+
+			case LANG of
+				0:	set_graphs(0, 1, SFOC, 'k' + MONS(1), 'objcop_' + my_fmtisim(ISXX), SNMF, GRAPH_AUX_C, IGRF, 1, 1, 1, 'Total operative costs', 'syst', 303, IGXX)
+				1:	set_graphs(0, 1, SFOC, 'k' + MONS(1), 'objcop_' + my_fmtisim(ISXX), SNMF, GRAPH_AUX_C, IGRF, 1, 1, 1, 'Costos operativos totales', 'syst', 303, IGXX)
+				2:	set_graphs(0, 1, SFOC, 'k' + MONS(1), 'objcop_' + my_fmtisim(ISXX), SNMF, GRAPH_AUX_C, IGRF, 1, 1, 1, 'Custos operativos totais', 'syst', 303, IGXX)
+			end-case
+
+		end-if
+
+	end-if
+
+end-procedure
+
+!***********************************************************************************************************************
+
+procedure exec_times
+
+	TFIM:= currenttime / 1000. + currentdate * 3600 * 24
+
+	GRAPH_AUX(1,01):= (TFIM - TINC)
+
+	IGRF:= NGRF + 2
+
+	if (NGAM > 0) then
+		IGXX:= GAME
+		ISXX:= GAME
+	else
+		IGXX:= ISIN
+		ISXX:= ISIM
+	end-if
+
+	if (PARALLEL_WRITE = 0) then
+
+		case LANG of
+			0:	set_graphs(0, 1, SFOX, 'sec', 'extime', SNMX, GRAPH_AUX, IGRF, 1, 1, 1, 'Execution times', 'syst', 326, IGXX)
+			1:	set_graphs(0, 1, SFOX, 'sec', 'extime', SNMX, GRAPH_AUX, IGRF, 1, 1, 1, 'Tiempos de ejecucion', 'syst', 326, IGXX)
+			2:	set_graphs(0, 1, SFOX, 'sec', 'extime', SNMX, GRAPH_AUX, IGRF, 1, 1, 1, 'Tempos de execucao', 'syst', 326, IGXX)
+		end-case
+
+	end-if
+
+	if (PARALLEL_WRITE = 1) then
+
+		case LANG of
+			0:	set_graphs(0, 1, SFOX, 'sec', 'extime_' + my_fmtisim(ISXX), SNMX, GRAPH_AUX, IGRF, 1, 1, 1, 'Execution times', 'syst', 326, IGXX)
+			1:	set_graphs(0, 1, SFOX, 'sec', 'extime_' + my_fmtisim(ISXX), SNMX, GRAPH_AUX, IGRF, 1, 1, 1, 'Tiempos de ejecucion', 'syst', 326, IGXX)
+			2:	set_graphs(0, 1, SFOX, 'sec', 'extime_' + my_fmtisim(ISXX), SNMX, GRAPH_AUX, IGRF, 1, 1, 1, 'Tempos de execucao', 'syst', 326, IGXX)
+		end-case
+
+	end-if
+
+end-procedure
+
+!***********************************************************************************************************************
+
+procedure check_cmgs(C: integer)
+
+	if (NSLC > 1 and IREP = 0) then
+
+		CMG_AUX:= CMG_AUX / (NSYS * DSLC)
+
+		if (C < NSLC) then
+			CMG_AVG(C):= CMG_AUX
+		else
+
+			CMG_TOT:= sum(c in 1..NSLC - 1) CMG_AVG(c) / (NSLC - 1)
+
+			if ((CMG_AUX > 3 * CMG_TOT) and (CMG_AUX > DEFC(NDEF) / NCEM)) then
+
+				IREP:= 1
+				ISLC:= 0
+
+				A:= 1
+				B:= NSTG
+				D:= 1
+				E:= NSTG
+
+				forall(j in STER,t in A..B - DSLC|EXST(j) <= 0 and COMT(j) > 0 and NCPT(j) = NSTG and (MUPT(j) > DURT(t) or MDWT(j) > DURT(t))) sethidden(Thermal_Initial_Commitment(j,t),true)
+
+				if (DEBUG or DEBG >= 2) then
+					writeln('Execution - Marginal Cost: ',IPER,'-',ISIM,'-',ISLC)
+				end-if
+
+				model_exec(A,B,C,E)
+
+				if (GENESYS = 1) then
+					add_genctr(A,B)
+				end-if
+
+				solve_modl(A,B,D)
+
+				if ((DEBUG or PROFILER) and PARL = 0) then
+					TOU1:= currenttime / 1000. + currentdate * 3600 * 24
+				end-if
+
+				if (OUTPUT = 1) then
+
+					if (NETW > 0 and getsize(SBUS) > 0) then
+						get_cmgbus(A,B)
+					end-if
+
+					out_result(A,B,C)
+
+				end-if
+
+			end-if
+
+		end-if
+
+	end-if
+
+end-procedure
+
+!***********************************************************************************************************************
+
+procedure index_file(A: string, B: string, C: string, D: string)
+
+	fopen(PATH + 'indice.grf',F_APPEND)
+
+	if (BINF = 0) then
+		A:= A + '.csv'
+	else
+		A:= A + '.bin'
+	end-if
+
+	writeln(strfmt(A,-12), ' ', strfmt(B,-33), strfmt(C,7), ' ', strfmt(D,4))
+
+	fclose(F_APPEND)
+
+end-procedure
+
+!***********************************************************************************************************************
+
+procedure graph_data
+
+	fopen(PATH + 'dadger.grf',F_OUTPUT)
+
+	writeln('SDDP')
+	writeln(strfmt('Language',-24)          ,', ',strfmt(LANG,4))
+	writeln(strfmt('Stage Type',-24)        ,', ',strfmt(TSTG,4))
+	writeln(strfmt('Initial Stage',-24)     ,', ',strfmt(IMTH,4))
+	writeln(strfmt('Initial Year',-24)      ,', ',strfmt(IYER,4))
+	writeln(strfmt('# of stages',-24)       ,', ',strfmt(NPER,4))
+	writeln(strfmt('# of series',-24)       ,', ',strfmt(NSSL,4))
+	writeln(strfmt('# of blocks',-24)       ,', ',strfmt(GSTG,4))
+	write(strfmt('Block duration (%)',-24)  ,',')
+	forall(i in 1..GSTG) write(strfmt('1.00',8))
+	writeln
+	writeln(strfmt('UREF',-24)              ,', ',strfmt(MONS(1),4))
+	writeln(strfmt('HOURLY',-24)            ,', ',strfmt('1',4))
+
+	fclose(F_OUTPUT)
+
+end-procedure
+
+!***********************************************************************************************************************
+
+procedure clean_data(A: integer, B: integer, C: set of integer, D: array(range,range) of real)
+
+	forall(t in A..B,m in C) D(t,m):= 0.0
+
+end-procedure
+
+!***********************************************************************************************************************
+
+procedure get_cmgbus(A: integer, B: integer)
+
+	if (getsize(SLIN) > 0) then
+
+		forall(t in A..B,m in SBUS) do
+			GRAPH_AUX_B(t,m):= getdual(Island_Balance(BISL(m),t))
+			GRAPH_AUX_B(t,m):= maxlist(0.0,(GRAPH_AUX_B(t,m) - sum(k in 1..NVIO|MAPH(t) = BVIO(k) and TVIO(k) = 0) BETA(m,FVIO(k))*(getdual(Circuit_Violation_1(XVIO(k),t)) + getdual(Circuit_Violation_2(XVIO(k),t))) -
+											                   sum(k in 1..NVIO|MAPH(t) = BVIO(k) and TVIO(k) = 1) BETA(m,FVIO(k))*(getdual(Circuit_Min_SumFlow(XVIO(k),t)) + getdual(Circuit_Max_SumFlow(XVIO(k),t))))) * NMIL
+		end-do
+
+	else
+
+		forall(t in A..B,m in SBUS|BUSI(m) > 0 or IBDF(m) = 1) GRAPH_AUX_B(t,m):= maxlist(0.0,getdual(Bus_Demand(m,t))) * NMIL
+
+	end-if
+
+end-procedure
+
+!***********************************************************************************************************************
+
+procedure get_cirflw(A: integer, B: integer)
+
+	if (NETW > 0 and getsize(SLIN) > 0) then
+
+		forall(t in A..B) do
+
+			forall(m in SBUS) do
+				BAUX(IBSO(m)):= (adju_value(getsol(GBUS(m,t))) / DURT(t)) - DEBX(m,t)
+				DEMB(m,t):= DEBX(m,t)
+			end-do
+
+			PSRNetwork_solveB  (dc_network, 1, BAUX)
+			PSRNetwork_getFlows(dc_network, 1, CAUX)
+
+			forall(m in SLIN) do
+				LOSR(m,t):= (RESI(m) / NDLL) * CAUX(m)^2
+				DEMB(ACFR(m),t)+= LOSR(m,t) / 2
+				DEMB(ACTO(m),t)+= LOSR(m,t) / 2
+			end-do
+
+		end-do
+
+	end-if
+
+end-procedure

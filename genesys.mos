@@ -1,0 +1,67 @@
+! **********
+! Input data
+! **********
+
+if (GENESYS = 1) then
+
+	! Hydro Tables
+
+	forall(k in 1..NUM5) do
+
+		PSRTimeController_setDimension(timectrl, 'point', k)
+
+		PSRMapData_pullToMemory(map_hydro_point)
+
+		forall(i in SHID) do
+			OXTT(i,k):= OTTX(i)
+			OXTO(i,k):= OTOX(i)
+		end-do
+
+		forall(i in SHID) do
+			PXNN(i,k):= PNNX(i)
+			PXNP(i,k):= PNPX(i)
+		end-do
+
+	end-do
+
+	! Hydro Elevation [m.a.s.l.]
+
+	if (getsize(SDAM) > 0) then
+
+		forall(i in SHID,k in 1..NUM4|SXHS(i,k + 1) - SXHS(i,k) > 0.0) do
+			HELV(i):= 1
+			ALFH(i,k):= (SXHH(i,k + 1) - SXHH(i,k)) / (SXHS(i,k + 1) - SXHS(i,k))
+			BETH(i,k):= SXHH(i,k) - ALFH(i,k)*SXHS(i,k)
+		end-do
+
+	end-if
+
+	! Hydro Tailwater Level [m.a.s.l.]
+
+	if (getsize(SHID) > 0) then
+
+		forall(i in SHID,k in 1..NUM4|OXTO(i,k + 1) - OXTO(i,k) > 0.0) do
+			HTWT(i):= 1
+			ALFT(i,k):= (OXTT(i,k + 1) - OXTT(i,k)) / (OXTO(i,k + 1) - OXTO(i,k))
+			BETT(i,k):= OXTT(i,k) - ALFT(i,k)*OXTO(i,k)
+		end-do
+
+	end-if
+
+	! Hydro Net Head [m]
+
+	if (getsize(SHID) > 0) then
+
+		forall(i in SHID,k in 1..NUM4|PXNN(i,k + 1) - PXNN(i,k) > 0.0) do
+			HNTH(i):= 1
+			ALFP(i,k):= (PXNP(i,k + 1) - PXNP(i,k)) / (PXNN(i,k + 1) - PXNN(i,k))
+			BETP(i,k):= PXNP(i,k) - ALFP(i,k)*OXTO(i,k)
+		end-do
+
+	end-if
+
+	! Maximum Spillage Penalty
+
+	forall(i in SHID|EXSH(i) <= 0 and TMXS(i) > 0.0 and PMXS(i) = -1) PMXS(i):= 1.1*DEFC(NDEF)*FPRA(i)*NM03*CNV2(1)
+
+end-if

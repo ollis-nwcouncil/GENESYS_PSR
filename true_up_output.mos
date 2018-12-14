@@ -1,0 +1,638 @@
+! ---------------------------------------------------------------------------
+! Output
+! ---------------------------------------------------------------------------
+
+! report configuration data for injections, areas, balancing authorities, hydro plants, thermal plants & renewable plants
+   if( NINJ > 0 and PRINT_LEVEL >= 2) then
+     diskdata(ETC_OUT+ETC_TRANS,PATH+'injection'+strfmt(IPER,2)+strfmt(ISIM,3)+strfmt(HINI,4)+'.csv',BUSINJ)
+     diskdata(ETC_OUT+ETC_TRANS+ETC_APPEND,PATH+'injection'+strfmt(IPER,2)+strfmt(ISIM,3)+strfmt(HINI,4)+'.csv',GERI)
+   end-if
+
+   if( PRINT_LEVEL >= 2) then
+! scenario probabilities (weights)
+     diskdata(ETC_OUT+ETC_TRANS,PATH+'scprbdata'+strfmt(IPER,2)+strfmt(ISIM,3)+strfmt(HINI,4)+'.csv',PRSC)
+
+! balancing authorities
+     diskdata(ETC_OUT+ETC_TRANS,PATH+'bacfgdata'+strfmt(IPER,2)+strfmt(ISIM,3)+strfmt(HINI,4)+'.csv',IDBA)
+     diskdata(ETC_OUT+ETC_TRANS+ETC_APPEND,PATH+'bacfgdata'+strfmt(IPER,2)+strfmt(ISIM,3)+strfmt(HINI,4)+'.csv',TYPBA)
+     diskdata(ETC_OUT+ETC_TRANS+ETC_APPEND,PATH+'bacfgdata'+strfmt(IPER,2)+strfmt(ISIM,3)+strfmt(HINI,4)+'.csv',NHYBA)
+     diskdata(ETC_OUT+ETC_TRANS+ETC_APPEND,PATH+'bacfgdata'+strfmt(IPER,2)+strfmt(ISIM,3)+strfmt(HINI,4)+'.csv',NRNBA)
+     diskdata(ETC_OUT+ETC_TRANS+ETC_APPEND,PATH+'bacfgdata'+strfmt(IPER,2)+strfmt(ISIM,3)+strfmt(HINI,4)+'.csv',NTHBA)
+     diskdata(ETC_OUT+ETC_TRANS+ETC_APPEND,PATH+'bacfgdata'+strfmt(IPER,2)+strfmt(ISIM,3)+strfmt(HINI,4)+'.csv',NDUBA)
+
+! areas
+     diskdata(ETC_OUT+ETC_TRANS,PATH+'areacfgdata'+strfmt(IPER,2)+strfmt(ISIM,3)+strfmt(HINI,4)+'.csv',IDARE)
+
+     forall(a in 1..A)
+       DATARE(a):= IDBA(BAARE(a))
+
+     diskdata(ETC_OUT+ETC_TRANS+ETC_APPEND,PATH+'areacfgdata'+strfmt(IPER,2)+strfmt(ISIM,3)+strfmt(HINI,4)+'.csv',DATARE)
+     diskdata(ETC_OUT+ETC_TRANS+ETC_APPEND,PATH+'areacfgdata'+strfmt(IPER,2)+strfmt(ISIM,3)+strfmt(HINI,4)+'.csv',TYPARE)
+     diskdata(ETC_OUT+ETC_TRANS+ETC_APPEND,PATH+'areacfgdata'+strfmt(IPER,2)+strfmt(ISIM,3)+strfmt(HINI,4)+'.csv',NHYARE)
+     diskdata(ETC_OUT+ETC_TRANS+ETC_APPEND,PATH+'areacfgdata'+strfmt(IPER,2)+strfmt(ISIM,3)+strfmt(HINI,4)+'.csv',NRNARE)
+
+     forall(h in 1..H) do
+       forall(a in 1..A)
+         DATARE(a):= NTHARE(h,a)
+
+       diskdata(ETC_OUT+ETC_TRANS+ETC_APPEND,PATH+'areacfgdata'+strfmt(IPER,2)+strfmt(ISIM,3)+strfmt(HINI,4)+'.csv',DATARE)
+     end-do
+
+! renewable plants
+     diskdata(ETC_OUT+ETC_TRANS,PATH+'rncfgdata'+strfmt(IPER,2)+strfmt(ISIM,3)+strfmt(HINI,4)+'.csv',IDRN)
+
+     forall(r in 1..R)
+       DATRN(r):= IDARE(ARERN(r))
+
+     diskdata(ETC_OUT+ETC_TRANS+ETC_APPEND,PATH+'rncfgdata'+strfmt(IPER,2)+strfmt(ISIM,3)+strfmt(HINI,4)+'.csv',DATRN)
+
+     forall(r in 1..R)
+       DATRN(r):= IDBA(BARN(r))
+
+     diskdata(ETC_OUT+ETC_TRANS+ETC_APPEND,PATH+'rncfgdata'+strfmt(IPER,2)+strfmt(ISIM,3)+strfmt(HINI,4)+'.csv',DATRN)
+
+     forall(r in 1..R)
+       DATRN(r):= EXISRN(r)
+
+     diskdata(ETC_OUT+ETC_TRANS+ETC_APPEND,PATH+'rncfgdata'+strfmt(IPER,2)+strfmt(ISIM,3)+strfmt(HINI,4)+'.csv',DATRN)
+
+     forall(r in 1..R)
+       DATRN(r):= CAPRN(r)
+
+     diskdata(ETC_OUT+ETC_TRANS+ETC_APPEND,PATH+'rncfgdata'+strfmt(IPER,2)+strfmt(ISIM,3)+strfmt(HINI,4)+'.csv',DATRN)
+
+! hydro plants & reservoirs
+     diskdata(ETC_OUT+ETC_TRANS,PATH+'hycfgdata'+strfmt(IPER,2)+strfmt(ISIM,3)+strfmt(HINI,4)+'.csv',IDHY)
+     diskdata(ETC_OUT+ETC_TRANS+ETC_APPEND,PATH+'hycfgdata'+strfmt(IPER,2)+strfmt(ISIM,3)+strfmt(HINI,4)+'.csv',EXISHY)
+
+     forall(i in 1..I)
+       DATHY(i):= IDARE(AREHY(i))
+
+     diskdata(ETC_OUT+ETC_TRANS+ETC_APPEND,PATH+'hycfgdata'+strfmt(IPER,2)+strfmt(ISIM,3)+strfmt(HINI,4)+'.csv',DATHY)
+
+     forall(i in 1..I)
+       DATHY(i):= IDBA(BAHY(i))
+
+     diskdata(ETC_OUT+ETC_TRANS+ETC_APPEND,PATH+'hycfgdata'+strfmt(IPER,2)+strfmt(ISIM,3)+strfmt(HINI,4)+'.csv',DATHY)
+
+     forall(i in 1..I)
+       DATHY(i):= PCHY(i)
+
+     diskdata(ETC_OUT+ETC_TRANS+ETC_APPEND,PATH+'hycfgdata'+strfmt(IPER,2)+strfmt(ISIM,3)+strfmt(HINI,4)+'.csv',DATHY)
+
+     forall(i in 1..I)
+       DATHY(i):= UMAXHY(i)
+
+     diskdata(ETC_OUT+ETC_TRANS+ETC_APPEND,PATH+'hycfgdata'+strfmt(IPER,2)+strfmt(ISIM,3)+strfmt(HINI,4)+'.csv',DATHY)
+
+     forall(i in 1..I)
+       DATHY(i):= OPCSTHY(i)
+
+     diskdata(ETC_OUT+ETC_TRANS+ETC_APPEND,PATH+'hycfgdata'+strfmt(IPER,2)+strfmt(ISIM,3)+strfmt(HINI,4)+'.csv',DATHY)
+
+     forall(i in 1..I)
+       if( DWSTU(i) = 0 ) then
+         DATHY(i):= 0
+       else
+         DATHY(i):= IDHY(DWSTU(i))
+       end-if
+
+     diskdata(ETC_OUT+ETC_TRANS+ETC_APPEND,PATH+'hycfgdata'+strfmt(IPER,2)+strfmt(ISIM,3)+strfmt(HINI,4)+'.csv',DATHY)
+
+     forall(i in 1..I)
+       if( DWSTS(i) = 0 ) then
+         DATHY(i):= 0
+       else
+         DATHY(i):= IDHY(DWSTS(i))
+       end-if
+
+     diskdata(ETC_OUT+ETC_TRANS+ETC_APPEND,PATH+'hycfgdata'+strfmt(IPER,2)+strfmt(ISIM,3)+strfmt(HINI,4)+'.csv',DATHY)
+
+     forall(i in 1..I)
+       DATHY(i):= VOLIHY(i)
+
+     diskdata(ETC_OUT+ETC_TRANS+ETC_APPEND,PATH+'hycfgdata'+strfmt(IPER,2)+strfmt(ISIM,3)+strfmt(HINI,4)+'.csv',DATHY)
+
+     forall(i in 1..I)
+       DATHY(i):= VMINHY(i)
+
+     diskdata(ETC_OUT+ETC_TRANS+ETC_APPEND,PATH+'hycfgdata'+strfmt(IPER,2)+strfmt(ISIM,3)+strfmt(HINI,4)+'.csv',DATHY)
+
+     forall(i in 1..I)
+       DATHY(i):= VMAXHY(i)
+
+     diskdata(ETC_OUT+ETC_TRANS+ETC_APPEND,PATH+'hycfgdata'+strfmt(IPER,2)+strfmt(ISIM,3)+strfmt(HINI,4)+'.csv',DATHY)
+
+     forall(i in 1..I)
+       DATHY(i):= INFLHY(HS,i)
+
+     diskdata(ETC_OUT+ETC_TRANS+ETC_APPEND,PATH+'hycfgdata'+strfmt(IPER,2)+strfmt(ISIM,3)+strfmt(HINI,4)+'.csv',DATHY)
+
+     forall(i in 1..I)
+       DATHY(i):= FLINHY(i)
+
+     diskdata(ETC_OUT+ETC_TRANS+ETC_APPEND,PATH+'hycfgdata'+strfmt(IPER,2)+strfmt(ISIM,3)+strfmt(HINI,4)+'.csv',DATHY)
+
+! thermal plants
+     diskdata(ETC_OUT+ETC_TRANS,PATH+'thcfgdata'+strfmt(IPER,2)+strfmt(ISIM,3)+strfmt(HINI,4)+'.csv',IDTH)
+     diskdata(ETC_OUT+ETC_TRANS+ETC_APPEND,PATH+'thcfgdata'+strfmt(IPER,2)+strfmt(ISIM,3)+strfmt(HINI,4)+'.csv',EXISTH)
+
+     forall(j in 1..J)
+       DATTH(j):= IDARE(ARETH(j))
+
+     diskdata(ETC_OUT+ETC_TRANS+ETC_APPEND,PATH+'thcfgdata'+strfmt(IPER,2)+strfmt(ISIM,3)+strfmt(HINI,4)+'.csv',DATTH)
+
+     forall(j in 1..J)
+       DATTH(j):= IDBA(BATH(j))
+
+     diskdata(ETC_OUT+ETC_TRANS+ETC_APPEND,PATH+'thcfgdata'+strfmt(IPER,2)+strfmt(ISIM,3)+strfmt(HINI,4)+'.csv',DATTH)
+
+     forall(j in 1..J)
+       DATTH(j):= COSTTH(j,1)
+
+     diskdata(ETC_OUT+ETC_TRANS+ETC_APPEND,PATH+'thcfgdata'+strfmt(IPER,2)+strfmt(ISIM,3)+strfmt(HINI,4)+'.csv',DATTH)
+
+     forall(j in 1..J)
+       DATTH(j):= FLINTH(j)
+
+     diskdata(ETC_OUT+ETC_TRANS+ETC_APPEND,PATH+'thcfgdata'+strfmt(IPER,2)+strfmt(ISIM,3)+strfmt(HINI,4)+'.csv',DATTH)
+
+     forall(j in 1..J)
+       DATTH(j):= PMINTH(j)
+
+     diskdata(ETC_OUT+ETC_TRANS+ETC_APPEND,PATH+'thcfgdata'+strfmt(IPER,2)+strfmt(ISIM,3)+strfmt(HINI,4)+'.csv',DATTH)
+
+     forall(j in 1..J)
+       DATTH(j):= PMAXTH(j)
+
+     diskdata(ETC_OUT+ETC_TRANS+ETC_APPEND,PATH+'thcfgdata'+strfmt(IPER,2)+strfmt(ISIM,3)+strfmt(HINI,4)+'.csv',DATTH)
+
+     forall(h in 1..H) do
+       forall(j in 1..J)
+         DATTH(j):= COMMTH(j,h)
+
+       diskdata(ETC_OUT+ETC_TRANS+ETC_APPEND,PATH+'thcfgdata'+strfmt(IPER,2)+strfmt(ISIM,3)+strfmt(HINI,4)+'.csv',DATTH)
+     end-do
+   end-if
+
+! report interconnections
+   if( L > 0 and PRINT_LEVEL >= 2) then
+     forall(l in 1..L)
+        DATINT(l):= IDARE(AFRINT(l))
+
+     diskdata(ETC_OUT+ETC_TRANS,PATH+'intcfgdata'+strfmt(IPER,2)+strfmt(ISIM,3)+strfmt(HINI,4)+'.csv',DATINT)
+
+     forall(l in 1..L)
+        DATINT(l):= IDARE(ATOINT(l))
+
+     diskdata(ETC_OUT+ETC_TRANS+ETC_APPEND,PATH+'intcfgdata'+strfmt(IPER,2)+strfmt(ISIM,3)+strfmt(HINI,4)+'.csv',DATINT)
+
+     forall(l in 1..L)
+        DATINT(l):= EXISINT(l)
+
+     diskdata(ETC_OUT+ETC_TRANS+ETC_APPEND,PATH+'intcfgdata'+strfmt(IPER,2)+strfmt(ISIM,3)+strfmt(HINI,4)+'.csv',DATINT)
+
+     forall(l in 1..L)
+        DATINT(l):= CFTINT(l,1)
+
+     diskdata(ETC_OUT+ETC_TRANS+ETC_APPEND,PATH+'intcfgdata'+strfmt(IPER,2)+strfmt(ISIM,3)+strfmt(HINI,4)+'.csv',DATINT)
+
+     forall(l in 1..L)
+        DATINT(l):= CTFINT(l,1)
+
+     diskdata(ETC_OUT+ETC_TRANS+ETC_APPEND,PATH+'intcfgdata'+strfmt(IPER,2)+strfmt(ISIM,3)+strfmt(HINI,4)+'.csv',DATINT)
+   end-if
+
+! report area net load per scenario, hours 1..H; area total load, hours 1..H
+   if (PRINT_LEVEL >= 0) then
+     forall(h in 1..H) do
+       forall(a in 1..A, s in 1..S|PRSC(s) > 0)
+         BUFAS(a,s):= NETLOADSHA(s,h,a)
+
+       diskdata(ETC_OUT+ETC_TRANS,PATH+'net_load_area_H'+strfmt(h,1)+strfmt(IPER,2)+strfmt(ISIM,3)+strfmt(HINI,4)+'.csv',SCEN)
+       diskdata(ETC_OUT+ETC_APPEND,PATH+'net_load_area_H'+strfmt(h,1)+strfmt(IPER,2)+strfmt(ISIM,3)+strfmt(HINI,4)+'.csv',BUFAS)
+     end-do
+
+     diskdata(ETC_OUT+ETC_TRANS,PATH+'tot_load_area'+strfmt(IPER,2)+strfmt(ISIM,3)+strfmt(HINI,4)+'.csv',IDARE)
+     diskdata(ETC_OUT+ETC_APPEND,PATH+'tot_load_area'+strfmt(IPER,2)+strfmt(ISIM,3)+strfmt(HINI,4)+'.csv',TOTLOADHA)
+   end-if
+
+   if (PRINT_LEVEL >= 1) then
+     diskdata(ETC_OUT,PATH+'mxdevloadBA'+strfmt(IPER,2)+strfmt(ISIM,3)+strfmt(HINI,4)+'.csv',MXDEVLOADHB)
+     diskdata(ETC_OUT,PATH+'mndevloadBA'+strfmt(IPER,2)+strfmt(ISIM,3)+strfmt(HINI,4)+'.csv',MNDEVLOADHB)
+   end-if
+
+! report balancing authority net load per scenario, hours 1..H
+   if (PRINT_LEVEL >= 1) then
+     forall(h in 1..H) do
+       forall(b in 1..B, s in 1..S|PRSC(s) > 0)
+         BUFBS(b,s):= NETLOADSHB(s,h,b)
+
+       diskdata(ETC_OUT+ETC_TRANS,PATH+'net_load_BA_H'+strfmt(h,1)+strfmt(IPER,2)+strfmt(ISIM,3)+strfmt(HINI,4)+'.csv',SCEN)
+       diskdata(ETC_OUT+ETC_APPEND,PATH+'net_load_BA_H'+strfmt(h,1)+strfmt(IPER,2)+strfmt(ISIM,3)+strfmt(HINI,4)+'.csv',BUFBS)
+     end-do
+   end-if
+
+!  check success of LP solution & echo status to log file; create LP file case infeasible and case flag LP_FILE is activated
+   if (PRINT_LOG > 0) then
+     writeln(" ")
+     writeln("------------------------------------------------------------------------")
+     writeln("Convergence summary")
+     writeln("------------------------------------------------------------------------")
+   end-if
+
+   probstatusx:= getparam("XPRS_LPSTATUS")
+
+   if( probstatusx <> 1 ) then
+     if (PRINT_LOG > 0) then
+     	writeln(" -> EXECUTION ENDED DUE TO LP ALGORITHM REPORTED NO SOLUTION")
+     end-if	
+	 exportprob(EP_MIN,PATH + 'trueup_infeasible_' + IPER + '_' + ISIM + '_' + HINI,OBJ)
+     exit(1)
+   else
+     if (LP_FILE) then
+       exportprob(EP_MIN,PATH + 'trueup_' + IPER + '_' + ISIM + '_' + HINI,OBJ)
+     end-if
+   end-if
+
+! Create solution csv report files for current solve; over-written for each new solve
+   if( PRINT_LEVEL >= 2) then
+
+! headers for hydro avg & LDR dispatch
+     diskdata(ETC_OUT+ETC_TRANS,PATH+'hylindisp'+strfmt(IPER,2)+strfmt(ISIM,3)+strfmt(HINI,4)+'.csv',IDHY)
+     diskdata(ETC_OUT+ETC_TRANS,PATH+'hyavgdisp'+strfmt(IPER,2)+strfmt(ISIM,3)+strfmt(HINI,4)+'.csv',IDHY)
+     diskdata(ETC_OUT+ETC_TRANS,PATH+'hyfxref'+strfmt(IPER,2)+strfmt(ISIM,3)+strfmt(HINI,4)+'.csv',IDHY)
+     diskdata(ETC_OUT+ETC_APPEND,PATH+'hyfxref'+strfmt(IPER,2)+strfmt(ISIM,3)+strfmt(HINI,4)+'.csv',FXHYREF)
+
+! headers for hydro volume & spil
+     diskdata(ETC_OUT+ETC_TRANS,PATH+'hyvolfavg'+strfmt(IPER,2)+strfmt(ISIM,3)+strfmt(HINI,4)+'.csv',IDHY)
+     diskdata(ETC_OUT+ETC_TRANS,PATH+'hyvolflin'+strfmt(IPER,2)+strfmt(ISIM,3)+strfmt(HINI,4)+'.csv',IDHY)
+
+     diskdata(ETC_OUT+ETC_TRANS,PATH+'hyspilavg'+strfmt(IPER,2)+strfmt(ISIM,3)+strfmt(HINI,4)+'.csv',IDHY)
+     diskdata(ETC_OUT+ETC_TRANS,PATH+'hyspillin'+strfmt(IPER,2)+strfmt(ISIM,3)+strfmt(HINI,4)+'.csv',IDHY)
+
+!headers for thermal avg & LDR dispatch
+     diskdata(ETC_OUT+ETC_TRANS,PATH+'thlindisp'+strfmt(IPER,2)+strfmt(ISIM,3)+strfmt(HINI,4)+'.csv',IDTH)
+     diskdata(ETC_OUT+ETC_TRANS,PATH+'thavgdisp'+strfmt(IPER,2)+strfmt(ISIM,3)+strfmt(HINI,4)+'.csv',IDTH)
+     diskdata(ETC_OUT+ETC_TRANS,PATH+'thfxref'+strfmt(IPER,2)+strfmt(ISIM,3)+strfmt(HINI,4)+'.csv',IDTH)
+     diskdata(ETC_OUT+ETC_APPEND,PATH+'thfxref'+strfmt(IPER,2)+strfmt(ISIM,3)+strfmt(HINI,4)+'.csv',FXTHREF)
+
+! headers for interc avg & LDR flow; LB/UB for avg & LDR slacks
+     forall(l in 1..L)
+       DISPL(2+l):= IDARE(AFRINT(l))
+
+     diskdata(ETC_OUT+ETC_TRANS,PATH+'intavg'+strfmt(IPER,2)+strfmt(ISIM,3)+strfmt(HINI,4)+'.csv',DISPL)
+     diskdata(ETC_OUT+ETC_TRANS,PATH+'intlin'+strfmt(IPER,2)+strfmt(ISIM,3)+strfmt(HINI,4)+'.csv',DISPL)
+     diskdata(ETC_OUT+ETC_TRANS,PATH+'intaslb'+strfmt(IPER,2)+strfmt(ISIM,3)+strfmt(HINI,4)+'.csv',DISPL)
+     diskdata(ETC_OUT+ETC_TRANS,PATH+'intasub'+strfmt(IPER,2)+strfmt(ISIM,3)+strfmt(HINI,4)+'.csv',DISPL)
+     diskdata(ETC_OUT+ETC_TRANS,PATH+'intlslb'+strfmt(IPER,2)+strfmt(ISIM,3)+strfmt(HINI,4)+'.csv',DISPL)
+     diskdata(ETC_OUT+ETC_TRANS,PATH+'intlsub'+strfmt(IPER,2)+strfmt(ISIM,3)+strfmt(HINI,4)+'.csv',DISPL)
+
+     forall(l in 1..L)
+       DISPL(2+l):= IDARE(ATOINT(l))
+
+     diskdata(ETC_OUT+ETC_TRANS+ETC_APPEND,PATH+'intavg'+strfmt(IPER,2)+strfmt(ISIM,3)+strfmt(HINI,4)+'.csv',DISPL)
+     diskdata(ETC_OUT+ETC_TRANS+ETC_APPEND,PATH+'intlin'+strfmt(IPER,2)+strfmt(ISIM,3)+strfmt(HINI,4)+'.csv',DISPL)
+     diskdata(ETC_OUT+ETC_TRANS+ETC_APPEND,PATH+'intaslb'+strfmt(IPER,2)+strfmt(ISIM,3)+strfmt(HINI,4)+'.csv',DISPL)
+     diskdata(ETC_OUT+ETC_TRANS+ETC_APPEND,PATH+'intasub'+strfmt(IPER,2)+strfmt(ISIM,3)+strfmt(HINI,4)+'.csv',DISPL)
+     diskdata(ETC_OUT+ETC_TRANS+ETC_APPEND,PATH+'intlslb'+strfmt(IPER,2)+strfmt(ISIM,3)+strfmt(HINI,4)+'.csv',DISPL)
+     diskdata(ETC_OUT+ETC_TRANS+ETC_APPEND,PATH+'intlsub'+strfmt(IPER,2)+strfmt(ISIM,3)+strfmt(HINI,4)+'.csv',DISPL)
+
+     forall(l in 1..L)
+       DISPL(2+l):= 0
+
+     forall(h in 1..H) do
+       forall(l in 1..L|EXISINT(l) <= 0)
+         DISPL(2+l):= getsol(favgint(h,l))
+
+       DISPL(2):= h
+       diskdata(ETC_OUT+ETC_TRANS+ETC_APPEND,PATH+'intavg'+strfmt(IPER,2)+strfmt(ISIM,3)+strfmt(HINI,4)+'.csv',DISPL)
+     end-do
+
+     forall(l in 1..L)
+       DISPL(2+l):= 0
+
+     forall(s in 1..S, h in 1..H|PRSC(s) > 0) do
+       DISPL(1):= s
+       DISPL(2):= h
+
+       forall(l in 1..L|EXISINT(l) <= 0)
+         DISPL(2+l):= getsol(flinint(s,h,l))
+
+       diskdata(ETC_OUT+ETC_TRANS+ETC_APPEND,PATH+'intlin'+strfmt(IPER,2)+strfmt(ISIM,3)+strfmt(HINI,4)+'.csv',DISPL)
+     end-do
+
+     forall(l in 1..L)
+       SLKINT(2+l):= 0
+
+     TOT:= 0.0
+     SLKINT(1):= 0
+
+     forall(h in 1..H) do
+       SLKINT(2):= h
+
+       forall(l in 1..L|EXISINT(l) <= 0)
+         SLKINT(2+l):= getsol(fslbavgint(h,l))
+
+       diskdata(ETC_OUT+ETC_TRANS+ETC_APPEND,PATH+'intaslb'+strfmt(IPER,2)+strfmt(ISIM,3)+strfmt(HINI,4)+'.csv',SLKINT)
+       TOT+= sum(l in 1..L) SLKINT(2+l)
+     end-do
+
+     if (PRINT_LOG > 0) then
+     	if( TOT > 0 ) then
+       		writeln(TOT," MW total average interconnection lower bound slacks along all hours")
+       end-if		
+     end-if
+
+     forall(l in 1..L)
+       SLKINT(2+l):= 0
+
+     TOT:= 0.0
+
+     forall(h in 1..H) do
+       SLKINT(2):= h
+
+       forall(l in 1..L|EXISINT(l) <= 0)
+         SLKINT(2+l):= getsol(fsubavgint(h,l))
+
+       diskdata(ETC_OUT+ETC_TRANS+ETC_APPEND,PATH+'intasub'+strfmt(IPER,2)+strfmt(ISIM,3)+strfmt(HINI,4)+'.csv',SLKINT)
+       TOT+= sum(l in 1..L) SLKINT(2+l)
+     end-do
+
+     if (PRINT_LOG > 0) then
+     	if( TOT > 0 ) then
+       		writeln(TOT," MW total average interconnection upper bound slacks along all hours")
+       end-if		
+     end-if
+
+     forall(l in 1..L)
+       SLKINT(2+l):= 0
+
+     TOT:= 0.0
+
+     forall(s in 1..S, h in 1..H|PRSC(s) > 0) do
+       SLKINT(1):= s
+       SLKINT(2):= h
+
+       forall(l in 1..L|EXISINT(l) <= 0 and BAARE(AFRINT(l)) = BAARE(ATOINT(l)))
+         SLKINT(2+l):= getsol(fslblinint(s,h,l))
+
+       diskdata(ETC_OUT+ETC_TRANS+ETC_APPEND,PATH+'intlslb'+strfmt(IPER,2)+strfmt(ISIM,3)+strfmt(HINI,4)+'.csv',SLKINT)
+       TOT+= sum(l in 1..L) SLKINT(2+l)
+     end-do
+
+     if (PRINT_LOG > 0) then
+     	if( TOT > 0 ) then
+       		writeln(TOT," MW total interconnection lower bound slacks along all scenarios & hours")
+       end-if		
+     end-if
+
+     forall(l in 1..L)
+       SLKINT(2+l):= 0
+
+     TOT:= 0.
+
+     forall(s in 1..S, h in 1..H|PRSC(s) > 0) do
+       SLKINT(1):= s
+       SLKINT(2):= h
+
+       forall(l in 1..L|EXISINT(l) <= 0 and BAARE(AFRINT(l)) = BAARE(ATOINT(l)))
+         SLKINT(2+l):= getsol(fsublinint(s,h,l))
+
+       diskdata(ETC_OUT+ETC_TRANS+ETC_APPEND,PATH+'intlsub'+strfmt(IPER,2)+strfmt(ISIM,3)+strfmt(HINI,4)+'.csv',SLKINT)
+       TOT+= sum(l in 1..L) SLKINT(2+l)
+     end-do
+
+     if (PRINT_LOG > 0) then
+     	if( TOT > 0 ) then
+       		writeln(TOT," MW total interconnection upper bound slacks along all scenarios & hours")
+        end-if		
+     end-if
+   end-if
+
+! report thermal plant hourly average dispatch
+   forall(j in 1..J)
+     forall(h in 1..H)
+       AUXHJ(h,j):= 0
+
+   forall(j in 1..J)
+     forall(h in 1..H)
+       TMPHJ(h,j):= 0
+
+     THCST:= 0.
+
+     forall(h in 1..H, j in 1..J)
+       TMPHJ(h,j):= 0
+
+     forall(j in 1..J|EXISTH(j) <= 0 and FLINTH(j) = 0)
+       forall(h in 1..H)
+         TMPHJ(h,j):= getsol(gavgth(h,j))
+
+     if(PRINT_LEVEL >= 2) then
+       diskdata(ETC_OUT+ETC_APPEND,PATH+'thavgdisp'+strfmt(IPER,2)+strfmt(ISIM,3)+strfmt(HINI,4)+'.csv',TMPHJ)
+     end-if
+
+     forall(j in 1..J|EXISTH(j) <= 0)
+       forall(h in 1..H)
+         THCST+= TMPHJ(h,j)*COSTTH(j,h)
+
+     if (PRINT_LOG > 0) then       
+       writeln(THCST," $ total thermal generation cost, in average")
+     end-if
+
+     forall(h in 1..H, j in 1..J)
+       AUXHJ(h,j):= 0
+
+     forall(j in 1..J|EXISTH(j) <= 0 and FLINTH(j) = 0)
+       forall(h in 1..H)
+         AUXHJ(h,j):= getsol(glinth(h,j))
+
+     if(PRINT_LEVEL >= 2) then
+       diskdata(ETC_OUT+ETC_APPEND,PATH+'thlindisp'+strfmt(IPER,2)+strfmt(ISIM,3)+strfmt(HINI,4)+'.csv',AUXHJ)
+     end-if
+
+! report hydro plant hourly average dispatch
+     HYCST:= 0.
+
+     forall(i in 1..I, h in 1..H)
+       TMPHI(h,i):= 0
+
+     forall(i in 1..I|EXISHY(i) <= 0 and PCHY(i) <> 0 )
+       forall(h in 1..H) do
+         TMPHI(h,i):= PCHY(i)*getsol(uavghy(h,i))
+         HYCST+= TMPHI(h,i)*OPCSTHY(i)
+       end-do
+
+     if(PRINT_LEVEL >= 2) then
+       diskdata(ETC_OUT+ETC_APPEND,PATH+'hyavgdisp'+strfmt(IPER,2)+strfmt(ISIM,3)+strfmt(HINI,4)+'.csv',TMPHI)
+     end-if
+
+     if (PRINT_LOG > 0) then
+       writeln(HYCST," $ total hydro generation cost, in average")
+     end-if
+
+     forall(i in 1..I, h in 1..H)
+       AUXHI(h,i):= 0
+
+     forall(i in 1..I|EXISHY(i) <= 0 and FLINHY(i) = 0 and PCHY(i) <> 0)
+       forall(h in 1..H)
+         AUXHI(h,i):= getsol(glinhy(h,i))
+
+     if(PRINT_LEVEL >= 2) then
+       diskdata(ETC_OUT+ETC_APPEND,PATH+'hylindisp'+strfmt(IPER,2)+strfmt(ISIM,3)+strfmt(HINI,4)+'.csv',AUXHI)
+     end-if
+
+! report hydro reservoir final volume per scenario
+     if(PRINT_LEVEL >= 2) then
+       forall(i in 1..I|VMINHY(i) < VMAXHY(i))
+         VOLFI(i):= getsol(volfavghy(i))
+
+       diskdata(ETC_OUT+ETC_TRANS+ETC_APPEND,PATH+'hyvolfavg'+strfmt(IPER,2)+strfmt(ISIM,3)+strfmt(HINI,4)+'.csv',VOLFI)
+
+       forall(s in 1..S|PRSC(s) > 0) do
+         forall(i in 1..I|VMINHY(i) < VMAXHY(i))
+           VOLFI(i):= getsol(volfhy(s,i))
+
+         diskdata(ETC_OUT+ETC_TRANS+ETC_APPEND,PATH+'hyvolflin'+strfmt(IPER,2)+strfmt(ISIM,3)+strfmt(HINI,4)+'.csv',VOLFI)
+       end-do
+     end-if
+
+! report hydro plant spillage per scenario
+     if(PRINT_LEVEL >= 2) then
+       forall(i in 1..I|EXISHY(i) <= 0)
+         SPILI(i):= getsol(spilavghy(i))
+
+       diskdata(ETC_OUT+ETC_TRANS+ETC_APPEND,PATH+'hyspilavg'+strfmt(IPER,2)+strfmt(ISIM,3)+strfmt(HINI,4)+'.csv',SPILI)
+
+       forall(s in 1..S|PRSC(s) > 0) do
+         forall(i in 1..I|EXISHY(i) <= 0)
+           SPILI(i):= getsol(spilhy(s,i))
+
+         diskdata(ETC_OUT+ETC_TRANS+ETC_APPEND,PATH+'hyspillin'+strfmt(IPER,2)+strfmt(ISIM,3)+strfmt(HINI,4)+'.csv',SPILI)
+       end-do
+     end-if
+
+! report thermal plant hourly slack wrt lower/upper generation limit
+     if(PRINT_LEVEL >= 2) then
+       forall(j in 1..J)
+         SLKTH(2+j):= IDTH(j)
+!
+       diskdata(ETC_OUT+ETC_TRANS,PATH+'thgenslb'+strfmt(IPER,2)+strfmt(ISIM,3)+strfmt(HINI,4)+'.csv',SLKTH)
+       diskdata(ETC_OUT+ETC_TRANS,PATH+'thgensub'+strfmt(IPER,2)+strfmt(ISIM,3)+strfmt(HINI,4)+'.csv',SLKTH)
+
+       TOT:= 0.
+
+       forall(j in 1..J)
+         SLKTH(2+j):= 0
+
+       forall(h in 1..H, s in 1..S|PRSC(s) > 0) do
+         forall(j in 1..J|EXISTH(j) <= 0 and FLINTH(j) = 0 and COMMTH(j,h) = 1)
+           SLKTH(2+j):= getsol(smnth(s,h,j))
+
+         SLKTH(1):= h
+         SLKTH(2):= s
+         diskdata(ETC_OUT+ETC_TRANS+ETC_APPEND,PATH+'thgenslb'+strfmt(IPER,2)+strfmt(ISIM,3)+strfmt(HINI,4)+'.csv',SLKTH)
+         TOT+= sum(j in 1..J) SLKTH(2+j)
+       end-do
+
+       if (PRINT_LOG > 0) then
+       		if( TOT > 0 ) then         
+         		writeln(TOT," MW total thermal plant lower bound slacks along all scenarios & hours")
+         	end-if	
+       end-if
+
+       TOT:= 0.0
+
+       forall(j in 1..J)
+         SLKTH(2+j):= 0
+
+       forall(h in 1..H, s in 1..S|PRSC(s) > 0) do
+         forall(j in 1..J|EXISTH(j) <= 0 and FLINTH(j) = 0 and COMMTH(j,h) = 1)
+           SLKTH(2+j):= getsol(smxth(s,h,j))
+
+         SLKTH(1):= h
+         SLKTH(2):= s
+         diskdata(ETC_OUT+ETC_TRANS+ETC_APPEND,PATH+'thgensub'+strfmt(IPER,2)+strfmt(ISIM,3)+strfmt(HINI,4)+'.csv',SLKTH)
+         TOT+= sum(j in 1..J) SLKTH(2+j)
+       end-do
+
+       if (PRINT_LOG > 0) then
+       		if( TOT > 0 ) then
+         		writeln(TOT," MW total thermal plant upper bound slacks along all scenarios & hours")
+       		end-if
+       end-if
+    end-if   
+
+! dispatch report files for each scenario & hour: thermal, hydro & renewable plants
+    if(PRINT_LEVEL >= 2) then
+!      aux:= 0.
+!      ind:= 0
+!
+      forall(j in 1..J)
+        DISPJ(2+j):= IDTH(j)
+!
+      diskdata(ETC_OUT+ETC_TRANS,PATH+'thdispatch.csv',DISPJ)
+!
+      forall(j in 1..J)
+        DISPJ(2+j):= 0
+!
+      forall(i in 1..I)
+        DISPI(2+i):= IDHY(i)
+!
+      diskdata(ETC_OUT+ETC_TRANS,PATH+'hydispatch.csv',DISPI)
+!
+      forall(i in 1..I)
+        DISPI(2+i):= 0
+!
+      if( R > 0 ) then
+        forall(n in 1..R)
+          DISPR(2+n):= IDRN(n)
+!
+        diskdata(ETC_OUT+ETC_TRANS,PATH+'rndispatch.csv',DISPR)
+!
+        forall(n in 1..R)
+          DISPR(2+n):= 0
+      end-if
+!
+      forall(s in 1..S, h in 1..H|PRSC(s) > 0) do
+        forall(j in 1..J|EXISTH(j) <= 0)
+          DISPJ(2+j):= ( NETLOADSHB(s,h,BATH(j)) - NETAVGLOADHB(h,BATH(j)) )*AUXHJ(h,j) + TMPHJ(h,j)
+!
+        DISPJ(1):= s
+        DISPJ(2):= h
+        diskdata(ETC_OUT+ETC_TRANS+ETC_APPEND,PATH+'thdispatch.csv',DISPJ)
+!
+        TOTTH(s,h):= sum(j in 1..J) DISPJ(2+j)
+!
+!        tmp:= sum(j in 1..J|EXISTH(j) <= 0) TMPHJ(h,j)
+!        tot:= TOTTH(s,h)
+!
+        forall(i in 1..I|EXISHY(i) <= 0 and PCHY(i) <> 0)
+          DISPI(2+i):= ( NETLOADSHB(s,h,BAHY(i)) - NETAVGLOADHB(h,BAHY(i)) )*AUXHI(h,i) + TMPHI(h,i)
+!
+        DISPI(1):= s
+        DISPI(2):= h
+        diskdata(ETC_OUT+ETC_TRANS+ETC_APPEND,PATH+'hydispatch.csv',DISPI)
+!
+        TOTHY(s,h):= sum(i in 1..I|EXISHY(i) <= 0 and PCHY(i) <> 0) DISPI(2+i)
+!
+!        tmp+= sum(i in 1..I|EXISHY(i) <= 0 and PCHY(i) <> 0) TMPHI(h,i)
+!        tot+= TOTHY(s,h)
+!
+        if( R > 0 ) then
+          forall(r in 1..R|EXISRN(r) <= 0)
+            DISPR(2+r):= PRODRN(H*(s-1)+h,r)
+!
+          DISPR(1):= s
+          DISPR(2):= h
+          diskdata(ETC_OUT+ETC_TRANS+ETC_APPEND,PATH+'rndispatch.csv',DISPR)
+!
+          TOTRN(s,h):= sum(r in 1..R|EXISRN(r) <= 0) DISPR(2+r)
+        end-if
+      end-do
+
+! summary report csv files: total (thermal, hydro & renewable) production, per scenario & hour
+       diskdata(ETC_OUT,PATH+'tot_th'+strfmt(IPER,2)+strfmt(ISIM,3)+strfmt(HINI,4)+'.csv',TOTTH)
+       diskdata(ETC_OUT,PATH+'tot_hy'+strfmt(IPER,2)+strfmt(ISIM,3)+strfmt(HINI,4)+'.csv',TOTHY)
+       diskdata(ETC_OUT,PATH+'tot_rn'+strfmt(IPER,2)+strfmt(ISIM,3)+strfmt(HINI,4)+'.csv',TOTRN)
+     end-if
